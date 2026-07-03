@@ -53,16 +53,9 @@ module.exports = function (ctx) {
 
             env: {
                 API_URL : ctx.dev
-                ? 'https://srvapp03.inabif.gob.pe/api/ms-educalle'
+                ? 'http://10.101.0.36:4000/api/ms-educalle'
                 : 'https://srvapp03.inabif.gob.pe/api/ms-educalle',
-
-                // PROD
-                // API_URL: 'http://172.19.0.44:4000/api/ms-sigesu',
-                // API_URL: 'https://srvapp03.inabif.gob.pe/api/ms-sigesu',
-                API_URL: 'https://srvapp03.inabif.gob.pe/api/ms-educalle',
                 
-                // DEV
-                // API_URL: 'http://10.101.0.36:4000/api/ms-sigesu',
                 API_RUTA:'https://srvapp01.inabif.gob.pe:8443/SRH',
                 APP_VERSION: '0.0.1',
 

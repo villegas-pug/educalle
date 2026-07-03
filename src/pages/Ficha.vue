@@ -291,6 +291,7 @@
                                                                     :value="rama.value"
                                                                     :options="rama.options"
                                                                     :loading="rama.loading"
+                                                                    :style="getBifurcacionControlStyle(pregunta)"
                                                                     :disable="esControlDeshabilitado(pregunta)"
                                                                     @input="val => onBranchedSelectChange(pregunta, ramaIndex, val)"
                                                                     :rules="pregunta.obligatoria ? [val => !!val || 'Debe seleccionar una opción'] : []"
@@ -322,6 +323,7 @@
                                                                     outlined
                                                                     dense
                                                                     :value="obtenerValorDisparadorBranched(pregunta)"
+                                                                    :style="getPreguntaControlStyle(pregunta)"
                                                                     :readonly="esCampoSoloLectura(pregunta)"
                                                                     :rules="validarPregunta(pregunta)"
                                                                     @input="val => actualizarValorDisparadorBranched(pregunta, val)"
@@ -353,6 +355,7 @@
                                                                     :value="pregunta.respuesta"
                                                                     :options="pregunta.opciones"
                                                                     :loading="pregunta._loadingHttp"
+                                                                    :style="getPreguntaControlStyle(pregunta)"
                                                                     :disable="esControlDeshabilitado(pregunta)"
                                                                     @input="val => actualizarRespuestaPregunta(pregunta, val)"
                                                                     :rules="pregunta.obligatoria ? [val => !!val || 'Debe seleccionar una opción'] : []"
@@ -393,6 +396,7 @@
                                                                     map-options
                                                                     :value="pregunta.respuesta"
                                                                     :options="pregunta.opciones"
+                                                                    :style="getPreguntaControlStyle(pregunta)"
                                                                     :disable="esControlDeshabilitado(pregunta)"
                                                                     @input="val => actualizarRespuestaPregunta(pregunta, val)"
                                                                 >
@@ -424,6 +428,7 @@
                                                                     class="ficha-radio-group"
                                                                     :value="pregunta.respuesta"
                                                                     :options="pregunta.opciones"
+                                                                    :style="getPreguntaControlStyle(pregunta)"
                                                                     type="radio"
                                                                     inline
                                                                     :disable="esControlDeshabilitado(pregunta)"
@@ -439,13 +444,14 @@
                                                                     </div>
                                                                     <span v-else class="ficha-valor">—</span>
                                                                 </template>
-                                                                <div v-else class="ficha-textm">
+                                                                <div v-else class="ficha-textm" :style="getPreguntaControlStyle(pregunta)">
                                                                     <div class="ficha-textm__input-row">
                                                                         <q-input
                                                                             outlined
                                                                             dense
                                                                             class="ficha-textm__input"
                                                                             :value="pregunta._textMDraft"
+                                                                            :style="getPreguntaControlStyle(pregunta)"
                                                                             :readonly="esCampoSoloLectura(pregunta)"
                                                                             :rules="validarPreguntaTextM(pregunta)"
                                                                             @input="val => actualizarDraftTextM(pregunta, val)"
@@ -486,6 +492,7 @@
                                                                     dense
                                                                     :value="obtenerValorTextoPregunta(pregunta)"
                                                                     :type="obtenerTipoInputPregunta(pregunta)"
+                                                                    :style="getPreguntaControlStyle(pregunta)"
                                                                     :min="usaTipoNumero(pregunta) ? 0 : null"
                                                                     :autogrow="usaAutogrowPregunta(pregunta)"
                                                                     :readonly="esCampoSoloLectura(pregunta)"
@@ -516,6 +523,7 @@
                                                                     dense
                                                                     type="text"
                                                                     :value="rama.value"
+                                                                    :style="getBifurcacionControlStyle(pregunta)"
                                                                     :readonly="!esRamificacionEditable(pregunta, rama)"
                                                                     @input="val => actualizarRamificacionTexto(pregunta, ramaIndex, val)"
                                                                 />
@@ -540,6 +548,7 @@
                                                                     outlined
                                                                     dense
                                                                     :value="pregunta.respuesta2"
+                                                                    :style="getPregunta2ControlStyle(pregunta)"
                                                                     @input="val => $set(pregunta, 'respuesta2', pregunta.tipoDato2 === 'NUMBER' ? normalizarNumeroNoNegativo(val) : val)"
                                                                     :type="pregunta.tipoDato2 === 'NUMBER' ? 'number' : 'textarea'"
                                                                     :min="pregunta.tipoDato2 === 'NUMBER' ? 0 : null"
@@ -556,6 +565,7 @@
                                                                     map-options
                                                                     :value="pregunta.respuesta2"
                                                                     :options="pregunta.opciones2"
+                                                                    :style="getPregunta2ControlStyle(pregunta)"
                                                                     @input="val => $set(pregunta, 'respuesta2', val)"
                                                                 />
                                                             </template>
@@ -3696,6 +3706,40 @@ export default {
         },
         esVistaBranched(pregunta) {
             return String(pregunta?.vistaControl || '').toLowerCase() === 'branched';
+        },
+        normalizarAnchoControl(valor) {
+            if (valor === null || valor === undefined) return null;
+
+            const texto = String(valor).trim();
+            if (!texto || texto.toUpperCase() === 'NULL') return null;
+
+            if (/^\d+(\.\d+)?$/.test(texto)) {
+                return `${texto}px`;
+            }
+
+            return texto;
+        },
+        buildControlWidthStyle(valor, { forSummary = false } = {}) {
+            const ancho = this.normalizarAnchoControl(valor);
+            if (!ancho) return null;
+
+            return {
+                width: ancho,
+                maxWidth: forSummary ? ancho : ancho
+            };
+        },
+        getPreguntaControlStyle(pregunta) {
+            return this.buildControlWidthStyle(pregunta?.lng, {
+                forSummary: this.esVistaSummaryRow(pregunta)
+            });
+        },
+        getBifurcacionControlStyle(pregunta) {
+            return this.buildControlWidthStyle(pregunta?.lngBifurcacion);
+        },
+        getPregunta2ControlStyle(pregunta) {
+            return this.buildControlWidthStyle(pregunta?.lng, {
+                forSummary: this.esVistaSummaryRow(pregunta)
+            });
         },
         esPreguntaBranchedInputSearch(pregunta) {
             return this.esVistaBranched(pregunta)
