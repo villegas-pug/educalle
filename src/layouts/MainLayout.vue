@@ -57,7 +57,7 @@
 
                     <!-- TÍTULO DEL MÓDULO -->
                     <q-item-label
-                        v-if="modulo.descripcion !== 'SIGESU'"
+                        v-if="!ocultarTituloModulo(modulo)"
                         header
                         class="text-bold">
                         {{ modulo.descripcion }}
@@ -92,7 +92,7 @@
                                     <q-icon/>
                                 </q-item-section>
                                 <q-item-section>
-                                    <q-item-label>{{ item.descripcion }}</q-item-label>
+                                    <q-item-label>{{ obtenerDescripcionVisible(item.descripcion) }}</q-item-label>
                                 </q-item-section>
                             </q-item>
                         </q-expansion-item>
@@ -103,14 +103,18 @@
                             clickable
                             dense
                             :disable="menu.flgDeshabilitado === 1"
-                            :class="{ 'submenu-activo': rutaActual === menu.enlace }"
+                            :class="[
+                                'submenu-gap',
+                                { 'submenu-activo': rutaActual === menu.enlace },
+                                { 'drawer-root-item--spaced': menu.descripcion === 'INICIO' }
+                            ]"
                             @click="irA(menu.enlace)"
                         >
                             <q-item-section avatar>
                                 <q-icon :name="menu.icono"/>
                             </q-item-section>
                             <q-item-section>
-                                <q-item-label>{{ menu.descripcion }}</q-item-label>
+                                <q-item-label>{{ obtenerDescripcionVisible(menu.descripcion) }}</q-item-label>
                             </q-item-section>
                         </q-item>
 
@@ -197,13 +201,37 @@ export default {
                 }
             });
 
-            // 🔥 ELIMINAR INICIO
-            this.menuBackend = request.data.map(modulo => ({
-                ...modulo,
-                subitems: modulo.subitems.filter(
-                    item => item.descripcion !== 'INICIO'
-                )
-            }));
+            this.menuBackend = this.normalizarArbolMenu(request.data);
+        },
+        normalizarArbolMenu(items = []) {
+            return items.map(item => this.normalizarNodoMenu(item));
+        },
+        normalizarNodoMenu(item = {}) {
+            const descripcion = String(item.descripcion || '').trim();
+            const subitems = Array.isArray(item.subitems)
+                ? item.subitems.map(subitem => this.normalizarNodoMenu(subitem))
+                : [];
+
+            return {
+                ...item,
+                descripcion,
+                enlace: this.resolverEnlaceMenu(item, descripcion),
+                subitems
+            };
+        },
+        resolverEnlaceMenu(item, descripcion) {
+            const enlace = String(item?.enlace || '').trim();
+            if (descripcion === 'INICIO' && enlace === '#') {
+                return 'inicio';
+            }
+            return enlace;
+        },
+        ocultarTituloModulo(modulo) {
+            const descripcion = String(modulo?.descripcion || '').trim().toUpperCase();
+            return descripcion === 'SIGESU' || descripcion === 'SISEC';
+        },
+        obtenerDescripcionVisible(descripcion) {
+            return descripcion === 'INICIO' ? 'Inicio' : descripcion;
         },
         irA(ruta) {
             if (ruta && ruta !== '#') {
@@ -496,3 +524,9 @@ export default {
     },
 }
 </script>
+
+<style scoped>
+.drawer-root-item--spaced {
+    margin-bottom: 8px;
+}
+</style>
