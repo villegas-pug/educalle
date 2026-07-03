@@ -1244,8 +1244,8 @@
 
 .ficha-campo--summary {
     gap: 0;
-    border: 1px solid #e3eaf2;
-    border-radius: 8px;
+    border: 1px solid #d8e3ef;
+    border-radius: 0;
     overflow: hidden;
     background: #fff;
 }
@@ -1253,17 +1253,88 @@
 .ficha-label--summary {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 8px;
     padding: 12px 14px;
     background: #edf3fa;
     color: #22313f;
     font-weight: 700;
     border-right: 1px solid #d8e3ef;
+    text-align: left;
+    line-height: 1.35;
 }
 
 .ficha-summary-icon {
     color: #BF0411;
-    font-size: 18px;
+    font-size: 22px;
+}
+
+.ficha-pregunta--summary {
+    padding: 0;
+    border-bottom: 0;
+}
+
+.ficha-pregunta--summary .ficha-campo--summary {
+    align-items: stretch;
+    min-height: 52px;
+}
+
+.ficha-pregunta--summary .ficha-label--summary {
+    flex: 0 0 45%;
+    max-width: 45%;
+    min-height: 100%;
+    padding: 8px 14px;
+}
+
+.ficha-pregunta--summary .ficha-input {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 55%;
+    max-width: 55%;
+    padding: 6px 14px;
+    background: #fff;
+}
+
+.ficha-pregunta--summary .ficha-input .q-field,
+.ficha-pregunta--summary .ficha-input .ficha-valor {
+    width: 100%;
+    max-width: 320px;
+}
+
+.ficha-pregunta--summary .ficha-input .q-field {
+    display: flex;
+    align-items: center;
+}
+
+.ficha-pregunta--summary :deep(.q-field__control) {
+    min-height: 38px;
+    height: 38px;
+    align-items: center;
+}
+
+.ficha-pregunta--summary :deep(.q-field__native),
+.ficha-pregunta--summary :deep(.q-field__input) {
+    padding-top: 0;
+    padding-bottom: 0;
+    align-items: center;
+}
+
+.ficha-pregunta--summary :deep(.q-field__marginal) {
+    height: 38px;
+    align-items: center;
+}
+
+.ficha-pregunta--summary .ficha-valor {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    text-align: center;
+}
+
+.ficha-pregunta--summary + .ficha-pregunta--summary .ficha-campo--summary {
+    border-top: 0;
 }
 
 .ficha-branched-group {
