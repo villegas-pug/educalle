@@ -493,22 +493,25 @@
                                                                     </div>
                                                                     <span v-else class="ficha-valor">—</span>
                                                                 </template>
-                                                                <div v-else class="ficha-textm" :style="getPreguntaControlStyle(pregunta)">
+                                                                <div v-else class="ficha-textm">
                                                                     <div class="ficha-textm__input-row">
                                                                         <q-input
                                                                             outlined
                                                                             dense
+                                                                            lazy-rules
                                                                             class="ficha-textm__input"
                                                                             type="time"
                                                                             :value="pregunta._timeRangeStartDraft"
                                                                             :style="getPreguntaControlStyle(pregunta)"
                                                                             :readonly="esCampoSoloLectura(pregunta)"
+                                                                            :rules="validarPreguntaTimeRangeM(pregunta)"
                                                                             @input="val => actualizarTimeRangeDraft(pregunta, 'start', val)"
                                                                             @keyup.enter.prevent="agregarItemTimeRangeM(pregunta)"
                                                                         />
                                                                         <q-input
                                                                             outlined
                                                                             dense
+                                                                            lazy-rules
                                                                             class="ficha-textm__input"
                                                                             type="time"
                                                                             :value="pregunta._timeRangeEndDraft"
@@ -4699,7 +4702,15 @@ export default {
 
             const inicio = String(pregunta._timeRangeStartDraft || '').trim();
             const fin = String(pregunta._timeRangeEndDraft || '').trim();
-            if (!inicio || !fin) return;
+            if (!inicio && !fin) return;
+
+            if (!inicio || !fin) {
+                this.$q.notify({
+                    type: 'warning',
+                    message: 'Debe completar el rango de horas'
+                });
+                return;
+            }
 
             const items = Array.isArray(pregunta.respuesta) ? [...pregunta.respuesta] : [];
             items.push(`${inicio} - ${fin}`);
@@ -5704,17 +5715,17 @@ export default {
         validarPreguntaTimeRangeM(pregunta) {
             const reglas = []
 
-            if (pregunta.obligatoria === 1) {
-                reglas.push(() => {
-                    const items = Array.isArray(pregunta?.respuesta) ? pregunta.respuesta : []
-                    return items.length > 0 || 'Este campo es obligatorio'
-                })
-            }
-
             reglas.push(() => {
                 const inicio = String(pregunta?._timeRangeStartDraft || '').trim()
                 const fin = String(pregunta?._timeRangeEndDraft || '').trim()
-                if (!inicio && !fin) return true
+                if (!inicio && !fin) {
+                    const items = Array.isArray(pregunta?.respuesta) ? pregunta.respuesta : []
+                    if (pregunta.obligatoria === 1) {
+                        return items.length > 0 || 'Este campo es obligatorio'
+                    }
+                    return true
+                }
+
                 return !!inicio && !!fin || 'Debe completar el rango de horas'
             })
 
