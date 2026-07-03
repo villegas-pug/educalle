@@ -3931,7 +3931,8 @@ export default {
                 otroTexto: null,
                 _textMDraft: '',
                 _timeRangeStartDraft: '',
-                _timeRangeEndDraft: ''
+                _timeRangeEndDraft: '',
+                _timeRangeAttemptedAdd: false
             };
 
             if (this.esPreguntaBranchedInputSearch(pregunta)) {
@@ -4691,6 +4692,7 @@ export default {
             this.$set(pregunta, 'respuesta', items);
         },
         actualizarTimeRangeDraft(pregunta, tipo, value) {
+            this.$set(pregunta, '_timeRangeAttemptedAdd', false);
             if (tipo === 'start') {
                 this.$set(pregunta, '_timeRangeStartDraft', value);
                 return;
@@ -4699,6 +4701,8 @@ export default {
         },
         agregarItemTimeRangeM(pregunta) {
             if (this.esCampoSoloLectura(pregunta)) return;
+
+            this.$set(pregunta, '_timeRangeAttemptedAdd', true);
 
             const inicio = String(pregunta._timeRangeStartDraft || '').trim();
             const fin = String(pregunta._timeRangeEndDraft || '').trim();
@@ -4717,6 +4721,7 @@ export default {
             this.$set(pregunta, 'respuesta', items);
             this.$set(pregunta, '_timeRangeStartDraft', '');
             this.$set(pregunta, '_timeRangeEndDraft', '');
+            this.$set(pregunta, '_timeRangeAttemptedAdd', false);
         },
         eliminarItemTimeRangeM(pregunta, index) {
             if (this.esCampoSoloLectura(pregunta)) return;
@@ -5726,6 +5731,8 @@ export default {
                     return true
                 }
 
+                if (!pregunta?._timeRangeAttemptedAdd) return true
+
                 return !!inicio && !!fin || 'Debe completar el rango de horas'
             })
 
@@ -5755,7 +5762,7 @@ export default {
                         switch (p.tipoControl) {
                             case 'text':    p.respuesta = ''; break
                             case 'textM':   p.respuesta = []; p._textMDraft = ''; break
-                            case 'timeRangeM': p.respuesta = []; p._timeRangeStartDraft = ''; p._timeRangeEndDraft = ''; break
+                            case 'timeRangeM': p.respuesta = []; p._timeRangeStartDraft = ''; p._timeRangeEndDraft = ''; p._timeRangeAttemptedAdd = false; break
                             case 'selectM': p.respuesta = []; break
                             case 'label':   p.respuesta = 2; break
                             default:        p.respuesta = null; break
