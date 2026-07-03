@@ -3845,15 +3845,21 @@ export default {
             this.loading = true;
 
             try {
-                const res = await this.$axios.get(`${process.env.API_URL_SIGESU}/obtenerRespuestas`, {
-                    params: {
-                        idAnexoCabecera: this.form.idAnexoCabecera,
-                        correlativo: this.form.correlativo
-                    }
-                });
+                const [catalogoBase, res] = await Promise.all([
+                    this.obtenerCatalogoPreguntasBase({
+                        anexo: this.form.idAnexo,
+                        idServicio: this.form.idServicio
+                    }),
+                    this.$axios.get(`${process.env.API_URL_SIGESU}/obtenerRespuestas`, {
+                        params: {
+                            idAnexoCabecera: this.form.idAnexoCabecera,
+                            correlativo: this.form.correlativo
+                        }
+                    })
+                ]);
 
                 const data = res.data?.data;
-                if (!data || !Array.isArray(data.respuestas)) return;
+                if (!data) return;
 
                 this.form.nombreCentro = data.centro || data.nombreCentro || this.form.nombreCentro;
                 this.form.correlativo = data.correlativo;
@@ -3874,7 +3880,9 @@ export default {
                 this.acreVigente = String(this.normalizarAcreditacionVigenteEntero(data.acreditacionVigente ?? this.acreVigente));
                 this.fechaAcreditacion = this.normalizarFechaAcreditacionISO(data.fechaAcreditacion ?? this.fechaAcreditacion);
 
-                const secciones = this.agruparPreguntasEnSecciones(data.respuestas);
+                const preguntasCompletas = this.mezclarCatalogoConRespuestasPersistidas(catalogoBase, data.respuestas || []);
+                this.preguntasRaw = preguntasCompletas;
+                const secciones = this.agruparPreguntasEnSecciones(preguntasCompletas);
                 await this.prepararSeccionesDinamicas(secciones);
                 this.secciones = secciones;
                 this.sincronizarResponsableSesion();
@@ -4176,19 +4184,54 @@ export default {
                 this.loading = false;
             }
         },
+        async obtenerCatalogoPreguntasBase({ anexo = null, idServicio = null } = {}) {
+            const anexoParam = anexo ?? this.form.idAnexo ?? this.anexoSeleccionado;
+            const servicioParam = idServicio ?? this.form.idServicio ?? this.servicioSeleccionado;
+
+            if (!anexoParam || !servicioParam) {
+                return [];
+            }
+
+            const res = await this.$axios.get(`${process.env.API_URL_SIGESU}/findAllAnexoPregustasByParams2`, {
+                params: {
+                    anexo: anexoParam,
+                    idServicio: servicioParam
+                }
+            });
+
+            return res.data?.data || [];
+        },
+        mezclarCatalogoConRespuestasPersistidas(catalogo = [], respuestas = []) {
+            const respuestasMap = new Map(
+                (Array.isArray(respuestas) ? respuestas : [])
+                    .filter(item => item && item.idPregunta !== undefined && item.idPregunta !== null)
+                    .map(item => [Number(item.idPregunta), item])
+            );
+
+            return (Array.isArray(catalogo) ? catalogo : []).map(preguntaCatalogo => {
+                const respuestaPersistida = respuestasMap.get(Number(preguntaCatalogo.idPregunta));
+                if (!respuestaPersistida) {
+                    return { ...preguntaCatalogo };
+                }
+
+                return {
+                    ...preguntaCatalogo,
+                    respuesta: respuestaPersistida.respuesta,
+                    respuesta2: respuestaPersistida.respuesta2,
+                    observacion: respuestaPersistida.observacion,
+                    puntaje: respuestaPersistida.puntaje
+                };
+            });
+        },
 
         async cargarPreguntas() {
             this.loading = true;
 
             try {
-                const res = await this.$axios.get(`${process.env.API_URL_SIGESU}/findAllAnexoPregustasByParams2`, {
-                    params: {
-                        anexo: this.anexoSeleccionado,
-                        idServicio: this.servicioSeleccionado
-                    }
+                const data = await this.obtenerCatalogoPreguntasBase({
+                    anexo: this.anexoSeleccionado,
+                    idServicio: this.servicioSeleccionado
                 });
-
-                const data = res.data?.data || [];
                 this.preguntasRaw = data;
                 const secciones = this.agruparPreguntasEnSecciones(data);
                 await this.prepararSeccionesDinamicas(secciones);
