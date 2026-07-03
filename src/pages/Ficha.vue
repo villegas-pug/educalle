@@ -1152,7 +1152,7 @@
 }
 
 .ficha-pregunta {
-    padding: 16px 0;
+    padding: 12px 0;
     border-bottom: 1px solid #e8e8e8;
     transition: background-color 0.15s ease;
 }
@@ -1208,7 +1208,7 @@
 .ficha-campo {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     width: 100%;
 }
 
@@ -1216,7 +1216,7 @@
     .ficha-campo {
         flex-direction: row;
         align-items: flex-start;
-        gap: 16px;
+        gap: 12px;
     }
 }
 
@@ -1227,7 +1227,7 @@
     font-weight: 500;
     color: #1a1a1a;
     line-height: 1.5;
-    padding-top: 8px;
+    padding-top: 4px;
 }
 
 @media (min-width: 600px) {
@@ -1632,7 +1632,7 @@
     }
     
     .ficha-pregunta {
-        padding: 12px 0;
+        padding: 10px 0;
     }
     
     .ficha-valor {

@@ -1,8 +1,8 @@
 {
-  "name": "siges",
+  "name": "sisec",
   "version": "0.0.1",
   "description": "-",
-  "productName": "Sistema de Gestión Integral de Familias",
+  "productName": "Sistema del Servicio de Educadores de Calle",
   "author": "sui",
   "private": true,
   "scripts": {
