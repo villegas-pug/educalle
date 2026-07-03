@@ -3858,6 +3858,7 @@ export default {
                     || this.resolverPropiedadCaseInsensitive(this.parseJsonFlexible(preguntaRaw.opciones), 'REF')
                     || null,
                 _ramificaciones: [],
+                _ramificacionesReadonlyHttp: false,
                 _branchedSelects: [],
                 _loadingHttp: false,
                 _httpLoaded: false,
@@ -4535,6 +4536,7 @@ export default {
                 ...rama,
                 value: valores[index + 1] || ''
             }));
+            pregunta._ramificacionesReadonlyHttp = (pregunta._ramificaciones || []).some(rama => !!String(rama?.value || '').trim());
         },
         obtenerValorDisparadorBranched(pregunta) {
             return pregunta?._branchedTriggerValue || '';
@@ -4545,6 +4547,7 @@ export default {
             pregunta.respuesta = this.serializarRespuestaPregunta(pregunta);
         },
         actualizarValorDisparadorBranched(pregunta, value) {
+            pregunta._ramificacionesReadonlyHttp = false;
             pregunta._branchedTriggerValue = value;
             pregunta.respuesta = this.serializarRespuestaPregunta(pregunta);
         },
@@ -4566,6 +4569,7 @@ export default {
         },
         esRamificacionEditable(pregunta, rama) {
             if (this.esVisualizacion) return false;
+            if (pregunta?._ramificacionesReadonlyHttp) return false;
             if (pregunta?._editableBifurcacionesRule) return this.cumpleReglaEditable(pregunta._editableBifurcacionesRule);
             if (pregunta?._editableRule) return this.cumpleReglaEditable(pregunta._editableRule);
             if (rama?.editable === undefined || rama?.editable === null) return false;
@@ -4662,6 +4666,9 @@ export default {
                     ...rama,
                     value: this.resolverPropiedadCaseInsensitive(item, rama.prop) || ''
                 }));
+
+                this.preguntaHttpActiva._ramificacionesReadonlyHttp = (this.preguntaHttpActiva._ramificaciones || [])
+                    .some(rama => !!String(rama?.value || '').trim());
 
                 this.preguntaHttpActiva.respuesta = this.serializarRespuestaPregunta(this.preguntaHttpActiva);
                 this.dialogHttpPregunta = false;
@@ -5631,6 +5638,7 @@ export default {
                             default:        p.respuesta = null; break
                         }
                         if (this.esPreguntaBranchedInputSearch(p)) {
+                            p._ramificacionesReadonlyHttp = false
                             p._branchedTriggerValue = ''
                             p._ramificaciones = (p._ramificaciones || []).map(rama => ({
                                 ...rama,
