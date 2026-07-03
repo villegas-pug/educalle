@@ -2742,7 +2742,8 @@ export default {
             anios: [
                 { id: '20261', anio: '2026 - 1' },
                 { id: '20262', anio: '2026 - 2' },
-                { id: '20271', anio: '2027 - 1' }
+                { id: '20271', anio: '2027 - 1' },
+                { id: 'TODOS', anio: 'TODOS' }
                 // { id: '2028', anio: '2028' },
             ],
             modoSupervision: null,
@@ -3924,7 +3925,12 @@ export default {
             this.fichaTipo = this.tipoFicha;
             this.acreVigente = '0';
             this.fechaAcreditacion = null;
-            if (this.anioSeleccionado === null || this.anioSeleccionado === undefined || this.anioSeleccionado === '') {
+            if (
+                this.anioSeleccionado === null ||
+                this.anioSeleccionado === undefined ||
+                this.anioSeleccionado === '' ||
+                this.anioSeleccionado === 'TODOS'
+            ) {
                 this.$q.notify({
                     type: 'warning',
                     message: 'Debe seleccionar un PERIODO válido (distinto de TODOS)'
@@ -5987,6 +5993,7 @@ export default {
         },
         puedeCrearNuevo() {
             return !!this.anioSeleccionado &&
+                this.anioSeleccionado !== 'TODOS' &&
                 !!this.tipoFicha &&
                 !!this.unidadSeleccionada &&
                 !!this.servicioSeleccionado &&
@@ -6000,7 +6007,10 @@ export default {
                 !!this.anexoSeleccionado
         },
         periodoYTipoValidos() {
-            const periodoValido = this.anioSeleccionado !== null && this.anioSeleccionado !== undefined && this.anioSeleccionado !== ''
+            const periodoValido = this.anioSeleccionado !== null &&
+                this.anioSeleccionado !== undefined &&
+                this.anioSeleccionado !== '' &&
+                this.anioSeleccionado !== 'TODOS'
             const tipoValido = this.tipoFicha !== null && this.tipoFicha !== undefined && this.tipoFicha !== ''
             return periodoValido && tipoValido
         },
@@ -6052,7 +6062,7 @@ export default {
             const centro = this.centroSeleccionado;
 
             return base.filter(row => {
-                if (this.anioSeleccionado && row.periodo !== this.anioSeleccionado) return false;
+                if (this.anioSeleccionado && this.anioSeleccionado !== 'TODOS' && row.periodo !== this.anioSeleccionado) return false;
                 if (this.tipoFicha && row.tipo !== this.tipoFicha) return false;
                 if (this.unidadSeleccionada && row.nombreUnidad !== (unidad?.nombreUnidad || '')) return false;
                 if (this.servicioSeleccionado && row.nombreServicio !== (servicio?.nombreServicio || '')) return false;
