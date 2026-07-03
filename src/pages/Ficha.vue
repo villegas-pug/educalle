@@ -267,30 +267,34 @@
                                                 </div>
 
                                                 <template v-else-if="esPreguntaBranchedSelects(pregunta)">
-                                                    <div class="ficha-branched-group">
+                                                    <div class="ficha-branched-group ficha-branched-group--selects-horizontal">
                                                         <div
                                                             v-for="(rama, ramaIndex) in pregunta._branchedSelects"
                                                             :key="`${pregunta.idPregunta}-rama-select-${ramaIndex}`"
-                                                            class="ficha-campo ficha-campo--branched"
+                                                            class="ficha-campo ficha-campo--branched ficha-campo--branched-select"
                                                         >
-                                                            <div class="ficha-label">
-                                                                {{ rama.label }}
-                                                                <span v-if="pregunta.obligatoria === 1" class="ficha-obligatorio">*</span>
-                                                            </div>
                                                             <div class="ficha-input" :class="{ 'modo-visualizacion': esVisualizacion }">
                                                                 <template v-if="esVisualizacion">
-                                                                    <span class="ficha-valor">{{ rama.value || '—' }}</span>
+                                                                    <div class="ficha-branched-select-visualizacion">
+                                                                        <span class="ficha-branched-select-visualizacion__label">
+                                                                            {{ rama.label }}
+                                                                            <span v-if="pregunta.obligatoria === 1" class="ficha-obligatorio">*</span>
+                                                                        </span>
+                                                                        <span class="ficha-valor ficha-branched-select-visualizacion__valor">{{ rama.value || '—' }}</span>
+                                                                    </div>
                                                                 </template>
                                                                 <q-select
                                                                     v-else
                                                                     outlined
                                                                     dense
+                                                                    stack-label
                                                                     emit-value
                                                                     map-options
                                                                     hide-bottom-space
                                                                     :value="rama.value"
                                                                     :options="rama.options"
                                                                     :loading="rama.loading"
+                                                                    :label="rama.label"
                                                                     :style="getBifurcacionControlStyle(pregunta)"
                                                                     :disable="esControlDeshabilitado(pregunta)"
                                                                     @input="val => onBranchedSelectChange(pregunta, ramaIndex, val)"
@@ -1354,6 +1358,13 @@
     margin-top: 12px;
 }
 
+.ficha-branched-group--selects-horizontal {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px;
+}
+
 .ficha-textm {
     width: 100%;
 }
@@ -1371,6 +1382,32 @@
 .ficha-campo--branched {
     padding-left: 16px;
     border-left: 3px solid #e8eef5;
+}
+
+.ficha-campo--branched-select {
+    flex: 1 1 220px;
+    min-width: 220px;
+    padding-left: 0;
+    border-left: 0;
+}
+
+.ficha-branched-select-visualizacion {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.ficha-branched-select-visualizacion__label {
+    font-weight: 600;
+    color: #22313f;
+}
+
+.ficha-branched-select-visualizacion__valor {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .ficha-input .q-field__control {
