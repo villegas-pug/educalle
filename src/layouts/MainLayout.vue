@@ -127,6 +127,13 @@
         <q-page-container>
             <router-view/>
         </q-page-container>
+
+        <q-footer class="app-footer">
+            <div class="app-footer-texto">
+                &copy; {{ currentYear }} {{ organizationName }} | Todos los derechos reservados
+                <span v-if="showVersion" class="app-footer-version">(versión {{ appVersion }})</span>
+            </div>
+        </q-footer>
     </q-layout>
 </template>
 
@@ -155,6 +162,8 @@ export default {
                     ]
                 },
             ],
+            organizationName: 'INABIF',
+            showVersion: true,
             sessionInterval: null,
             sessionDialogOpen: false,
         }
@@ -505,6 +514,12 @@ export default {
     },
 
     computed: {
+        appVersion() {
+            return process.env.APP_VERSION || '0.0.1'
+        },
+        currentYear() {
+            return new Date().getFullYear()
+        },
         rutaActual() {
             return this.$route.path.replace(/^\/+/, '')
         },
@@ -526,6 +541,23 @@ export default {
 </script>
 
 <style scoped>
+.app-footer {
+    background-color: transparent;
+    color: #000000;
+    padding: 8px 16px;
+}
+
+.app-footer-texto {
+    text-align: center;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.app-footer-version {
+    color: #90caf9;
+    margin-left: 6px;
+}
+
 .drawer-root-item--spaced {
     margin-bottom: 8px;
 }
