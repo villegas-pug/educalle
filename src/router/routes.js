@@ -12,6 +12,7 @@ const routes = [
         children: [
             {path: '/inicio', component: () => import('pages/Principal.vue')},
             {path: '/ficha', component: () => import('pages/Ficha.vue')},
+            {path: '/registro-nna', component: () => import('pages/Ficha.vue')},
 
             //REPORTES
             {path: '/asistencia-economica', component: () => import('pages/reportes/ReporteAsistenciaEconomica.vue')},

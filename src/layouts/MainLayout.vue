@@ -193,7 +193,7 @@ export default {
                 params: {
                     action: "itemsMenu2",
                     u: this.$q.localStorage.getItem('sgs-idUsuario'),
-                    s: 166
+                    s: 324
                 }
             });
 

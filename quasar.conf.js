@@ -58,7 +58,8 @@ module.exports = function (ctx) {
 
                 // PROD
                 // API_URL_SIGESU: 'http://172.19.0.44:4000/api/ms-sigesu',
-                API_URL_SIGESU: 'https://srvapp03.inabif.gob.pe/api/ms-sigesu',
+                // API_URL_SIGESU: 'https://srvapp03.inabif.gob.pe/api/ms-sigesu',
+                API_URL_SIGESU: 'https://srvapp03.inabif.gob.pe/api/ms-sisec',
                 
                 // DEV
                 // API_URL_SIGESU: 'http://10.101.0.36:4000/api/ms-sigesu',
