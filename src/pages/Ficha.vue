@@ -241,320 +241,314 @@
                                     <q-btn label="Descargar PDF" icon="picture_as_pdf" color="green" @click="descargarPDF" />
                                 </div>
 
-                                <!-- ============================= -->
-                                <!-- I. DATOS GENERALES (ACORDEÓN) -->
-                                <!-- ============================= -->
-
-                                <q-expansion-item
-                                    group="ficha-secciones"
-                                    label="I. DATOS GENERALES DEL SERVICIO"
-                                    expand-separator header-class="bg-red-5 text-white q-mt-sm header-seccion"
-                                    expand-icon-class="text-white">
-
-                                    <q-card-section class="q-pa-md datos-generales-section">
-                                        <div class="tabla-scroll-container datos-generales-scroll">
-                                            <q-markup-table bordered :dense="$q.screen.gt.xs" class="rounded-borders datos-generales-tabla">
-                                            <tbody>
-
-                                                <tr>
-                                                    <td class="text-left text-bold">
-                                                        <q-icon name="person" class="q-mr-sm" />
-                                                        MODALIDAD DE SUPERVISION
-                                                    </td>
-                                                    <td class="text-dark">
-                                                        <q-select v-model="modoSupervision" :options="modalidades"
-                                                            option-label="modo" option-value="id" emit-value map-options
-                                                            outlined dense />
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="text-left text-bold">
-                                                        <q-icon name="account_tree" class="q-mr-sm" />
-                                                        UNIDAD
-                                                    </td>
-                                                    <td class="text-dark">{{ form.nombreUnidad }}</td>
-                                                </tr>
-
-                                                <tr class="bg-grey-2">
-                                                    <td class="text-left text-bold" style="width: 40%;">
-                                                        <q-icon name="miscellaneous_services" class="q-mr-sm" />
-                                                        SERVICIO
-                                                    </td>
-                                                    <td class="text-dark">{{ form.nombreServicio.toUpperCase() }}</td>
-                                                </tr>
-
-
-                                                <tr>
-                                                    <td class="text-left text-bold">
-                                                        <q-icon name="location_city" class="q-mr-sm" />
-                                                        CENTRO
-                                                    </td>
-                                                    <td class="text-dark">
-                                                        {{ form.nombreCentro }}
-                                                        <span v-if="form.tipoCentro" class="text-grey-7">
-                                                            (PERFIL: {{ form.tipoCentro }})
-                                                        </span>
-                                                    </td>
-                                                </tr>
-
-                                                <tr>
-                                                    <td class="text-left text-bold">
-                                                        <q-icon name="place" class="q-mr-sm" />
-                                                        <span class="u-wrap">DEPARTAMENTO / PROVINCIA / DISTRITO</span>
-                                                    </td>
-                                                    <td class="text-dark">{{ form.departamento }} / {{ form.provincia }}
-                                                        / {{
-                                                            form.distrito }}</td>
-                                                </tr>
-
-                                                <tr>
-                                                    <td class="text-left text-bold">
-                                                        <q-icon name="person" class="q-mr-sm" />
-                                                        RESPONSABLE SUPERVISIÓN
-                                                    </td>
-                                                    <td class="text-dark">
-                                                        <q-select v-model="form.idRespSupervision"
-                                                            :options="responsables" option-label="nombre"
-                                                            option-value="idPersonal" emit-value map-options outlined
-                                                            clearable
-                                                            :display-value="getResponsableSupervisionDisplay()"
-                                                            dense :disable="esVisualizacion" style="border: none;" />
-                                                    </td>
-                                                </tr>
-
-                                                <tr v-if="puedeMostrarDirector(form.reqDirector)">
-                                                    <td class="text-left text-bold">
-                                                        <q-icon name="person" class="q-mr-sm" />
-                                                        DIRECTOR/COORDINADOR
-                                                    </td>
-                                                    <td class="text-dark">
-                                                        <q-input v-model="form.respDirector" type="text" outlined dense readonly />
-                                                    </td>
-                                                </tr>
-
-                                                <tr v-if="puedeMostrarSupervisados(form.reqSupervisados)">
-                                                    <td class="text-left text-bold">
-                                                        <q-icon name="person" class="q-mr-sm" />
-                                                        SUPERVISADO (OS)
-                                                    </td>
-                                                    <td>
-                                                        <div class="row q-col-gutter-sm items-center dg-supervisados-row">
-                                                            <div class="col">
-                                                                <q-select v-model="form.idsSupervisados"
-                                                                    :options="trabajadoresCentro" option-label="nombre"
-                                                                    option-value="idPersonal" multiple use-chips
-                                                                    label="Seleccionar supervisados" outlined dense
-                                                                    clearable :disable="esVisualizacion"
-                                                                    style="border: none;" emit-value map-options>
-                                                                </q-select>
-                                                            </div>
-                                                            <div class="col-auto" v-if="!esVisualizacion">
-                                                                <q-btn icon="search" flat round dense color="primary"
-                                                                    @click="abrirDialogSupervisados" />
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-
-                                                <tr>
-                                                    <td class="text-left text-bold">
-                                                        <q-icon name="event" class="q-mr-sm" />
-                                                        FECHA DE REGISTRO
-                                                    </td>
-                                                    <td class="text-dark"><q-input v-model="form.fechaRegistro"
-                                                            label="Fecha de registro" type="date" outlined dense
-                                                            :disable="esVisualizacion" /></td>
-                                                </tr>
-                                                <tr v-if="mostrarAcreditacion">
-                                                    <td class="text-left text-bold">
-                                                        <q-icon name="person" class="q-mr-sm" />
-                                                        ACREDITACIÓN VIGENTE
-                                                    </td>
-                                                    <td class="text-dark">
-                                                        <q-select v-model="acreVigente" :options="acreditaciones"
-                                                            option-label="acreditacion" option-value="id" emit-value
-                                                            map-options outlined dense :disable="esVisualizacion" />
-                                                    </td>
-                                                </tr>
-                                                <tr v-if="mostrarFechaAcreditacion">
-                                                    <td class="text-left text-bold">
-                                                        <q-icon name="event" class="q-mr-sm" />
-                                                        FECHA DE ACREDITACIÓN
-                                                    </td>
-                                                    <td class="text-dark"><q-input v-model="fechaAcreditacion"
-                                                            label="Fecha de acreditación" type="date" outlined dense
-                                                            :disable="esVisualizacion" /></td>
-                                                </tr>
-                                            </tbody>
-                                        </q-markup-table>
+                                <div class="contexto-ficha">
+                                    <div class="contexto-ficha__titulo">CONTEXTO FICHA</div>
+                                    <div class="row q-col-gutter-md">
+                                        <div v-for="item in fichaContexto" :key="item.label" class="col-12 col-md-4">
+                                            <div class="contexto-ficha__item">
+                                                <div class="contexto-ficha__label">{{ item.label }}</div>
+                                                <div class="contexto-ficha__valor">{{ item.value || '—' }}</div>
+                                            </div>
                                         </div>
-                                    </q-card-section>
-                                </q-expansion-item>
-
-                                <!-- ============================= -->
-                                <!-- SECCIONES DINÁMICAS -->
-                                <!-- ============================= -->
+                                    </div>
+                                </div>
 
                                 <div v-if="loading" class="text-center q-pa-lg">
                                     <q-spinner size="40px" color="primary" />
                                 </div>
 
                                 <div v-else>
-
                                     <q-expansion-item
                                         v-for="(seccion, index) in secciones"
                                         :key="index"
                                         group="ficha-secciones"
-                                        :label="seccion.titulo" expand-separator
-                                        header-class="bg-red-5 text-white q-mt-sm header-seccion seccion-expansion" expand-icon-class="text-white">
+                                        :label="seccion.titulo"
+                                        expand-separator
+                                        header-class="bg-red-5 text-white q-mt-sm header-seccion seccion-expansion"
+                                        expand-icon-class="text-white"
+                                    >
                                         <div class="q-pa-md">
-
-                                            <!-- CABECERA -->
                                             <div class="row seccion-cabecera q-mb-sm text-weight-bold text-grey-7">
-                                                <div class="col-12 col-sm-5">
-                                                    Pregunta
-                                                </div>
-                                                <div class="col-12 col-sm-7">
-                                                    Respuesta
-                                                </div>
+                                                <div class="col-12 col-sm-5">Pregunta</div>
+                                                <div class="col-12 col-sm-7">Respuesta</div>
                                             </div>
 
                                             <q-separator class="q-mb-md" />
 
-                                            <!-- PREGUNTAS -->
-                                            <div v-for="pregunta in seccion.preguntas" :key="pregunta.idPregunta"
+                                            <div
+                                                v-for="pregunta in seccion.preguntas"
+                                                :key="pregunta.idPregunta"
                                                 v-if="mostrarPregunta(pregunta)"
-                                                class="ficha-pregunta">
-
-                                                <!-- SUBTITULO -->
-                                                <div v-if="pregunta.tipoControl === 'label'"
-                                                    class="col-12 pregunta-label">
+                                                class="ficha-pregunta"
+                                                :class="{
+                                                    'ficha-pregunta--summary': esVistaSummaryRow(pregunta),
+                                                    'ficha-pregunta--branched': esVistaBranched(pregunta)
+                                                }"
+                                            >
+                                                <div v-if="pregunta.tipoControl === 'label'" class="col-12 pregunta-label">
                                                     <span class="text-body2 text-weight-bold text-uppercase">
-                                                    {{ pregunta.pregunta }}
+                                                        {{ pregunta.pregunta }}
                                                     </span>
                                                 </div>
 
-                                                <!-- SELECT -->
-                                                <template v-else-if="pregunta.tipoControl === 'select'">
-                                                    <div class="ficha-campo">
-                                                        <div class="ficha-label">
-                                                            {{ pregunta.pregunta }}
+                                                <template v-else-if="esPreguntaBranchedSelects(pregunta)">
+                                                    <div class="ficha-branched-group">
+                                                        <div
+                                                            v-for="(rama, ramaIndex) in pregunta._branchedSelects"
+                                                            :key="`${pregunta.idPregunta}-rama-select-${ramaIndex}`"
+                                                            class="ficha-campo ficha-campo--branched"
+                                                        >
+                                                            <div class="ficha-label">
+                                                                {{ rama.label }}
+                                                                <span v-if="pregunta.obligatoria === 1" class="ficha-obligatorio">*</span>
+                                                            </div>
+                                                            <div class="ficha-input" :class="{ 'modo-visualizacion': esVisualizacion }">
+                                                                <template v-if="esVisualizacion">
+                                                                    <span class="ficha-valor">{{ rama.value || '—' }}</span>
+                                                                </template>
+                                                                <q-select
+                                                                    v-else
+                                                                    outlined
+                                                                    dense
+                                                                    emit-value
+                                                                    map-options
+                                                                    hide-bottom-space
+                                                                    :value="rama.value"
+                                                                    :options="rama.options"
+                                                                    :loading="rama.loading"
+                                                                    :disable="esControlDeshabilitado(pregunta)"
+                                                                    @input="val => onBranchedSelectChange(pregunta, ramaIndex, val)"
+                                                                    :rules="pregunta.obligatoria ? [val => !!val || 'Debe seleccionar una opción'] : []"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </template>
+
+                                                <template v-else>
+                                                    <div class="ficha-campo" :class="{ 'ficha-campo--summary': esVistaSummaryRow(pregunta) }">
+                                                        <div class="ficha-label" :class="{ 'ficha-label--summary': esVistaSummaryRow(pregunta) }">
+                                                            <q-icon
+                                                                v-if="esVistaSummaryRow(pregunta) && pregunta.iconoControl"
+                                                                :name="pregunta.iconoControl"
+                                                                class="ficha-summary-icon"
+                                                            />
+                                                            <span>{{ pregunta.pregunta }}</span>
                                                             <span v-if="pregunta.obligatoria === 1" class="ficha-obligatorio">*</span>
                                                         </div>
+
                                                         <div class="ficha-input" :class="{ 'modo-visualizacion': esVisualizacion }">
-                                                            <template v-if="esVisualizacion && pregunta.respuesta">
-                                                                <span class="ficha-valor">{{ pregunta.respuesta }}</span>
+                                                            <template v-if="esPreguntaBranchedInputSearch(pregunta)">
+                                                                <template v-if="esVisualizacion">
+                                                                    <span class="ficha-valor">{{ obtenerValorDisparadorBranched(pregunta) || '—' }}</span>
+                                                                </template>
+                                                                <q-input
+                                                                    v-else
+                                                                    outlined
+                                                                    dense
+                                                                    :value="obtenerValorDisparadorBranched(pregunta)"
+                                                                    :readonly="esCampoSoloLectura(pregunta)"
+                                                                    :rules="validarPregunta(pregunta)"
+                                                                    @input="val => actualizarValorDisparadorBranched(pregunta, val)"
+                                                                >
+                                                                    <template v-slot:append>
+                                                                        <q-btn
+                                                                            flat
+                                                                            round
+                                                                            dense
+                                                                            icon="search"
+                                                                            color="primary"
+                                                                            :disable="!puedeAbrirBusquedaHttp(pregunta)"
+                                                                            @click="abrirModalHttpPregunta(pregunta)"
+                                                                        />
+                                                                    </template>
+                                                                </q-input>
                                                             </template>
-                                                            <q-select v-else outlined dense
-                                                                :value="pregunta.respuesta"
-                                                                @input="val => $set(pregunta, 'respuesta', val)"
-                                                                :options="pregunta.opciones" emit-value map-options
-                                                                :disable="esVisualizacion"
-                                                                :rules="pregunta.obligatoria ? [val => !!val || 'Debe seleccionar una opción'] : []">
-                                                                <template v-slot:selected-item="scope">
-                                                                    <div class="row items-center no-wrap">
-                                                                        <img v-if="getOptionImage(pregunta, scope.opt)" :src="getOptionImage(pregunta, scope.opt)" class="select-option-img q-mr-sm" />
-                                                                        <span>{{ scope.opt.label }}</span>
+
+                                                            <template v-else-if="pregunta.tipoControl === 'select'">
+                                                                <template v-if="esVisualizacion">
+                                                                    <span class="ficha-valor">{{ pregunta.respuesta || '—' }}</span>
+                                                                </template>
+                                                                <q-select
+                                                                    v-else
+                                                                    outlined
+                                                                    dense
+                                                                    emit-value
+                                                                    map-options
+                                                                    :value="pregunta.respuesta"
+                                                                    :options="pregunta.opciones"
+                                                                    :loading="pregunta._loadingHttp"
+                                                                    :disable="esControlDeshabilitado(pregunta)"
+                                                                    @input="val => actualizarRespuestaPregunta(pregunta, val)"
+                                                                    :rules="pregunta.obligatoria ? [val => !!val || 'Debe seleccionar una opción'] : []"
+                                                                >
+                                                                    <template v-slot:selected-item="scope">
+                                                                        <div class="row items-center no-wrap">
+                                                                            <img v-if="getOptionImage(pregunta, scope.opt)" :src="getOptionImage(pregunta, scope.opt)" class="select-option-img q-mr-sm" />
+                                                                            <span>{{ scope.opt.label }}</span>
+                                                                        </div>
+                                                                    </template>
+                                                                    <template v-slot:option="scope">
+                                                                        <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
+                                                                            <q-item-section avatar v-if="getOptionImage(pregunta, scope.opt)">
+                                                                                <img :src="getOptionImage(pregunta, scope.opt)" class="select-option-img" />
+                                                                            </q-item-section>
+                                                                            <q-item-section>
+                                                                                <q-item-label>{{ scope.opt.label }}</q-item-label>
+                                                                            </q-item-section>
+                                                                        </q-item>
+                                                                    </template>
+                                                                </q-select>
+                                                            </template>
+
+                                                            <template v-else-if="pregunta.tipoControl === 'selectM'">
+                                                                <template v-if="esVisualizacion && pregunta.respuesta && pregunta.respuesta.length">
+                                                                    <div class="ficha-tags">
+                                                                        <span v-for="item in pregunta.respuesta" :key="item" class="ficha-tag">{{ item }}</span>
                                                                     </div>
                                                                 </template>
-                                                                <template v-slot:option="scope">
-                                                                    <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
-                                                                        <q-item-section avatar v-if="getOptionImage(pregunta, scope.index + 1)">
-                                                                            <img :src="getOptionImage(pregunta, scope.index + 1)" class="select-option-img" />
-                                                                        </q-item-section>
-                                                                        <q-item-section>
-                                                                            <q-item-label>{{ scope.opt.label }}</q-item-label>
-                                                                        </q-item-section>
-                                                                    </q-item>
-                                                                </template>
-                                                            </q-select>
-                                                        </div>
-                                                    </div>
-                                                </template>
+                                                                <span v-else-if="esVisualizacion" class="ficha-valor">—</span>
+                                                                <q-select
+                                                                    v-else
+                                                                    outlined
+                                                                    dense
+                                                                    multiple
+                                                                    use-chips
+                                                                    emit-value
+                                                                    map-options
+                                                                    :value="pregunta.respuesta"
+                                                                    :options="pregunta.opciones"
+                                                                    :disable="esControlDeshabilitado(pregunta)"
+                                                                    @input="val => actualizarRespuestaPregunta(pregunta, val)"
+                                                                >
+                                                                    <template v-slot:selected-item="scope">
+                                                                        <q-chip removable @remove="scope.removeAtIndex(scope.index)" :tabindex="scope.tabindex" class="q-ma-none">
+                                                                            <img v-if="getOptionImage(pregunta, scope.opt)" :src="getOptionImage(pregunta, scope.opt)" class="select-option-img q-mr-xs" />
+                                                                            {{ scope.opt.label }}
+                                                                        </q-chip>
+                                                                    </template>
+                                                                    <template v-slot:option="scope">
+                                                                        <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
+                                                                            <q-item-section avatar v-if="getOptionImage(pregunta, scope.opt)">
+                                                                                <img :src="getOptionImage(pregunta, scope.opt)" class="select-option-img" />
+                                                                            </q-item-section>
+                                                                            <q-item-section>
+                                                                                <q-item-label>{{ scope.opt.label }}</q-item-label>
+                                                                            </q-item-section>
+                                                                        </q-item>
+                                                                    </template>
+                                                                </q-select>
+                                                            </template>
 
-                                                <!-- SELECT MULTIPLE -->
-                                                <template v-else-if="pregunta.tipoControl === 'selectM'">
-                                                    <div class="ficha-campo">
-                                                        <div class="ficha-label">
-                                                            {{ pregunta.pregunta }}
-                                                            <span v-if="pregunta.obligatoria === 1" class="ficha-obligatorio">*</span>
-                                                        </div>
-                                                        <div class="ficha-input" :class="{ 'modo-visualizacion': esVisualizacion }">
-                                                            <template v-if="esVisualizacion && pregunta.respuesta && pregunta.respuesta.length">
-                                                                <div class="ficha-tags">
-                                                                    <span v-for="item in pregunta.respuesta" :key="item" class="ficha-tag">{{ item }}</span>
+                                                            <template v-else-if="pregunta.tipoControl === 'radio'">
+                                                                <template v-if="esVisualizacion">
+                                                                    <span class="ficha-valor">{{ pregunta.respuesta || '—' }}</span>
+                                                                </template>
+                                                                <q-option-group
+                                                                    v-else
+                                                                    class="ficha-radio-group"
+                                                                    :value="pregunta.respuesta"
+                                                                    :options="pregunta.opciones"
+                                                                    type="radio"
+                                                                    inline
+                                                                    :disable="esControlDeshabilitado(pregunta)"
+                                                                    @input="val => actualizarRespuestaPregunta(pregunta, val)"
+                                                                    :rules="pregunta.obligatoria ? [val => !!val || 'Debe seleccionar una opción'] : []"
+                                                                />
+                                                            </template>
+
+                                                            <template v-else-if="pregunta.tipoControl === 'textM'">
+                                                                <template v-if="esVisualizacion">
+                                                                    <div v-if="pregunta.respuesta && pregunta.respuesta.length" class="ficha-tags">
+                                                                        <span v-for="item in pregunta.respuesta" :key="item" class="ficha-tag">{{ item }}</span>
+                                                                    </div>
+                                                                    <span v-else class="ficha-valor">—</span>
+                                                                </template>
+                                                                <div v-else class="ficha-textm">
+                                                                    <div class="ficha-textm__input-row">
+                                                                        <q-input
+                                                                            outlined
+                                                                            dense
+                                                                            class="ficha-textm__input"
+                                                                            :value="pregunta._textMDraft"
+                                                                            :readonly="esCampoSoloLectura(pregunta)"
+                                                                            :rules="validarPreguntaTextM(pregunta)"
+                                                                            @input="val => actualizarDraftTextM(pregunta, val)"
+                                                                            @keyup.enter.prevent="agregarItemTextM(pregunta)"
+                                                                        />
+                                                                        <q-btn
+                                                                            dense
+                                                                            round
+                                                                            unelevated
+                                                                            color="primary"
+                                                                            icon="add"
+                                                                            :disable="esCampoSoloLectura(pregunta)"
+                                                                            @click="agregarItemTextM(pregunta)"
+                                                                        />
+                                                                    </div>
+                                                                    <div v-if="pregunta.respuesta && pregunta.respuesta.length" class="ficha-tags q-mt-sm">
+                                                                        <q-chip
+                                                                            v-for="(item, itemIndex) in pregunta.respuesta"
+                                                                            :key="`${pregunta.idPregunta}-textm-${itemIndex}-${item}`"
+                                                                            :removable="!esCampoSoloLectura(pregunta)"
+                                                                            color="blue-1"
+                                                                            text-color="primary"
+                                                                            @remove="eliminarItemTextM(pregunta, itemIndex)"
+                                                                        >
+                                                                            {{ item }}
+                                                                        </q-chip>
+                                                                    </div>
                                                                 </div>
                                                             </template>
-                                                            <q-select v-else outlined dense multiple use-chips
-                                                                :value="pregunta.respuesta"
-                                                                @input="val => $set(pregunta, 'respuesta', val)"
-                                                                :options="pregunta.opciones" emit-value map-options
-                                                                :disable="esVisualizacion">
-                                                                <template v-slot:selected-item="scope">
-                                                                    <q-chip removable @remove="scope.removeAtIndex(scope.index)" :tabindex="scope.tabindex" class="q-ma-none">
-                                                                        <img v-if="getOptionImage(pregunta, scope.opt)" :src="getOptionImage(pregunta, scope.opt)" class="select-option-img q-mr-xs" />
-                                                                        {{ scope.opt.label }}
-                                                                    </q-chip>
+
+                                                            <template v-else>
+                                                                <template v-if="esVisualizacion">
+                                                                    <span class="ficha-valor">{{ obtenerValorTextoPregunta(pregunta) || '—' }}</span>
                                                                 </template>
-                                                                <template v-slot:option="scope">
-                                                                    <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
-                                                                        <q-item-section avatar v-if="getOptionImage(pregunta, scope.index + 1)">
-                                                                            <img :src="getOptionImage(pregunta, scope.index + 1)" class="select-option-img" />
-                                                                        </q-item-section>
-                                                                        <q-item-section>
-                                                                            <q-item-label>{{ scope.opt.label }}</q-item-label>
-                                                                        </q-item-section>
-                                                                    </q-item>
+                                                                <q-input
+                                                                    v-else
+                                                                    outlined
+                                                                    dense
+                                                                    :value="obtenerValorTextoPregunta(pregunta)"
+                                                                    :type="obtenerTipoInputPregunta(pregunta)"
+                                                                    :min="usaTipoNumero(pregunta) ? 0 : null"
+                                                                    :autogrow="usaAutogrowPregunta(pregunta)"
+                                                                    :readonly="esCampoSoloLectura(pregunta)"
+                                                                    :rules="validarPregunta(pregunta)"
+                                                                    input-style="resize: none; overflow-wrap: anywhere; word-break: break-word;"
+                                                                    @input="val => actualizarRespuestaTextoPregunta(pregunta, val)"
+                                                                />
+                                                            </template>
+                                                        </div>
+                                                    </div>
+
+                                                    <div v-if="esPreguntaBranchedInputSearch(pregunta)" class="ficha-branched-group">
+                                                        <div
+                                                            v-for="(rama, ramaIndex) in pregunta._ramificaciones"
+                                                            :key="`${pregunta.idPregunta}-rama-${ramaIndex}`"
+                                                            class="ficha-campo ficha-campo--branched"
+                                                        >
+                                                            <div class="ficha-label">
+                                                                {{ rama.label }}
+                                                            </div>
+                                                            <div class="ficha-input" :class="{ 'modo-visualizacion': esVisualizacion }">
+                                                                <template v-if="esVisualizacion">
+                                                                    <span class="ficha-valor">{{ rama.value || '—' }}</span>
                                                                 </template>
-                                                            </q-select>
+                                                                <q-input
+                                                                    v-else
+                                                                    outlined
+                                                                    dense
+                                                                    type="text"
+                                                                    :value="rama.value"
+                                                                    :readonly="!esRamificacionEditable(pregunta, rama)"
+                                                                    @input="val => actualizarRamificacionTexto(pregunta, ramaIndex, val)"
+                                                                />
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </template>
 
-                                                <!-- TEXT -->
-                                                <template v-else-if="pregunta.tipoControl === 'text'">
-                                                    <div class="ficha-campo">
-                                                        <div class="ficha-label">
-                                                            {{ pregunta.pregunta }}
-                                                            <span v-if="pregunta.obligatoria === 1" class="ficha-obligatorio">*</span>
-                                                        </div>
-                                                        <div class="ficha-input" :class="{ 'modo-visualizacion': esVisualizacion }">
-                                                            <template v-if="esVisualizacion">
-                                                                <span class="ficha-valor">{{ pregunta.respuesta || '—' }}</span>
-                                                            </template>
-                                                            <q-input v-else outlined dense
-                                                                :value="pregunta.respuesta"
-                                                                @input="val => $set(pregunta, 'respuesta', pregunta.tipoDato1 === 'NUMBER' ? normalizarNumeroNoNegativo(val) : val)"
-                                                                :disable="esVisualizacion"
-                                                                :type="pregunta.tipoDato1 === 'NUMBER' ? 'number' : 'text'"
-                                                                :min="pregunta.tipoDato1 === 'NUMBER' ? 0 : null"
-                                                                :rules="validarPregunta(pregunta)" />
-                                                        </div>
-                                                    </div>
-                                                </template>
-
-                                                <!-- RADIO -->
-                                                <template v-else-if="pregunta.tipoControl === 'radio'">
-
-                                                    <div class="ficha-campo">
-                                                        <div class="ficha-label">
-                                                            {{ pregunta.pregunta }}
-                                                            <span v-if="pregunta.obligatoria === 1" class="ficha-obligatorio">*</span>
-                                                        </div>
-                                                        <div class="ficha-input" :class="{ 'modo-visualizacion': esVisualizacion }">
-                                                            <template v-if="esVisualizacion && pregunta.respuesta">
-                                                                <span class="ficha-valor">{{ pregunta.respuesta }}</span>
-                                                            </template>
-                                                            <q-option-group v-else class="ficha-radio-group"
-                                                                :value="pregunta.respuesta"
-                                                                @input="val => $set(pregunta, 'respuesta', val)"
-                                                                :options="pregunta.opciones" type="radio" inline
-                                                                :disable="esVisualizacion"
-                                                                :rules="pregunta.obligatoria ? [val => !!val || 'Debe seleccionar una opción'] : []" />
-                                                        </div>
-                                                    </div>
-                                                </template>
-                                                <!-- PREGUNTA 2 -->
                                                 <template v-if="mostrarPregunta2(pregunta)">
                                                     <div class="ficha-campo ficha-pregunta2">
                                                         <div class="ficha-label">
@@ -562,37 +556,38 @@
                                                             <span v-if="pregunta.obligatoria2 === 1" class="ficha-obligatorio">*</span>
                                                         </div>
                                                         <div class="ficha-input" :class="{ 'modo-visualizacion': esVisualizacion }">
-                                                            <!-- TEXT -->
                                                             <template v-if="esVisualizacion">
                                                                 <span class="ficha-valor">{{ pregunta.respuesta2 || '—' }}</span>
                                                             </template>
                                                             <template v-else>
-                                                                <q-input v-if="pregunta.tipoControl2 === 'text'" outlined dense
+                                                                <q-input
+                                                                    v-if="pregunta.tipoControl2 === 'text'"
+                                                                    outlined
+                                                                    dense
                                                                     :value="pregunta.respuesta2"
                                                                     @input="val => $set(pregunta, 'respuesta2', pregunta.tipoDato2 === 'NUMBER' ? normalizarNumeroNoNegativo(val) : val)"
-                                                                    :disable="esVisualizacion"
                                                                     :type="pregunta.tipoDato2 === 'NUMBER' ? 'number' : 'textarea'"
                                                                     :min="pregunta.tipoDato2 === 'NUMBER' ? 0 : null"
                                                                     :autogrow="pregunta.tipoDato2 !== 'NUMBER'"
                                                                     input-style="resize: none; overflow-wrap: anywhere; word-break: break-word;"
-                                                                    :rules="validarPregunta2(pregunta)" />
+                                                                    :rules="validarPregunta2(pregunta)"
+                                                                />
 
-                                                                <q-select v-if="pregunta.tipoControl2 === 'select'" outlined
-                                                                    dense v-model="pregunta.respuesta2"
-                                                                    :options="pregunta.opciones2" emit-value map-options
-                                                                    :disable="esVisualizacion" />
+                                                                <q-select
+                                                                    v-if="pregunta.tipoControl2 === 'select'"
+                                                                    outlined
+                                                                    dense
+                                                                    emit-value
+                                                                    map-options
+                                                                    :value="pregunta.respuesta2"
+                                                                    :options="pregunta.opciones2"
+                                                                    @input="val => $set(pregunta, 'respuesta2', val)"
+                                                                />
                                                             </template>
                                                         </div>
                                                     </div>
                                                 </template>
-
-
-
-
                                             </div>
-
-
-
                                         </div>
                                     </q-expansion-item>
 
@@ -617,10 +612,7 @@
                                             <div class="text-right">{{ totalesRespuestas.NO_APLICA }}</div>
                                         </div>
                                     </div>
-
                                 </div>
-
-
                             </q-card-section>
 
                         </q-card>
@@ -658,6 +650,45 @@
                             <q-btn label="Cancelar" icon="close" v-close-popup class="ficha-btn-cancelar" style="min-width: 70px;" title="Cancelar" />
                         </q-card-actions>
                     </div>
+                </q-card>
+            </q-dialog>
+            <q-dialog v-model="dialogHttpPregunta" persistent>
+                <q-card class="ficha-http-dialog">
+                    <q-card-section class="bg-header-dialog ficha-http-dialog__header">
+                        <div class="text-body2 text-bold">{{ tituloModalHttpPregunta }}</div>
+                        <q-btn icon="close" flat round dense v-close-popup />
+                    </q-card-section>
+
+                    <q-card-section class="ficha-http-dialog__body">
+                        <div class="row q-col-gutter-md">
+                            <div
+                                v-for="campo in camposModalHttpPregunta"
+                                :key="campo.paramKey"
+                                class="col-12"
+                            >
+                                <q-input
+                                    outlined
+                                    dense
+                                    :type="campo.type"
+                                    :label="campo.label"
+                                    :value="formHttpPregunta[campo.paramKey]"
+                                    @input="val => $set(formHttpPregunta, campo.paramKey, val)"
+                                />
+                            </div>
+                        </div>
+                    </q-card-section>
+
+                    <q-card-actions align="right" class="ficha-http-dialog__actions">
+                        <q-btn flat label="Cancelar" color="grey-7" v-close-popup />
+                        <q-btn
+                            unelevated
+                            color="primary"
+                            icon="search"
+                            label="Buscar"
+                            :loading="loadingHttpPregunta"
+                            @click="ejecutarBusquedaPreguntaHttp"
+                        />
+                    </q-card-actions>
                 </q-card>
             </q-dialog>
             <q-dialog v-model="dialogCentros" persistent>
@@ -1159,6 +1190,46 @@
     border-bottom: none;
 }
 
+.contexto-ficha {
+    margin-bottom: 20px;
+    padding: 16px;
+    border: 1px solid #d9e2ec;
+    border-radius: 8px;
+    background: #f8fbff;
+}
+
+.contexto-ficha__titulo {
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #34495e;
+    text-transform: uppercase;
+}
+
+.contexto-ficha__item {
+    min-height: 84px;
+    padding: 12px 14px;
+    border-left: 4px solid #BF0411;
+    border-radius: 6px;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+}
+
+.contexto-ficha__label {
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #5b7083;
+    text-transform: uppercase;
+}
+
+.contexto-ficha__valor {
+    color: #1f2d3d;
+    font-size: 0.95rem;
+    font-weight: 600;
+    word-break: break-word;
+}
+
 .ficha-campo {
     display: flex;
     flex-direction: column;
@@ -1194,6 +1265,56 @@
 .ficha-input {
     flex: 1;
     min-width: 0;
+}
+
+.ficha-campo--summary {
+    gap: 0;
+    border: 1px solid #e3eaf2;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.ficha-label--summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    background: #edf3fa;
+    color: #22313f;
+    font-weight: 700;
+    border-right: 1px solid #d8e3ef;
+}
+
+.ficha-summary-icon {
+    color: #BF0411;
+    font-size: 18px;
+}
+
+.ficha-branched-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.ficha-textm {
+    width: 100%;
+}
+
+.ficha-textm__input-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.ficha-textm__input {
+    flex: 1;
+}
+
+.ficha-campo--branched {
+    padding-left: 16px;
+    border-left: 3px solid #e8eef5;
 }
 
 .ficha-input .q-field__control {
@@ -1290,6 +1411,25 @@
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+.ficha-http-dialog {
+    width: 520px;
+    max-width: 94vw;
+}
+
+.ficha-http-dialog__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ficha-http-dialog__body {
+    padding: 16px;
+}
+
+.ficha-http-dialog__actions {
+    padding: 0 16px 16px;
 }
 
 .datos-generales-tabla tbody tr:nth-child(odd) {
@@ -2594,7 +2734,11 @@ export default {
         return {
 
             dialog: false,
+            dialogHttpPregunta: false,
             loading: false,
+            preguntaHttpActiva: null,
+            formHttpPregunta: {},
+            loadingHttpPregunta: false,
             preguntasRaw: [],
             seccionAbierta: null,
             fichaFooterPosicion: { x: null, y: null },
@@ -3173,7 +3317,6 @@ export default {
             this.modo = "editar";
             try {
                 this.validacionReseteadaEnEdicion = false;
-                this.sincronizarModalidadDesdeFuente(row);
                 this.sincronizarAcreditacionDesdeFuente(row);
                 // Llenamos el form con los datos de la fila seleccionada
                 this.form.idAnexoCabecera = row.idAnexoCabecera;
@@ -3207,24 +3350,11 @@ export default {
                 this.form.tipoCentro = row.tipoCentro;
                 this.form.reqObligatoriedad = Number(row?.reqObligatoriedad ?? 1);
 
-                // Capturar periodo y tipo desde la fila para modo edición
                 this.fichaPeriodo = row.periodo;
-                this.fichaTipo = row.tipo;
-
-                // Marcar modo edición
-                this.modoEdicion = true;
-
-                // Cerrar acordeón
                 this.seccionAbierta = null;
-
-                // Abrir diálogo
                 this.resetFooterFichaFlotante();
                 this.dialog = true;
-
-                // 1️⃣ Cargar preguntas del anexo
-                // await this.cargarPreguntas();
-
-                // 2️⃣ Cargar respuestas existentes
+                this.sincronizarResponsableSesion();
                 await this.cargarRespuestas();
 
             } catch (error) {
@@ -3235,7 +3365,6 @@ export default {
         async verRegistro(row) {
             this.modo = "ver";
             try {
-                this.sincronizarModalidadDesdeFuente(row);
                 this.sincronizarAcreditacionDesdeFuente(row);
 
                 this.form.idAnexoCabecera = row.idAnexoCabecera;
@@ -3267,14 +3396,7 @@ export default {
                 }
                 this.form.tipoCentro = row.tipoCentro;
 
-                // Capturar periodo y tipo desde la fila para modo visualización
                 this.fichaPeriodo = row.periodo;
-                this.fichaTipo = row.tipo;
-
-                this.modoEdicion = false;
-                this.modoVisualizacion = true;
-
-                // Cerrar acordeón
                 this.seccionAbierta = null;
 
                 this.resetFooterFichaFlotante();
@@ -3332,153 +3454,432 @@ export default {
             });
         },
 
+        leerLocalStorageSesion(key) {
+            const valorQuasar = this.$q.localStorage.getItem(key);
+            if (valorQuasar !== null && valorQuasar !== undefined) return valorQuasar;
+            const raw = window.localStorage.getItem(key);
+            if (!raw) return null;
+            return String(raw).replace(/^__q_\w+\|/, '');
+        },
+        obtenerNombreCompletoSesion() {
+            return normalizeTextSpacing(String(this.leerLocalStorageSesion('sgs-nombreCompleto') || '').trim());
+        },
+        obtenerIdPersonalSesion() {
+            return this.normalizarIdResponsable(this.leerLocalStorageSesion('sgs-idPersonal'));
+        },
+        obtenerIdUsuarioSesion() {
+            const valor = this.leerLocalStorageSesion('sgs-idUsuario');
+            const numero = Number(valor);
+            return Number.isFinite(numero) ? numero : null;
+        },
+        sincronizarResponsableSesion() {
+            const idPersonal = this.obtenerIdPersonalSesion();
+            const nombreCompleto = this.obtenerNombreCompletoSesion();
+            if (idPersonal !== null) {
+                this.form.idRespSupervision = idPersonal;
+            }
+            if (nombreCompleto) {
+                this.form.respSupervision = nombreCompleto;
+            }
+        },
+        normalizarTextoComparacion(value) {
+            return value === null || value === undefined
+                ? ''
+                : String(value).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        },
+        getRefValue(refName) {
+            const ref = this.normalizarTextoComparacion(refName);
+            const centroNombre = this.form.nombreCentro || this.centroSeleccionado?.nombreUnidad || '';
+            const centroId = this.form.idCentro || this.centroSeleccionado?.idUnidadOrganica || null;
+            const periodo = this.fichaPeriodo || this.anioSeleccionado || '';
+            const responsableNombre = this.form.respSupervision || this.obtenerNombreCompletoSesion() || '';
+            const responsableId = this.normalizarIdResponsable(this.form.idRespSupervision) || this.obtenerIdPersonalSesion();
+            const centroUbigeo = [this.form.departamento, this.form.provincia, this.form.distrito]
+                .filter(Boolean)
+                .join(' / ');
+
+            const refs = {
+                PERIODO: periodo,
+                CENTRONOMBRE: centroNombre,
+                IDCENTRO: centroId,
+                CENTRODEP: this.form.departamento || '',
+                CENTRODEPARTAMENTO: this.form.departamento || '',
+                CENTROPROV: this.form.provincia || '',
+                CENTROPROVINCIA: this.form.provincia || '',
+                CENTRODIST: this.form.distrito || '',
+                CENTRODISTRITO: this.form.distrito || '',
+                CENTROUBIGEO: centroUbigeo,
+                UNIDADNOMBRE: this.form.nombreUnidad || '',
+                SERVNOMBRE: this.form.nombreServicio || '',
+                SERVICIONOMBRE: this.form.nombreServicio || '',
+                RESPID: responsableId,
+                RESPNOMBRE: responsableNombre
+            };
+
+            return refs[ref] !== undefined ? refs[ref] : '';
+        },
+        parseJsonFlexible(value) {
+            if (value === null || value === undefined || value === '') return null;
+            if (typeof value !== 'string') return value;
+
+            const texto = value.trim();
+            if (!texto) return null;
+            if (texto === '*') return '*';
+
+            try {
+                return JSON.parse(texto);
+            } catch (error) {
+                const textoCorregido = texto
+                    .replace(/([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)(\s*:)/g, '$1"$2"$3')
+                    .replace(/'/g, '"');
+                try {
+                    return JSON.parse(textoCorregido);
+                } catch (secondError) {
+                    return null;
+                }
+            }
+        },
+        resolverPropiedadCaseInsensitive(obj, key) {
+            if (!obj || !key) return undefined;
+            const clave = this.normalizarTextoComparacion(key);
+            const encontrada = Object.keys(obj).find(item => this.normalizarTextoComparacion(item) === clave);
+            return encontrada ? obj[encontrada] : undefined;
+        },
+        esHttpParamsWildcard(httpParams) {
+            if (httpParams === '*') return true;
+            return typeof httpParams === 'string' && httpParams.trim() === '*';
+        },
+        parseOpciones(opciones) {
+            const parseado = this.parseJsonFlexible(opciones);
+            if (Array.isArray(parseado)) {
+                return parseado
+                    .map(item => {
+                        if (item === null || item === undefined) return null;
+                        if (typeof item !== 'object') {
+                            const valor = String(item).trim();
+                            return valor ? { label: valor, value: valor } : null;
+                        }
+                        const label = this.resolverPropiedadCaseInsensitive(item, 'label')
+                            || this.resolverPropiedadCaseInsensitive(item, 't')
+                            || this.resolverPropiedadCaseInsensitive(item, 'text')
+                            || this.resolverPropiedadCaseInsensitive(item, 'descripcion')
+                            || this.resolverPropiedadCaseInsensitive(item, 'nombre');
+                        const value = this.resolverPropiedadCaseInsensitive(item, 'value') ?? label;
+                        return label !== undefined && label !== null && String(label).trim()
+                            ? { label: String(label).trim(), value: value !== undefined && value !== null ? value : String(label).trim(), raw: item }
+                            : null;
+                    })
+                    .filter(Boolean);
+            }
+
+            if (typeof opciones !== 'string') return [];
+
+            return opciones
+                .split('|')
+                .map(op => op.trim())
+                .filter(Boolean)
+                .map(op => ({ label: op, value: op }));
+        },
+        normalizarHttpParams(httpParams) {
+            if (this.esHttpParamsWildcard(httpParams)) return [];
+            const parseado = this.parseJsonFlexible(httpParams);
+            if (!Array.isArray(parseado)) return [];
+
+            return parseado.map(item => {
+                if (!item || typeof item !== 'object') {
+                    return {
+                        label: '',
+                        paramKey: '',
+                        valueKey: '',
+                        type: 'text',
+                        raw: {}
+                    };
+                }
+
+                return {
+                    label: this.resolverPropiedadCaseInsensitive(item, 't') || this.resolverPropiedadCaseInsensitive(item, 'label') || '',
+                    paramKey: this.resolverPropiedadCaseInsensitive(item, 'p') || this.resolverPropiedadCaseInsensitive(item, 'param') || '',
+                    valueKey: this.resolverPropiedadCaseInsensitive(item, 'v') || this.resolverPropiedadCaseInsensitive(item, 'valueKey') || '',
+                    type: this.resolverPropiedadCaseInsensitive(item, 'tipo') || this.resolverPropiedadCaseInsensitive(item, 'type') || 'text',
+                    editable: this.resolverPropiedadCaseInsensitive(item, 'editable'),
+                    raw: item
+                };
+            });
+        },
+        normalizarReglaEditable(editable) {
+            const parseado = this.parseJsonFlexible(editable);
+            if (!parseado || typeof parseado !== 'object') return null;
+            const id = Number(this.resolverPropiedadCaseInsensitive(parseado, 'id'));
+            const valor = this.resolverPropiedadCaseInsensitive(parseado, 'valor');
+            if (!Number.isFinite(id) || valor === undefined || valor === null) return null;
+            return { id, valor };
+        },
+        normalizarEditableBifurcaciones(editableBifurcaciones) {
+            return this.normalizarReglaEditable(editableBifurcaciones);
+        },
+        obtenerValorLabelHttp(opciones) {
+            const parseado = this.parseJsonFlexible(opciones);
+            if (!parseado || Array.isArray(parseado) || typeof parseado !== 'object') return 'nombre';
+            return this.resolverPropiedadCaseInsensitive(parseado, 'v') || 'nombre';
+        },
+        normalizarRamificacionesInputSearch(opciones) {
+            const parseado = this.parseJsonFlexible(opciones);
+            if (!Array.isArray(parseado)) return [];
+            return parseado
+                .map(item => {
+                    if (!item || typeof item !== 'object') return null;
+                    const label = this.resolverPropiedadCaseInsensitive(item, 't') || this.resolverPropiedadCaseInsensitive(item, 'label');
+                    const prop = this.resolverPropiedadCaseInsensitive(item, 'p') || this.resolverPropiedadCaseInsensitive(item, 'prop');
+                    if (!label || !prop) return null;
+                    return {
+                        label,
+                        prop,
+                        value: '',
+                        editable: this.resolverPropiedadCaseInsensitive(item, 'editable')
+                    };
+                })
+                .filter(Boolean);
+        },
+        normalizarRamificacionesSelect(opciones) {
+            const parseado = this.parseJsonFlexible(opciones);
+            if (!Array.isArray(parseado)) return [];
+            return parseado
+                .map(item => {
+                    if (!item || typeof item !== 'object') return null;
+                    const label = this.resolverPropiedadCaseInsensitive(item, 't') || this.resolverPropiedadCaseInsensitive(item, 'label');
+                    const valueField = this.resolverPropiedadCaseInsensitive(item, 'v') || 'nombre';
+                    if (!label) return null;
+                    return {
+                        label,
+                        valueField
+                    };
+                })
+                .filter(Boolean);
+        },
+        esVistaSummaryRow(pregunta) {
+            return String(pregunta?.vistaControl || '').toLowerCase() === 'summaryrow';
+        },
+        esVistaBranched(pregunta) {
+            return String(pregunta?.vistaControl || '').toLowerCase() === 'branched';
+        },
+        esPreguntaBranchedInputSearch(pregunta) {
+            return this.esVistaBranched(pregunta)
+                && String(pregunta?.tipoControl || '').toLowerCase() === 'text'
+                && String(pregunta?.modoControl || '').toLowerCase() === 'http'
+                && Number(pregunta?.reqDisparador) === 1
+                && !this.esHttpParamsWildcard(pregunta?.httpParams)
+                && Array.isArray(pregunta?._httpParamsParsed)
+                && pregunta._httpParamsParsed.length > 0;
+        },
+        esPreguntaBranchedSelects(pregunta) {
+            return this.esVistaBranched(pregunta)
+                && String(pregunta?.tipoControl || '').toLowerCase() === 'select'
+                && String(pregunta?.modoControl || '').toLowerCase() === 'http'
+                && Number(pregunta?.reqDisparador) === 0;
+        },
+        esPreguntaSelectHttpSimple(pregunta) {
+            return String(pregunta?.tipoControl || '').toLowerCase() === 'select'
+                && String(pregunta?.modoControl || '').toLowerCase() === 'http'
+                && this.esHttpParamsWildcard(pregunta?.httpParams)
+                && String(pregunta?._httpMethod || pregunta?.httpMetodo || 'GET').toUpperCase() === 'GET';
+        },
+        esPreguntaRedirected(pregunta) {
+            return String(pregunta?.modoControl || '').toLowerCase() === 'redirected';
+        },
+        inicializarRespuesta2Pregunta(pregunta, respuesta2) {
+            if (respuesta2 !== undefined && respuesta2 !== null) return respuesta2;
+            switch (pregunta.tipoControl2) {
+                case 'text':
+                    return '';
+                case 'selectM':
+                    return [];
+                default:
+                    return null;
+            }
+        },
+        normalizarRespuestaPregunta(pregunta, respuestaRaw) {
+            if (this.esPreguntaBranchedInputSearch(pregunta) || this.esPreguntaBranchedSelects(pregunta)) {
+                return respuestaRaw || null;
+            }
+
+            switch (pregunta.tipoControl) {
+                case 'label':
+                    return respuestaRaw || '';
+                case 'text':
+                case 'date':
+                case 'number':
+                case 'textarea':
+                case 'inputSearch':
+                    return respuestaRaw || '';
+                case 'textM':
+                    if (Array.isArray(respuestaRaw)) return respuestaRaw;
+                    if (!respuestaRaw) return [];
+                    return String(respuestaRaw).split('|').map(item => item.trim()).filter(Boolean);
+                case 'radio':
+                case 'select':
+                    if (respuestaRaw === null || respuestaRaw === undefined || respuestaRaw === '') return null;
+                    if (!Array.isArray(pregunta.opciones) || pregunta.opciones.length === 0) return respuestaRaw;
+                    return pregunta.opciones.find(op => this.normalizarTextoComparacion(op.value) === this.normalizarTextoComparacion(respuestaRaw))?.value || respuestaRaw;
+                case 'selectM':
+                    if (Array.isArray(respuestaRaw)) return respuestaRaw;
+                    if (!respuestaRaw) return [];
+                    return String(respuestaRaw).split('|').map(item => item.trim()).filter(Boolean);
+                default:
+                    return respuestaRaw || null;
+            }
+        },
+        construirPreguntaDinamica(preguntaRaw) {
+            const pregunta = {
+                ...preguntaRaw,
+                obligatoria: Number(preguntaRaw.obligatoria ?? 0),
+                obligatoria2: Number(preguntaRaw.obligatoria2 ?? 0),
+                condicion: this.parseCondicion(preguntaRaw.condicion),
+                _editableRule: this.normalizarReglaEditable(preguntaRaw.editable),
+                _editableBifurcacionesRule: this.normalizarEditableBifurcaciones(preguntaRaw.editableBifurcaciones),
+                _httpMethod: String(preguntaRaw.httpMetodo || 'GET').toUpperCase(),
+                _httpParamsParsed: this.normalizarHttpParams(preguntaRaw.httpParams),
+                _redirectRef: this.resolverPropiedadCaseInsensitive(this.parseJsonFlexible(preguntaRaw.opciones), 'ref')
+                    || this.resolverPropiedadCaseInsensitive(this.parseJsonFlexible(preguntaRaw.opciones), 'REF')
+                    || null,
+                _ramificaciones: [],
+                _branchedSelects: [],
+                _loadingHttp: false,
+                _httpLoaded: false,
+                _labelHttpField: this.obtenerValorLabelHttp(preguntaRaw.opciones),
+                opciones: [],
+                opciones2: this.parseOpciones(preguntaRaw.opciones2),
+                respuesta: null,
+                respuesta2: null,
+                otroTexto: null,
+                _textMDraft: ''
+            };
+
+            if (this.esPreguntaBranchedInputSearch(pregunta)) {
+                pregunta._ramificaciones = this.normalizarRamificacionesInputSearch(preguntaRaw.opciones);
+            }
+
+            if (this.esPreguntaBranchedSelects(pregunta)) {
+                pregunta._branchedDefs = this.normalizarRamificacionesSelect(preguntaRaw.opciones);
+                pregunta._branchedSelects = pregunta._branchedDefs.map(def => ({
+                    label: def.label,
+                    valueField: def.valueField,
+                    value: '',
+                    selectedOption: null,
+                    options: [],
+                    loading: false
+                }));
+            }
+
+            if (!this.esPreguntaBranchedInputSearch(pregunta) && !this.esPreguntaBranchedSelects(pregunta) && !this.esPreguntaSelectHttpSimple(pregunta)) {
+                pregunta.opciones = this.parseOpciones(preguntaRaw.opciones);
+            }
+
+            pregunta.respuesta = this.normalizarRespuestaPregunta(pregunta, preguntaRaw.respuesta);
+            pregunta.respuesta2 = this.inicializarRespuesta2Pregunta(pregunta, preguntaRaw.respuesta2);
+            if (String(pregunta.tipoControl || '').toLowerCase() === 'textm' && !Array.isArray(pregunta.respuesta)) {
+                pregunta.respuesta = [];
+            }
+
+            if (this.esPreguntaBranchedInputSearch(pregunta)) {
+                this.hidratarBranchedInputSearchDesdeRespuesta(pregunta);
+            }
+
+            return pregunta;
+        },
+        agruparPreguntasEnSecciones(lista = []) {
+            const ordenadas = [...lista].sort((a, b) => (a.numGrupo - b.numGrupo) || (a.numPregunta - b.numPregunta));
+            const secciones = [];
+            let seccionActual = null;
+
+            ordenadas.forEach(pregunta => {
+                if (pregunta.tipoControl === 'cabecera') {
+                    if (seccionActual && seccionActual.preguntas.length > 0) {
+                        secciones.push(seccionActual);
+                    }
+                    seccionActual = {
+                        titulo: pregunta.pregunta,
+                        preguntas: []
+                    };
+                    return;
+                }
+
+                if (!seccionActual) {
+                    seccionActual = {
+                        titulo: 'GENERAL',
+                        preguntas: []
+                    };
+                }
+
+                seccionActual.preguntas.push(this.construirPreguntaDinamica(pregunta));
+            });
+
+            if (seccionActual && seccionActual.preguntas.length > 0) {
+                secciones.push(seccionActual);
+            }
+
+            return secciones;
+        },
+        async prepararSeccionesDinamicas(secciones = []) {
+            for (const seccion of secciones) {
+                for (const pregunta of seccion.preguntas) {
+                    await this.prepararPreguntaDinamica(pregunta);
+                }
+            }
+        },
+        async prepararPreguntaDinamica(pregunta) {
+            if (this.esPreguntaRedirected(pregunta)) {
+                pregunta.respuesta = this.getRefValue(pregunta._redirectRef);
+            }
+
+            if (this.esPreguntaSelectHttpSimple(pregunta)) {
+                await this.cargarOpcionesSelectHttp(pregunta);
+            }
+
+            if (this.esPreguntaBranchedSelects(pregunta)) {
+                await this.inicializarBranchedSelects(pregunta);
+            }
+        },
         async cargarRespuestas() {
             if (!this.form.idAnexoCabecera) return;
-
-            if (this.secciones.length && this.secciones[0]?.idAnexoCabecera === this.form.idAnexoCabecera) {
-                return;
-            }
 
             this.loading = true;
 
             try {
-                const res = await this.$axios.get(
-                    `${process.env.API_URL_SIGESU}/obtenerRespuestas`,
-                    //  'http://10.101.0.8:4004/api/ms-sigesu/obtenerRespuestas',
-                    {
-                        params: {
-                            idAnexoCabecera: this.form.idAnexoCabecera,
-                            correlativo: this.form.correlativo
-                        }
+                const res = await this.$axios.get(`${process.env.API_URL_SIGESU}/obtenerRespuestas`, {
+                    params: {
+                        idAnexoCabecera: this.form.idAnexoCabecera,
+                        correlativo: this.form.correlativo
                     }
-                );
+                });
 
-                const data = res.data.data;
-                if (!data || !data.respuestas) return;
+                const data = res.data?.data;
+                if (!data || !Array.isArray(data.respuestas)) return;
 
-                // Datos generales
-                this.form.nombreCentro = data.centro || data.nombreCentro;
+                this.form.nombreCentro = data.centro || data.nombreCentro || this.form.nombreCentro;
                 this.form.correlativo = data.correlativo;
                 this.form.nombreAnexo = data.nombreAnexo;
                 this.form.nombreUnidad = data.nombreUnidad;
                 this.form.fechaAplicacion = data.fechaAplicacion;
-                this.form.departamento = data.departamento;
-                this.form.provincia = data.provincia;
-                this.form.distrito = data.distrito;
+                this.form.departamento = data.departamento || this.form.departamento;
+                this.form.provincia = data.provincia || this.form.provincia;
+                this.form.distrito = data.distrito || this.form.distrito;
                 this.form.nombreServicio = data.nombreServicio;
-                this.form.fechaRegistro = data.fechaRegistro;
+                this.form.fechaRegistro = data.fechaRegistro || this.form.fechaRegistro;
                 this.form.audioUrl = data.audioUrl;
-                this.form.reqDirector = Number(data.reqDirector ?? 0);
+                this.form.reqDirector = Number(data.reqDirector ?? this.form.reqDirector ?? 0);
                 this.form.reqObligatoriedad = Number(data.reqObligatoriedad ?? 1);
-                if (this.puedeMostrarDirector(this.form.reqDirector)) {
-                    this.form.respDirector = data.respDirector;
-                    this.form.idDirector = this.normalizarIdResponsable(data.idDirector ?? data.idPersonal);
-                } else {
-                    this.form.respDirector = '';
-                    this.form.idDirector = null;
-                }
-                this.form.tipoCentro = data.tipoCentro;
-                this.form.idRespSupervision = this.normalizarIdResponsable(data.idRespSupervision);
-                this.sincronizarModalidadDesdeFuente(data);
-                this.sincronizarAcreditacionDesdeFuente(data);
-                if (this.puedeMostrarSupervisados(this.form.reqSupervisados)) {
-                    this.form.idsSupervisados = this.parseIdSupervisado(data.idSupervisado);
-                    this.sincronizarOpcionesSupervisados(data.idSupervisado, data.nombreSupervisado);
-                } else {
-                    this.form.idsSupervisados = [];
-                }
-                // Agrupar respuestas por secciones (cabecera)
-                const secciones = [];
-                let currentSeccion = { titulo: 'GENERAL', preguntas: [] }; // por defecto
+                this.form.idDirector = this.normalizarIdResponsable(data.idDirector ?? this.form.idDirector);
+                this.form.idsSupervisados = this.parseIdSupervisado(data.idSupervisado);
+                this.form.tipoCentro = data.tipoCentro || this.form.tipoCentro;
+                this.acreVigente = String(this.normalizarAcreditacionVigenteEntero(data.acreditacionVigente ?? this.acreVigente));
+                this.fechaAcreditacion = this.normalizarFechaAcreditacionISO(data.fechaAcreditacion ?? this.fechaAcreditacion);
 
-                data.respuestas.forEach(p => {
-                    if (p.tipoControl === 'cabecera') {
-                        if (currentSeccion.preguntas.length > 0) secciones.push({ ...currentSeccion });
-                        currentSeccion = { titulo: p.pregunta, preguntas: [] };
-                    } else {
-                        currentSeccion.preguntas.push(p);
-                    }
-                });
-                if (currentSeccion.preguntas.length > 0) secciones.push(currentSeccion);
-
-                // Transformar cada pregunta
-                secciones.forEach(seccion => {
-                    seccion.preguntas.forEach(p => {
-
-                        // Parsear opciones si existen
-                        if (p.opciones && typeof p.opciones === 'string') {
-                            p.opciones = p.opciones
-                                .split('|')
-                                .map(op => op.trim())
-                                .filter(Boolean)
-                                .map(op => ({ label: op, value: op }));
-                        } else {
-                            p.opciones = [];
-                        }
-
-                        // Respuesta según tipo
-                        switch (p.tipoControl) {
-                            case 'label':
-                                // pregunta solo lectura, no modificar
-                                p.respuesta = p.respuesta || '';
-                                break;
-
-                            case 'text':
-                                p.respuesta = p.respuesta || '';
-                                break;
-
-                            case 'radio':
-                            case 'select':
-                                if (p.respuesta != null && p.opciones.length > 0) {
-                                    // Normalizar para coincidencia insensible a mayúsculas y tildes
-                                    const normalizar = str => str.toString().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-                                    const respNorm = normalizar(p.respuesta);
-                                    const match = p.opciones.find(o =>
-                                        normalizar(o.value) === respNorm
-                                    );
-                                    p.respuesta = match ? match.value : null;
-                                } else {
-                                    p.respuesta = null;
-                                }
-                                break;
-
-                            case 'selectM':
-                            case 'checkbox':
-                                if (p.respuesta) {
-                                    if (p.tipoControl === 'checkbox') {
-                                        p.respuesta = p.respuesta.split('|').map(v => v === '1');
-                                    } else {
-                                        const normalizar = str => str.toString().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-                                        const respuestaItems = p.respuesta
-                                            .split('|')
-                                            .map(v => v.trim())
-                                            .filter(Boolean);
-                                        p.respuesta = respuestaItems
-                                            .map(resp => {
-                                                const respNorm = normalizar(resp);
-                                                const match = p.opciones.find(o => normalizar(o.value) === respNorm);
-                                                return match ? match.value : null;
-                                            })
-                                            .filter(Boolean);
-                                    }
-                                } else {
-                                    p.respuesta = p.tipoControl === 'selectM' ? [] : [];
-                                }
-                                break;
-
-                            default:
-                                p.respuesta = p.respuesta || null;
-                                break;
-                        }
-
-                        p.condicion = this.parseCondicion(p.condicion);
-                    });
-                });
-
+                const secciones = this.agruparPreguntasEnSecciones(data.respuestas);
+                await this.prepararSeccionesDinamicas(secciones);
                 this.secciones = secciones;
-
+                this.sincronizarResponsableSesion();
             } catch (error) {
-                this.$q.notify({ type: "negative", message: "Error al cargar las respuestas" });
+                this.$q.notify({ type: 'negative', message: 'Error al cargar las respuestas' });
             } finally {
                 this.loading = false;
             }
@@ -3553,24 +3954,14 @@ export default {
             this.modo = "nuevo";
             this.seccionAbierta = null;
 
-            // Capturar periodo y tipo desde los combos de la pantalla principal
             this.fichaPeriodo = this.anioSeleccionado;
             this.fichaTipo = this.tipoFicha;
-            this.modoSupervision = null;
-            this.acreVigente = null;
+            this.acreVigente = '0';
             this.fechaAcreditacion = null;
             if (this.anioSeleccionado === null || this.anioSeleccionado === undefined || this.anioSeleccionado === '') {
                 this.$q.notify({
                     type: 'warning',
                     message: 'Debe seleccionar un PERIODO válido (distinto de TODOS)'
-                })
-                return
-            }
-
-            if (this.tipoFicha === null || this.tipoFicha === undefined || this.tipoFicha === '') {
-                this.$q.notify({
-                    type: 'warning',
-                    message: 'Debe seleccionar un TIPO válido (distinto de TODOS)'
                 })
                 return
             }
@@ -3645,12 +4036,10 @@ export default {
 
             // Precargar todo el personal del centro
             this.precargarTrabajadoresCentro()
+            this.sincronizarResponsableSesion()
 
             this.resetFooterFichaFlotante()
             this.dialog = true
-
-
-            this.modoEdicion = false
 
             this.cargarPreguntas()
         },
@@ -3749,22 +4138,6 @@ export default {
             this.preguntasAgrupadas = [];
 
         },
-        parseOpciones(opciones) {
-
-            if (!opciones || typeof opciones !== 'string')
-                return []
-
-            return opciones
-                .split('|')
-                .map(op => op.trim())
-                .filter(Boolean)
-                .map(op => ({
-                    label: op,
-                    value: op
-                }))
-
-        },
-
         async cargarPreguntasPorFiltros() {
             if (!this.unidadSeleccionada || !this.servicioSeleccionado || !this.anexoSeleccionado) {
                 this.$q.notify({
@@ -3805,162 +4178,28 @@ export default {
         },
 
         async cargarPreguntas() {
-
-            this.loading = true
+            this.loading = true;
 
             try {
-
-                const res = await this.$axios.get(
-                    `${process.env.API_URL_SIGESU}/findAllAnexoPregustasByParams2`,
-                    {
-                        params: {
-                            anexo: this.anexoSeleccionado,
-                            idServicio: this.servicioSeleccionado
-                        }
+                const res = await this.$axios.get(`${process.env.API_URL_SIGESU}/findAllAnexoPregustasByParams2`, {
+                    params: {
+                        anexo: this.anexoSeleccionado,
+                        idServicio: this.servicioSeleccionado
                     }
+                });
 
-                )
-                // console.log("RESPUESTA COMPLETA:", res)
-                //  console.log("res.data:", res.data)
-                //  console.log("res.data.data:", res.data?.data)
-                const data = res.data.data || []
-
-                // ordenar por grupo y número de pregunta
-                const listaOrdenada = data.sort(
-                    (a, b) => a.numGrupo - b.numGrupo || a.numPregunta - b.numPregunta
-                )
-
-                this.preguntasRaw = listaOrdenada
-
-                const secciones = []
-                let seccionActual = null
-
-                listaOrdenada.forEach(p => {
-
-                    // 🔹 asegurar obligatoria
-                    const obligatoria = Number(p.obligatoria ?? 0)
-
-                    if (p.tipoControl === 'cabecera') {
-
-                        seccionActual = {
-                            titulo: p.pregunta,
-                            preguntas: [{
-                                ...p,
-                                obligatoria,
-                                respuesta: 1,
-                                opciones: []
-                            }]
-                        }
-
-                        secciones.push(seccionActual)
-                        return
-                    }
-
-                    if (!seccionActual) return
-
-                    if (p.tipoControl === 'label') {
-
-                        seccionActual.preguntas.push({
-                            ...p,
-
-                            obligatoria,
-                            respuesta: 2,
-                            condicion: this.parseCondicion(p.condicion),
-                            opciones: [
-                                { label: 'SI', value: 1 },
-                                { label: 'NO', value: 0 }
-                            ]
-                        })
-
-                        return
-                    }
-
-                    let respuesta = null
-                    let opciones = [
-                        { label: 'SI', value: 1 },
-                        { label: 'NO', value: 0 }
-                    ]
-
-                    switch (p.tipoControl) {
-
-                        case 'text':
-                            respuesta = ''
-                            break
-
-                        case 'select':
-                        case 'radio':
-                            respuesta = null
-                            opciones = this.parseOpciones(p.opciones)
-                            break
-
-                        case 'selectM':
-                            respuesta = []
-                            opciones = this.parseOpciones(p.opciones)
-                            break
-
-                        default:
-                            respuesta = null
-                            break
-                    }
-
-                    // Inicializar respuesta2 según tipoControl2
-                    let respuesta2 = null
-                    switch (p.tipoControl2) {
-                        case 'text':
-                            respuesta2 = ''
-                            break
-                        case 'select':
-                        case 'radio':
-                            respuesta2 = null
-                            break
-                        case 'selectM':
-                            respuesta2 = []
-                            break
-                        default:
-                            respuesta2 = null
-                            break
-                    }
-
-                    seccionActual.preguntas.push({
-                        ...p,
-
-                        tipoDato1: p.tipoDato1,
-                        tipoDato2: p.tipoDato2,
-
-                        obligatoria: Number(p.obligatoria ?? 0),
-                        obligatoria2: Number(p.obligatoria2 ?? 0),
-
-                        respuesta,
-                        respuesta2,
-
-                        opciones,
-                        opciones2: this.parseOpciones(p.opciones2),
-
-                        pregunta2: p.pregunta2,
-                        tipoControl2: p.tipoControl2,
-                        condicion: this.parseCondicion(p.condicion),
-                        // condicion: p.condicion ? JSON.parse(p.condicion) : null,
-                        //condicion: p.condicion || null,
-                        otroTexto: null,
-                        esSumable: p.tipoControl === 'select'
-
-                    })
-
-                })
-
-                this.secciones = secciones
-
+                const data = res.data?.data || [];
+                this.preguntasRaw = data;
+                const secciones = this.agruparPreguntasEnSecciones(data);
+                await this.prepararSeccionesDinamicas(secciones);
+                this.secciones = secciones;
             } catch (error) {
-
                 this.$q.notify({
                     type: 'negative',
                     message: 'Error al cargar preguntas'
-                })
-
+                });
             } finally {
-
-                this.loading = false
-
+                this.loading = false;
             }
         },
 
@@ -3968,47 +4207,82 @@ export default {
            GUARDAR TODO
         ======================================== */
 
-        async guardarTodo() {
+        serializarRespuestaPregunta(pregunta) {
+            if (this.esPreguntaBranchedInputSearch(pregunta)) {
+                const partes = [this.obtenerValorDisparadorBranched(pregunta), ...pregunta._ramificaciones.map(rama => rama.value || '')]
+                    .filter(valor => valor !== null && valor !== undefined && valor !== '');
+                return partes.length ? partes.join('|') : null;
+            }
 
+            if (this.esPreguntaBranchedSelects(pregunta)) {
+                const partes = pregunta._branchedSelects
+                    .map(rama => rama.value)
+                    .filter(valor => valor !== null && valor !== undefined && valor !== '');
+                return partes.length ? partes.join('|') : null;
+            }
+
+            if (String(pregunta?.tipoControl || '').toLowerCase() === 'textm') {
+                return Array.isArray(pregunta.respuesta) && pregunta.respuesta.length
+                    ? pregunta.respuesta.join('|')
+                    : null;
+            }
+
+            if (Array.isArray(pregunta.respuesta)) {
+                if (pregunta.respuesta.includes('OTRO') || pregunta.respuesta.includes('OTROS')) {
+                    return pregunta.respuesta
+                        .map(r => (r === 'OTRO' || r === 'OTROS') ? (pregunta.otroTexto || r) : r)
+                        .join('|');
+                }
+                return pregunta.respuesta.join('|');
+            }
+
+            if (pregunta.respuesta === 'OTRO' || pregunta.respuesta === 'OTROS') {
+                return pregunta.otroTexto || pregunta.respuesta;
+            }
+
+            return pregunta.respuesta ?? null;
+        },
+        estaPreguntaRespondida(pregunta) {
+            if (this.esPreguntaBranchedInputSearch(pregunta)) {
+                return !!this.obtenerValorDisparadorBranched(pregunta)
+                    && pregunta._ramificaciones.every(rama => !!rama.value);
+            }
+
+            if (this.esPreguntaBranchedSelects(pregunta)) {
+                return pregunta._branchedSelects.length > 0
+                    && pregunta._branchedSelects.every(rama => !!rama.value);
+            }
+
+            if (Array.isArray(pregunta.respuesta)) {
+                return pregunta.respuesta.length > 0;
+            }
+
+            return !!pregunta.respuesta;
+        },
+        async guardarTodo() {
             try {
-                // limpiar respuestas ocultas solo en modo NUEVO
-                this.limpiarRespuestasOcultas()
-                // VALIDAR OBLIGATORIOS
+                this.limpiarRespuestasOcultas();
+                this.sincronizarResponsableSesion();
+
                 for (const seccion of this.secciones) {
                     for (const pregunta of seccion.preguntas) {
+                        if (!this.mostrarPregunta(pregunta)) continue;
 
-                        // SOLO VALIDAR SI ES VISIBLE
-                        if (!this.mostrarPregunta(pregunta)) continue
-
-                        if (pregunta.obligatoria === 1) {
-
-                            const resp = pregunta.respuesta
-
-                            if (!resp || (Array.isArray(resp) && resp.length === 0)) {
-
-                                this.$q.notify({
-                                    type: "warning",
-                                    message: `Debe responder: ${pregunta.pregunta}`
-                                })
-
-                                return
-                            }
+                        if (pregunta.obligatoria === 1 && !this.estaPreguntaRespondida(pregunta)) {
+                            this.$q.notify({
+                                type: 'warning',
+                                message: `Debe responder: ${pregunta.pregunta}`
+                            });
+                            return;
                         }
 
-                        // 🔥 VALIDAR PREGUNTA 2
-                        if (this.mostrarPregunta2(pregunta) && pregunta.obligatoria2 === 1) {
-
-                            if (!pregunta.respuesta2) {
-
-                                this.$q.notify({
-                                    type: "warning",
-                                    message: `Debe responder: ${pregunta.pregunta2}`
-                                })
-
-                                return
-                            }
+                        if (this.mostrarPregunta2(pregunta) && pregunta.obligatoria2 === 1 && !pregunta.respuesta2) {
+                            this.$q.notify({
+                                type: 'warning',
+                                message: `Debe responder: ${pregunta.pregunta2}`
+                            });
+                            return;
                         }
-
                     }
                 }
 
@@ -4016,93 +4290,18 @@ export default {
                     seccion.preguntas
                         .filter(p => this.mostrarPregunta(p))
                         .map(p => ({
-
                             idPregunta: p.idPregunta,
-
-                            // 🔹 RESPUESTA 1
-                            respuesta: (() => {
-
-                                if (['cabecera', 'label'].includes(p.tipoControl)) {
-                                    return p.tipoControl === 'cabecera' ? 1 : 2
-                                }
-
-                                // 🔥 OTRO (simple)
-                                if (p.respuesta === 'OTRO' || p.respuesta === 'OTROS') {
-                                    return p.otroTexto || p.respuesta
-                                }
-
-                                // 🔥 OTRO (multiple)
-                                if (Array.isArray(p.respuesta)) {
-
-                                    if (p.respuesta.includes('OTRO') || p.respuesta.includes('OTROS')) {
-
-                                        return p.respuesta
-                                            .map(r => (r === 'OTRO' || r === 'OTROS') ? (p.otroTexto || r) : r)
-                                            .join('|')
-                                    }
-
-                                    return p.respuesta.join('|')
-                                }
-
-                                return p.respuesta ?? null
-
-                            })(),
-
-                            // 🔹 RESPUESTA 2
+                            respuesta: this.serializarRespuestaPregunta(p),
                             respuesta2: (() => {
-                                // OTRO en pregunta2 (si aplica)
                                 if (p.respuesta2 === 'OTRO' || p.respuesta2 === 'OTROS') {
-                                    return p.otroTexto2 || p.respuesta2
+                                    return p.otroTexto2 || p.respuesta2;
                                 }
-                                return p.respuesta2 ?? null
+                                return p.respuesta2 ?? null;
                             })(),
-
                             observacion: null,
                             puntaje: null
-
                         }))
                 );
-
-                if (!this.modoEdicion && this.puedeMostrarDirector(this.form.reqDirector)) {
-                    const directorCentro = this.resolverDirectorCentro(this.centroSeleccionado);
-                    this.form.respDirector = directorCentro.respDirector;
-                    this.form.idDirector = directorCentro.idDirector;
-
-                    if (!this.form.idDirector) {
-                        this.$q.notify({
-                            type: "warning",
-                            message: "No se pudo vincular el idPersonal del centro al DIRECTOR/COORDINADOR"
-                        });
-                        return;
-                    }
-                } else if (!this.puedeMostrarDirector(this.form.reqDirector)) {
-                    this.form.respDirector = '';
-                    this.form.idDirector = null;
-                }
-
-                const modalidad = this.normalizarModalidad(this.modoSupervision);
-                if (!modalidad) {
-                    this.$q.notify({
-                        type: "warning",
-                        message: "Debe seleccionar MODALIDAD DE SUPERVISIÓN"
-                    });
-                    return;
-                }
-
-                const acreditacionVigente = this.mostrarAcreditacion
-                    ? this.normalizarAcreditacionVigenteEntero(this.acreVigente)
-                    : 0;
-                const fechaAcreditacion = (this.mostrarAcreditacion && acreditacionVigente === 1)
-                    ? this.normalizarFechaAcreditacionISO(this.fechaAcreditacion)
-                    : null;
-
-                if (this.mostrarAcreditacion && acreditacionVigente === 1 && !fechaAcreditacion) {
-                    this.$q.notify({
-                        type: "warning",
-                        message: "Debe seleccionar FECHA DE ACREDITACIÓN cuando ACREDITACIÓN VIGENTE es SI"
-                    });
-                    return;
-                }
 
                 const payload = {
                     idAnexo: this.form.idAnexo,
@@ -4110,17 +4309,13 @@ export default {
                     centro: this.form.nombreCentro || '',
                     correlativo: this.form.correlativo,
                     periodo: this.fichaPeriodo,
-                    tipo: this.fichaTipo,
+                    acreditacionVigente: this.normalizarAcreditacionVigenteEntero(this.acreVigente),
+                    fechaAcreditacion: this.normalizarFechaAcreditacionISO(this.fechaAcreditacion),
                     fechaAplicacion: new Date().toISOString().split('T')[0],
                     fechaRegistro: this.form.fechaRegistro,
+                    idDirector: this.form.idDirector || null,
                     idRespSupervision: this.normalizarIdResponsable(this.form.idRespSupervision),
-                    idDirector: this.puedeMostrarDirector(this.form.reqDirector) ? this.form.idDirector : null,
-                    idSupervisado: this.puedeMostrarSupervisados(this.form.reqSupervisados)
-                        ? this.buildIdSupervisadoPayload()
-                        : '',
-                    modalidad,
-                    acreditacionVigente,
-                    fechaAcreditacion,
+                    idSupervisado: this.buildIdSupervisadoPayload ? this.buildIdSupervisadoPayload() : '',
                     respuestas,
                     totales: {
                         conforme: this.totalesRespuestas.CONFORME,
@@ -4130,17 +4325,12 @@ export default {
                     }
                 };
 
-                if (this.modoEdicion) {
-
+                if (this.modo === 'editar') {
                     payload.idCabecera = this.form.idAnexoCabecera;
-                    payload.usuModifica = parseInt(this.$q.localStorage.getItem('sgs-idUsuario'));
+                    payload.usuModifica = this.obtenerIdUsuarioSesion();
 
-                    await this.$axios.put(
-                        `${process.env.API_URL_SIGESU}/updateAnexoCompleto`,
-                        payload
-                    );
+                    await this.$axios.put(`${process.env.API_URL_SIGESU}/updateAnexoCompleto`, payload);
 
-                    // Resetear validaciones previas al editar solo si reqObligatoriedad !== 0
                     if (Number(this.form.reqObligatoriedad) !== 0) {
                         try {
                             await this.$axios.delete(
@@ -4150,40 +4340,321 @@ export default {
                         } catch (resetError) {
                         }
                     }
-
                 } else {
-
-                    payload.usuRegistra = parseInt(this.$q.localStorage.getItem('sgs-idUsuario'));
-
-                    await this.$axios.post(
-                        `${process.env.API_URL_SIGESU}/createAnexoCompleto`,
-                        payload
-                    );
-
+                    payload.usuRegistra = this.obtenerIdUsuarioSesion();
+                    await this.$axios.post(`${process.env.API_URL_SIGESU}/createAnexoCompleto`, payload);
                 }
 
                 this.$q.notify({
-                    type: "positive",
-                    message: this.modoEdicion
+                    type: 'positive',
+                    message: this.modo === 'editar'
                         ? (this.validacionReseteadaEnEdicion
-                            ? "Actualizado correctamente. Las validaciones previas han sido reseteadas."
-                            : "Actualizado correctamente")
-                        : "Registrado correctamente"
+                            ? 'Actualizado correctamente. Las validaciones previas han sido reseteadas.'
+                            : 'Actualizado correctamente')
+                        : 'Registrado correctamente'
                 });
-                this.validacionReseteadaEnEdicion = false;
 
+                this.validacionReseteadaEnEdicion = false;
                 this.dialog = false;
                 this.cargarTablaAnexos();
-
             } catch (error) {
-
                 this.$q.notify({
-                    type: "negative",
-                    message: "Error al guardar"
+                    type: 'negative',
+                    message: 'Error al guardar'
+                });
+            }
+        },
+        hidratarBranchedInputSearchDesdeRespuesta(pregunta) {
+            const valores = String(pregunta.respuesta || '')
+                .split('|')
+                .map(item => item.trim());
+
+            pregunta._branchedTriggerValue = valores[0] || '';
+            pregunta._ramificaciones = (pregunta._ramificaciones || []).map((rama, index) => ({
+                ...rama,
+                value: valores[index + 1] || ''
+            }));
+        },
+        obtenerValorDisparadorBranched(pregunta) {
+            return pregunta?._branchedTriggerValue || '';
+        },
+        actualizarRamificacionTexto(pregunta, index, value) {
+            if (!pregunta._ramificaciones[index]) return;
+            this.$set(pregunta._ramificaciones[index], 'value', value);
+            pregunta.respuesta = this.serializarRespuestaPregunta(pregunta);
+        },
+        actualizarValorDisparadorBranched(pregunta, value) {
+            pregunta._branchedTriggerValue = value;
+            pregunta.respuesta = this.serializarRespuestaPregunta(pregunta);
+        },
+        cumpleReglaEditable(regla) {
+            if (!regla || !regla.id) return true;
+            const preguntaBase = this.buscarPregunta(regla.id);
+            if (!preguntaBase) return false;
+            return this.normalizarCondicion(preguntaBase.respuesta, regla.valor);
+        },
+        esCampoSoloLectura(pregunta) {
+            if (this.esVisualizacion) return true;
+            const modo = String(pregunta?.modoControl || '').toLowerCase();
+            if (modo === 'readonly' || modo === 'redirected') return true;
+            if (pregunta?._editableRule) return !this.cumpleReglaEditable(pregunta._editableRule);
+            return false;
+        },
+        esControlDeshabilitado(pregunta) {
+            return this.esVisualizacion || this.esCampoSoloLectura(pregunta);
+        },
+        esRamificacionEditable(pregunta, rama) {
+            if (this.esVisualizacion) return false;
+            if (pregunta?._editableBifurcacionesRule) return this.cumpleReglaEditable(pregunta._editableBifurcacionesRule);
+            if (pregunta?._editableRule) return this.cumpleReglaEditable(pregunta._editableRule);
+            if (rama?.editable === undefined || rama?.editable === null) return false;
+            const valor = String(rama.editable).toLowerCase();
+            return valor === 'true' || valor === '1';
+        },
+        obtenerTipoInputPregunta(pregunta) {
+            if (String(pregunta?.tipoControl || '').toLowerCase() === 'date') return 'date';
+            if (this.usaTipoNumero(pregunta)) return 'number';
+            if (String(pregunta?.tipoControl || '').toLowerCase() === 'textarea') return 'textarea';
+            return 'text';
+        },
+        usaTipoNumero(pregunta) {
+            return String(pregunta?.tipoControl || '').toLowerCase() === 'number' || pregunta?.tipoDato1 === 'NUMBER';
+        },
+        usaAutogrowPregunta(pregunta) {
+            return String(pregunta?.tipoControl || '').toLowerCase() === 'textarea';
+        },
+        obtenerValorTextoPregunta(pregunta) {
+            if (this.esPreguntaRedirected(pregunta)) {
+                return this.getRefValue(pregunta._redirectRef);
+            }
+            return pregunta?.respuesta || '';
+        },
+        actualizarRespuestaPregunta(pregunta, value) {
+            this.$set(pregunta, 'respuesta', value);
+        },
+        actualizarRespuestaTextoPregunta(pregunta, value) {
+            const valorNormalizado = this.usaTipoNumero(pregunta)
+                ? this.normalizarNumeroNoNegativo(value)
+                : value;
+            this.$set(pregunta, 'respuesta', valorNormalizado);
+        },
+        actualizarDraftTextM(pregunta, value) {
+            this.$set(pregunta, '_textMDraft', value);
+        },
+        agregarItemTextM(pregunta) {
+            if (this.esCampoSoloLectura(pregunta)) return;
+            const valor = String(pregunta._textMDraft || '').trim();
+            if (!valor) return;
+            const items = Array.isArray(pregunta.respuesta) ? [...pregunta.respuesta] : [];
+            items.push(valor);
+            this.$set(pregunta, 'respuesta', items);
+            this.$set(pregunta, '_textMDraft', '');
+        },
+        eliminarItemTextM(pregunta, index) {
+            if (this.esCampoSoloLectura(pregunta)) return;
+            const items = Array.isArray(pregunta.respuesta) ? [...pregunta.respuesta] : [];
+            items.splice(index, 1);
+            this.$set(pregunta, 'respuesta', items);
+        },
+        puedeAbrirBusquedaHttp(pregunta) {
+            return !this.esVisualizacion && !this.esCampoSoloLectura(pregunta);
+        },
+        abrirModalHttpPregunta(pregunta) {
+            if (!this.puedeAbrirBusquedaHttp(pregunta)) return;
+
+            this.preguntaHttpActiva = pregunta;
+            this.formHttpPregunta = {};
+
+            (pregunta._httpParamsParsed || []).forEach((campo, index) => {
+                if (!campo.paramKey) return;
+                const valorInicial = index === 0 ? this.obtenerValorDisparadorBranched(pregunta) : '';
+                this.$set(this.formHttpPregunta, campo.paramKey, valorInicial);
+            });
+
+            this.dialogHttpPregunta = true;
+        },
+        async ejecutarBusquedaPreguntaHttp() {
+            if (!this.preguntaHttpActiva) return;
+
+            this.loadingHttpPregunta = true;
+            try {
+                if (!this.preguntaHttpActiva.urlServicio) {
+                    throw new Error('URL de servicio no definida');
+                }
+                const params = { ...this.formHttpPregunta };
+                const response = await this.executeDynamicHttp({
+                    url: this.preguntaHttpActiva.urlServicio,
+                    method: this.preguntaHttpActiva._httpMethod,
+                    params,
+                    body: params
                 });
 
+                const data = this.extraerDataHttp(response);
+                const item = Array.isArray(data) ? (data[0] || {}) : (data || {});
+                const primerCampo = (this.preguntaHttpActiva._httpParamsParsed || []).find(campo => campo.paramKey);
+
+                this.preguntaHttpActiva._branchedTriggerValue = primerCampo
+                    ? (this.formHttpPregunta[primerCampo.paramKey] || '')
+                    : '';
+
+                this.preguntaHttpActiva._ramificaciones = (this.preguntaHttpActiva._ramificaciones || []).map(rama => ({
+                    ...rama,
+                    value: this.resolverPropiedadCaseInsensitive(item, rama.prop) || ''
+                }));
+
+                this.preguntaHttpActiva.respuesta = this.serializarRespuestaPregunta(this.preguntaHttpActiva);
+                this.dialogHttpPregunta = false;
+            } catch (error) {
+                this.$q.notify({
+                    type: 'negative',
+                    message: 'No se pudo obtener la información de la búsqueda dinámica'
+                });
+            } finally {
+                this.loadingHttpPregunta = false;
+            }
+        },
+        async executeDynamicHttp({ url, method = 'GET', params = null, body = null }) {
+            if (!url) throw new Error('URL de servicio no definida');
+            const fullUrl = `${process.env.API_URL}${url}`;
+            if (String(method).toUpperCase() === 'POST') {
+                return this.$axios.post(fullUrl, body || {});
+            }
+            return this.$axios.get(fullUrl, { params: params || {} });
+        },
+        extraerDataHttp(response) {
+            return response?.data?.data ?? response?.data ?? [];
+        },
+        mapearOpcionesHttp(data, labelField = 'nombre') {
+            const lista = Array.isArray(data) ? data : [];
+            return lista
+                .map(item => {
+                    const label = this.resolverPropiedadCaseInsensitive(item, labelField);
+                    if (label === undefined || label === null || label === '') return null;
+                    return {
+                        label: String(label),
+                        value: String(label),
+                        raw: item
+                    };
+                })
+                .filter(Boolean);
+        },
+        async cargarOpcionesSelectHttp(pregunta) {
+            if (!this.esPreguntaSelectHttpSimple(pregunta) || pregunta._httpLoaded) return;
+
+            pregunta._loadingHttp = true;
+            try {
+                const response = await this.executeDynamicHttp({
+                    url: pregunta.urlServicio,
+                    method: pregunta._httpMethod,
+                    params: null,
+                    body: null
+                });
+                pregunta.opciones = this.mapearOpcionesHttp(this.extraerDataHttp(response), pregunta._labelHttpField);
+                pregunta._httpLoaded = true;
+            } catch (error) {
+                this.$q.notify({
+                    type: 'negative',
+                    message: `No se pudieron cargar las opciones de ${pregunta.pregunta}`
+                });
+            } finally {
+                pregunta._loadingHttp = false;
+            }
+        },
+        async inicializarBranchedSelects(pregunta) {
+            if (!Array.isArray(pregunta._branchedSelects) || pregunta._branchedSelects.length === 0) return;
+            await this.cargarOpcionesBranchedSelect(pregunta, 0);
+
+            if (pregunta.respuesta) {
+                await this.hidratarBranchedSelectsDesdeRespuesta(pregunta);
+            } else {
+                pregunta.respuesta = this.serializarRespuestaPregunta(pregunta);
+            }
+        },
+        construirParamsBranchedSelect(pregunta, index) {
+            if (index === 0) return {};
+            const definicion = pregunta._httpParamsParsed[index] || {};
+            if (!definicion.paramKey) return {};
+
+            const ramaPadre = pregunta._branchedSelects[index - 1];
+            const valorPadre = this.resolverPropiedadCaseInsensitive(ramaPadre?.selectedOption?.raw || {}, definicion.valueKey);
+            if (valorPadre === undefined || valorPadre === null || valorPadre === '') return null;
+
+            return { [definicion.paramKey]: valorPadre };
+        },
+        async cargarOpcionesBranchedSelect(pregunta, index) {
+            const rama = pregunta._branchedSelects[index];
+            if (!rama) return;
+
+            const params = this.esHttpParamsWildcard(pregunta.httpParams)
+                ? {}
+                : this.construirParamsBranchedSelect(pregunta, index);
+            if (params === null) return;
+
+            rama.loading = true;
+            try {
+                const response = await this.executeDynamicHttp({
+                    url: pregunta.urlServicio,
+                    method: pregunta._httpMethod,
+                    params,
+                    body: params
+                });
+                this.$set(rama, 'options', this.mapearOpcionesHttp(this.extraerDataHttp(response), rama.valueField));
+            } catch (error) {
+                this.$set(rama, 'options', []);
+                this.$q.notify({
+                    type: 'negative',
+                    message: `No se pudieron cargar las opciones de ${rama.label}`
+                });
+            } finally {
+                rama.loading = false;
+            }
+        },
+        async hidratarBranchedSelectsDesdeRespuesta(pregunta) {
+            const labels = String(pregunta.respuesta || '')
+                .split('|')
+                .map(item => item.trim())
+                .filter(Boolean);
+
+            for (let index = 0; index < pregunta._branchedSelects.length; index++) {
+                const rama = pregunta._branchedSelects[index];
+                const label = labels[index] || '';
+                if (!label) break;
+
+                const option = rama.options.find(item => this.normalizarTextoComparacion(item.value) === this.normalizarTextoComparacion(label));
+                if (!option) {
+                    rama.value = label;
+                    break;
+                }
+
+                rama.value = option.value;
+                rama.selectedOption = option;
+
+                if (index < pregunta._branchedSelects.length - 1) {
+                    await this.cargarOpcionesBranchedSelect(pregunta, index + 1);
+                }
+            }
+        },
+        limpiarBranchedSelectChildren(pregunta, index) {
+            for (let idx = index + 1; idx < pregunta._branchedSelects.length; idx++) {
+                const rama = pregunta._branchedSelects[idx];
+                rama.value = '';
+                rama.selectedOption = null;
+                rama.options = [];
+            }
+        },
+        async onBranchedSelectChange(pregunta, index, value) {
+            const rama = pregunta._branchedSelects[index];
+            if (!rama) return;
+
+            rama.value = value;
+            rama.selectedOption = rama.options.find(item => item.value === value) || null;
+            this.limpiarBranchedSelectChildren(pregunta, index);
+
+            if (rama.selectedOption && index < pregunta._branchedSelects.length - 1) {
+                await this.cargarOpcionesBranchedSelect(pregunta, index + 1);
             }
 
+            pregunta.respuesta = this.serializarRespuestaPregunta(pregunta);
         },
 
         onUnidadChange() {
@@ -4278,6 +4749,9 @@ export default {
             this.modoSupervision = null;
             this.acreVigente = null;
             this.fechaAcreditacion = null;
+            this.dialogHttpPregunta = false;
+            this.preguntaHttpActiva = null;
+            this.formHttpPregunta = {};
         },
         normalizarModalidad(valor) {
             if (valor === null || valor === undefined) return null;
@@ -4882,7 +5356,7 @@ export default {
                 reglas.push(v => !!v || 'Este campo es obligatorio')
             }
 
-            if (pregunta.tipoDato1 === 'NUMBER') {
+            if (this.usaTipoNumero(pregunta)) {
                 reglas.push(v => !v || !isNaN(v) || 'Debe ingresar un número')
                 reglas.push(v => v === null || v === '' || Number(v) >= 0 || 'No se permiten valores negativos')
             }
@@ -4900,6 +5374,18 @@ export default {
                 reglas.push(val => {
                     if (!val) return true
                     return Number(val) <= max || `Máximo permitido: ${max}`
+                })
+            }
+
+            return reglas
+        },
+        validarPreguntaTextM(pregunta) {
+            const reglas = []
+
+            if (pregunta.obligatoria === 1) {
+                reglas.push(() => {
+                    const items = Array.isArray(pregunta?.respuesta) ? pregunta.respuesta : []
+                    return items.length > 0 || 'Este campo es obligatorio'
                 })
             }
 
@@ -4928,9 +5414,25 @@ export default {
                     if (!this.mostrarPregunta(p)) {
                         switch (p.tipoControl) {
                             case 'text':    p.respuesta = ''; break
+                            case 'textM':   p.respuesta = []; p._textMDraft = ''; break
                             case 'selectM': p.respuesta = []; break
                             case 'label':   p.respuesta = 2; break
                             default:        p.respuesta = null; break
+                        }
+                        if (this.esPreguntaBranchedInputSearch(p)) {
+                            p._branchedTriggerValue = ''
+                            p._ramificaciones = (p._ramificaciones || []).map(rama => ({
+                                ...rama,
+                                value: ''
+                            }))
+                        }
+                        if (this.esPreguntaBranchedSelects(p)) {
+                            p._branchedSelects = (p._branchedSelects || []).map(rama => ({
+                                ...rama,
+                                value: '',
+                                selectedOption: null,
+                                options: []
+                            }))
                         }
                     }
                     if (!this.mostrarPregunta2(p)) {
@@ -5384,6 +5886,25 @@ export default {
                 right: "auto",
                 bottom: "auto"
             };
+        },
+        fichaContexto() {
+            return [
+                { label: 'PERIODO', value: this.fichaPeriodo || this.anioSeleccionado || '' },
+                { label: 'RESPONSABLE SUPERVISIÓN', value: this.form.respSupervision || this.obtenerNombreCompletoSesion() || '' },
+                { label: 'FECHA REGISTRO', value: this.form.fechaRegistro || '' }
+            ];
+        },
+        tituloModalHttpPregunta() {
+            return this.preguntaHttpActiva?.pregunta || 'Búsqueda dinámica';
+        },
+        camposModalHttpPregunta() {
+            return (this.preguntaHttpActiva?._httpParamsParsed || [])
+                .filter(campo => !!campo.paramKey)
+                .map(campo => ({
+                    label: campo.label || campo.paramKey,
+                    paramKey: campo.paramKey,
+                    type: campo.type || 'text'
+                }));
         },
         codigosConAcreditacion() {
             return [
