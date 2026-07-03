@@ -2826,87 +2826,70 @@ export default {
 
             columnasTableAnexos: [
                 {
-                    name: "idAnexoCabecera",
-                    label: "ID",
-                    field: "idAnexoCabecera",
-                    format: (val) => String(val).padStart(5, '0'),
+                    name: "correlativoFormateado",
+                    label: "N°",
+                    field: "correlativoFormateado",
                     align: "center",
                     sortable: true,
-                    sort: (a, b) => parseInt(a, 10) - parseInt(b, 10),
-                    style: "width: 70px; min-width: 70px; max-width: 70px;",
+                    sort: (a, b, rowA, rowB) => Number(rowA.correlativo || 0) - Number(rowB.correlativo || 0),
+                    style: "width: 80px; min-width: 80px; max-width: 80px;",
                     classes: "ellipsis-cell"
                 },
                 {
-                    name: "periodo",
-                    label: "PERIODO",
-                    field: "periodo",
-                    align: "center",
+                    name: "nombreCompleto",
+                    label: "APELLIDOS Y NOMBRES",
+                    field: "nombreCompleto",
+                    align: "left",
                     sortable: true,
-                    style: "width: 100px; min-width: 100px; max-width: 100px;",
+                    style: "width: 280px; min-width: 280px;",
                     classes: "ellipsis-cell"
                 },
                 {
-                    name: "tipo",
-                    label: "TIPO",
-                    field: "tipo",
+                    name: "edad",
+                    label: "EDAD",
+                    field: "edad",
+                    align: "center",
+                    sortable: true,
+                    sort: (a, b) => Number(a || 0) - Number(b || 0),
+                    style: "width: 90px; min-width: 90px; max-width: 90px;",
+                    classes: "ellipsis-cell"
+                },
+                {
+                    name: "genero",
+                    label: "SEXO",
+                    field: "genero",
                     align: "center",
                     sortable: true,
                     style: "width: 120px; min-width: 120px; max-width: 120px;",
                     classes: "ellipsis-cell"
                 },
                 {
-                    name: "nombreUnidad",
-                    label: "UNIDAD",
-                    field: "nombreUnidad",
-                    align: "center",
-                    sortable: true,
-                    style: "width: 130px; min-width: 130px; max-width: 130px;",
-                    classes: "ellipsis-cell"
-                },
-                {
-                    name: "nombreServicio",
-                    label: "SERVICIO",
-                    field: "nombreServicio",
-                    align: "left",
-                    sortable: true,
-                    style: "width: 180px; min-width: 180px; max-width: 180px;",
-                    classes: "ellipsis-cell"
-                },
-                {
                     name: "nombreCentro",
-                    label: "CENTRO",
+                    label: "ZONA INTERVENCIÓN",
                     field: "nombreCentro",
+                    align: "left",
+                    sortable: true,
+                    style: "width: 180px; min-width: 180px;",
+                    classes: "ellipsis-cell"
+                },
+                {
+                    name: "fechaIngresoFormateada",
+                    label: "FECHA INGRESO",
+                    field: "fechaIngresoFormateada",
                     align: "center",
                     sortable: true,
+                    sort: (a, b, rowA, rowB) => String(rowA.fechaIngreso || '').localeCompare(String(rowB.fechaIngreso || '')),
                     style: "width: 130px; min-width: 130px; max-width: 130px;",
                     classes: "ellipsis-cell"
                 },
                 {
-                    name: "codigoAnexo2",
-                    label: "CÓDIGO",
-                    field: "codigoAnexo2",
+                    name: "fechaAbordajeFormateada",
+                    label: "FECHA DE ABORDAJE",
+                    field: "fechaAbordajeFormateada",
                     align: "center",
                     sortable: true,
-                    style: "width: 100px; min-width: 100px; max-width: 100px;",
-                    classes: "ellipsis-cell"
-                },
-                {
-                    name: "nombreAnexo",
-                    label: "INSTRUMENTO",
-                    field: "nombreAnexo",
-                    align: "left",
-                    sortable: true,
-                    style: "width: 300px; min-width: 300px; max-width: 300px;",
-                    classes: "ellipsis-cell"
-                },
-                {
-                    name: "correlativo",
-                    label: "CORRELATIVO",
-                    field: "correlativo",
-                    align: "center",
-                    sortable: true,
-                    sort: (a, b) => parseInt(a, 10) - parseInt(b, 10),
-                    style: "width: 100px; min-width: 100px; max-width: 100px;",
+                    sort: (a, b, rowA, rowB) => String(rowA.fechaAbordaje || '').localeCompare(String(rowB.fechaAbordaje || '')),
+                    style: "width: 150px; min-width: 150px; max-width: 150px;",
                     classes: "ellipsis-cell"
                 },
                 {
@@ -3184,6 +3167,13 @@ export default {
             const minuto = pad(fecha.getMinutes());
             const segundo = pad(fecha.getSeconds());
             return `${dia}/${mes}/${anio}T${hora}:${minuto}:${segundo}`;
+        },
+        formatearFechaTabla(valor) {
+            if (!valor) return '-';
+            const texto = String(valor).trim();
+            const match = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (!match) return '-';
+            return `${match[3]}-${match[2]}-${match[1]}`;
         },
         normalizarNombreValidacion(nombre) {
             if (nombre === null || nombre === undefined) return "";
@@ -6041,7 +6031,19 @@ export default {
             // Si no hay ningun filtro activo, devolver todos los registros
             if (!this.anioSeleccionado && !this.tipoFicha && !this.unidadSeleccionada &&
                 !this.servicioSeleccionado && !this.centroSeleccionado && !this.anexoSeleccionado) {
-                return base;
+                return base
+                    .slice()
+                    .sort((a, b) => Number(b.correlativo || 0) - Number(a.correlativo || 0))
+                    .map(row => ({
+                        ...row,
+                        correlativoFormateado: String(row.correlativo || 0).padStart(5, '0'),
+                        nombreCompleto: row.nombreCompleto || '-',
+                        edad: Number(row.edad || 0),
+                        genero: row.genero || '-',
+                        nombreCentro: row.nombreCentro || '-',
+                        fechaIngresoFormateada: this.formatearFechaTabla(row.fechaIngreso),
+                        fechaAbordajeFormateada: this.formatearFechaTabla(row.fechaAbordaje)
+                    }));
             }
 
             // Obtener nombres de los objetos seleccionados para comparacion exacta
@@ -6057,7 +6059,18 @@ export default {
                 if (this.centroSeleccionado && row.nombreCentro !== (centro?.nombreUnidad || '')) return false;
                 if (this.anexoSeleccionado && row.idAnexo !== this.anexoSeleccionado) return false;
                 return true;
-            });
+            })
+                .sort((a, b) => Number(b.correlativo || 0) - Number(a.correlativo || 0))
+                .map(row => ({
+                    ...row,
+                    correlativoFormateado: String(row.correlativo || 0).padStart(5, '0'),
+                    nombreCompleto: row.nombreCompleto || '-',
+                    edad: Number(row.edad || 0),
+                    genero: row.genero || '-',
+                    nombreCentro: row.nombreCentro || '-',
+                    fechaIngresoFormateada: this.formatearFechaTabla(row.fechaIngreso),
+                    fechaAbordajeFormateada: this.formatearFechaTabla(row.fechaAbordaje)
+                }));
         },
 
         codigosConTotales() {
