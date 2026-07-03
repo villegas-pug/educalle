@@ -162,7 +162,7 @@ export default {
                     condicion: this.filtroCondicion || ''
                 };
                 const { data } = await this.$axios.get(
-                    `${process.env.API_URL_SIGESU}/reporte/sigeir`,
+                    `${process.env.API_URL}/reporte/sigeir`,
                     { params }
                 );
                 this.dataTabla = Array.isArray(data) ? data : [];
@@ -188,7 +188,7 @@ export default {
                     condicion: this.filtroCondicion || ''
                 };
                 const { data, headers } = await this.$axios.get(
-                    `${process.env.API_URL_SIGESU}/reporte/sigeir/excel`,
+                    `${process.env.API_URL}/reporte/sigeir/excel`,
                     { params, responseType: 'blob' }
                 );
                 if (!data || data.size === 0) {

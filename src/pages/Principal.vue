@@ -88,7 +88,7 @@ export default {
 
             try {
                 const { data } = await this.$axios.get(
-                    `${process.env.API_URL_SIGESU}/reporte/indicadores-anexos-cabecera`
+                    `${process.env.API_URL}/reporte/indicadores-anexos-cabecera`
                 )
 
                 const filas = Array.isArray(data)

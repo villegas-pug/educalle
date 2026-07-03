@@ -3315,7 +3315,7 @@ export default {
         },
         async obtenerIdsPersonalValidaPersistidos(idAnexoCabecera, correlativo) {
             const res = await this.$axios.get(
-                `${process.env.API_URL_SIGESU}/obtenerRespuestas`,
+                `${process.env.API_URL}/obtenerRespuestas`,
                 {
                     params: {
                         idAnexoCabecera,
@@ -3471,7 +3471,7 @@ export default {
             }).onOk(async () => {
                 try {
                     await this.$axios.patch(
-                        `${process.env.API_URL_SIGESU}/saveEstadoConformidadAnexoCabecera?idAnexoCabecera=${row.idAnexoCabecera}&estado=0`
+                        `${process.env.API_URL}/saveEstadoConformidadAnexoCabecera?idAnexoCabecera=${row.idAnexoCabecera}&estado=0`
                     );
 
                     this.$q.notify({
@@ -3885,7 +3885,7 @@ export default {
                         anexo: this.form.idAnexo,
                         idServicio: this.form.idServicio
                     }),
-                    this.$axios.get(`${process.env.API_URL_SIGESU}/obtenerRespuestas`, {
+                    this.$axios.get(`${process.env.API_URL}/obtenerRespuestas`, {
                         params: {
                             idAnexoCabecera: this.form.idAnexoCabecera,
                             correlativo: this.form.correlativo
@@ -3934,7 +3934,7 @@ export default {
             try {
 
                 const res = await this.$axios.get(
-                    `${process.env.API_URL_SIGESU}/listarAnexosCabecera`
+                    `${process.env.API_URL}/listarAnexosCabecera`
                     //  'http://10.101.0.8:4004/api/ms-sigesu/listarAnexosCabecera'
                 )
 
@@ -4093,7 +4093,7 @@ export default {
             }
 
             const res = await this.$axios.get(
-                process.env.API_URL_SIGESU + "/centros/listar",
+                process.env.API_URL + "/centros/listar",
                 {
                     params: {
                         idServicio: this.servicioSeleccionado
@@ -4120,7 +4120,7 @@ export default {
             try {
 
                 const res = await axios.get(
-                    `${process.env.API_URL_SIGESU}/centros/listar`,
+                    `${process.env.API_URL}/centros/listar`,
 
                     {
                         params: {
@@ -4196,7 +4196,7 @@ export default {
 
             try {
                 const res = await this.$axios.get(
-                    `${process.env.API_URL_SIGESU}/anexo/listar`,
+                    `${process.env.API_URL}/anexo/listar`,
                     // 'http://10.101.0.8:4004/api/ms-sigesu/anexo/listar',
                     {
                         params: {
@@ -4229,7 +4229,7 @@ export default {
                 return [];
             }
 
-            const res = await this.$axios.get(`${process.env.API_URL_SIGESU}/findAllAnexoPregustasByParams2`, {
+            const res = await this.$axios.get(`${process.env.API_URL}/findAllAnexoPregustasByParams2`, {
                 params: {
                     anexo: anexoParam,
                     idServicio: servicioParam
@@ -4409,12 +4409,12 @@ export default {
                     payload.idCabecera = this.form.idAnexoCabecera;
                     payload.usuModifica = this.obtenerIdUsuarioSesion();
 
-                    await this.$axios.put(`${process.env.API_URL_SIGESU}/updateAnexoCompleto`, payload);
+                    await this.$axios.put(`${process.env.API_URL}/updateAnexoCompleto`, payload);
 
                     if (Number(this.form.reqObligatoriedad) !== 0) {
                         try {
                             await this.$axios.delete(
-                                `${process.env.API_URL_SIGESU}/resetValidacionAnexoCabecera?idAnexoCabecera=${this.form.idAnexoCabecera}`
+                                `${process.env.API_URL}/resetValidacionAnexoCabecera?idAnexoCabecera=${this.form.idAnexoCabecera}`
                             );
                             this.validacionReseteadaEnEdicion = true;
                         } catch (resetError) {
@@ -4422,7 +4422,7 @@ export default {
                     }
                 } else {
                     payload.usuRegistra = this.obtenerIdUsuarioSesion();
-                    await this.$axios.post(`${process.env.API_URL_SIGESU}/createAnexoCompleto`, payload);
+                    await this.$axios.post(`${process.env.API_URL}/createAnexoCompleto`, payload);
                 }
 
                 this.$q.notify({
@@ -4802,7 +4802,7 @@ export default {
         async cargarUnidades() {
             this.loadingUnidades = true;
             try {
-                const res = await axios.get(`${process.env.API_URL_SIGESU}/anexo/unidadesSugesu`);
+                const res = await axios.get(`${process.env.API_URL}/anexo/unidadesSugesu`);
                 //const res = await axios.get('http://10.101.0.8:4004/api/ms-sigesu/anexo/unidadesSugesu');
                 this.unidades = res.data.data || [];
                 this.autoseleccionarTipoOculto();
@@ -4819,7 +4819,7 @@ export default {
             if (!this.unidadSeleccionada) return;
             this.loadingServicios = true;
             try {
-                const res = await axios.get(`${process.env.API_URL_SIGESU}/anexo/unidades-serviciosSugesu`, {
+                const res = await axios.get(`${process.env.API_URL}/anexo/unidades-serviciosSugesu`, {
                     // const res = await axios.get('http://10.101.0.8:4004/api/ms-sigesu/anexo/unidades-serviciosSugesu', {
                     params: { idUnidadOrganica: this.unidadSeleccionada }
                 });
@@ -4837,7 +4837,7 @@ export default {
             if (!this.unidadSeleccionada || !this.servicioSeleccionado) return;
             this.loadingAnexos = true;
             try {
-                const res = await axios.get(`${process.env.API_URL_SIGESU}/anexo/anexos-por-servicioSugesu`, {
+                const res = await axios.get(`${process.env.API_URL}/anexo/anexos-por-servicioSugesu`, {
                     //  const res = await axios.get('http://10.101.0.8:4004/api/ms-sigesu/anexo/anexos-por-servicioSugesu', {
                     params: {
                         idUnidadOrganica: this.unidadSeleccionada,
@@ -4856,7 +4856,7 @@ export default {
             if (!this.unidadSeleccionada || !this.servicioSeleccionado || !this.anexoSeleccionado) return;
             this.loadingResultados = true;
             try {
-                const res = await axios.get(`${process.env.API_URL_SIGESU}/anexo/listar`, {
+                const res = await axios.get(`${process.env.API_URL}/anexo/listar`, {
                     // const res = await this.$axios.get('http://10.101.0.8:4004/api/ms-sigesu/anexo/listar', {
                     params: {
                         idUnidadOrganica: this.unidadSeleccionada,
@@ -4923,7 +4923,7 @@ export default {
             try {
 
                 const response = await this.$axios.get(
-                    `${process.env.API_URL_SIGESU}/anexo/pdf`,
+                    `${process.env.API_URL}/anexo/pdf`,
                     // "http://10.101.0.8:4004/api/ms-sigesu/anexo/pdf",
                     {
                         params: {
@@ -4949,7 +4949,7 @@ export default {
             }
         },
         getAudioUrl(file) {
-            return `${process.env.API_URL_SIGESU}/uploads/audios/${file}`;
+            return `${process.env.API_URL}/uploads/audios/${file}`;
         },
 
         abrirDialogAudios(row) {
@@ -4963,7 +4963,7 @@ export default {
             this.loadingAudios = true;
             try {
                 const res = await this.$axios.get(
-                    `${process.env.API_URL_SIGESU}/anexo-cabecera-audio/listar`,
+                    `${process.env.API_URL}/anexo-cabecera-audio/listar`,
                     {
                         params: { idAnexoCabecera: this.audioRow.idAnexoCabecera }
                     }
@@ -5118,7 +5118,7 @@ export default {
                     formData.append("estado", 1);
 
                     await this.$axios.put(
-                        `${process.env.API_URL_SIGESU}/anexo-cabecera-audio`,
+                        `${process.env.API_URL}/anexo-cabecera-audio`,
                         formData,
                         {
                             headers: { "Content-Type": "multipart/form-data" }
@@ -5131,7 +5131,7 @@ export default {
                     formData.append("idAnexoCabecera", this.audioRow.idAnexoCabecera);
 
                     await this.$axios.post(
-                        `${process.env.API_URL_SIGESU}/anexo-cabecera-audio`,
+                        `${process.env.API_URL}/anexo-cabecera-audio`,
                         formData,
                         {
                             headers: { "Content-Type": "multipart/form-data" }
@@ -5197,7 +5197,7 @@ export default {
                 this.loadingAudios = true;
                 try {
                     await this.$axios.delete(
-                        `${process.env.API_URL_SIGESU}/anexo-cabecera-audio`,
+                        `${process.env.API_URL}/anexo-cabecera-audio`,
                         {
                             params: { idAudio: row.idAudio }
                         }
@@ -5223,7 +5223,7 @@ export default {
         async reproducirAudio(row) {
             try {
                 const res = await this.$axios.get(
-                    `${process.env.API_URL_SIGESU}/anexo-cabecera-audio`,
+                    `${process.env.API_URL}/anexo-cabecera-audio`,
                     {
                         params: {
                             idAnexoCabecera: this.audioRow.idAnexoCabecera,
@@ -5259,7 +5259,7 @@ export default {
             try {
 
                 const res = await this.$axios.get(
-                    process.env.API_URL_SIGESU + "/responsables-supervision",
+                    process.env.API_URL + "/responsables-supervision",
                     {
                         params: {
                             abreviatura: "UNIDAD DE FORTALECIMIENTO DE SERVICIOS Y COORDINACIÓN TERRITORIAL"
@@ -5303,7 +5303,7 @@ export default {
                 }
 
                 const res = await this.$axios.get(
-                    process.env.API_URL_SIGESU + "/responsables-centro",
+                    process.env.API_URL + "/responsables-centro",
                     {
                         params: {
                             idUnidadOrganica
@@ -5440,7 +5440,7 @@ export default {
             if (!idUnidadOrganica) return
             try {
                 const res = await this.$axios.get(
-                    process.env.API_URL_SIGESU + "/responsables-centro",
+                    process.env.API_URL + "/responsables-centro",
                     {
                         params: {
                             idUnidadOrganica
@@ -5777,7 +5777,7 @@ export default {
                     this.$q.notify({ type: "warning", message: "No se pudo obtener el centro para cargar personal" });
                 } else {
                 const res = await this.$axios.get(
-                    process.env.API_URL_SIGESU + "/responsables-centro",
+                    process.env.API_URL + "/responsables-centro",
                     { params: { idUnidadOrganica } }
                 );
                 const data = res.data?.data || res.data || [];
@@ -5859,7 +5859,7 @@ export default {
             try {
                 const idPersonalParam = this.construirIdPersonalValidacion(item);
                 await this.$axios.patch(
-                    `${process.env.API_URL_SIGESU}/validatePersonalAnexoCabecera?idAnexoCabecera=${this.fichaAValidar.idAnexoCabecera}&idPersonal=${encodeURIComponent(idPersonalParam)}&password=${encodeURIComponent(item.contrasena)}`
+                    `${process.env.API_URL}/validatePersonalAnexoCabecera?idAnexoCabecera=${this.fichaAValidar.idAnexoCabecera}&idPersonal=${encodeURIComponent(idPersonalParam)}&password=${encodeURIComponent(item.contrasena)}`
                 );
 
                 item.validado = true;
@@ -5900,7 +5900,7 @@ export default {
 
             try {
                 await this.$axios.patch(
-                    `${process.env.API_URL_SIGESU}/saveConformidadAnexoCabecera?idAnexoCabecera=${this.fichaAValidar.idAnexoCabecera}&estado=2`
+                    `${process.env.API_URL}/saveConformidadAnexoCabecera?idAnexoCabecera=${this.fichaAValidar.idAnexoCabecera}&estado=2`
                 );
 
                 this.$q.notify({ type: "positive", message: "Ficha validada con conformidad" });
@@ -5939,7 +5939,7 @@ export default {
 
             try {
                 const res = await this.$axios.get(
-                    `${process.env.API_URL_SIGESU}/centros/listar`,
+                    `${process.env.API_URL}/centros/listar`,
                     {
                         params: {
                             idServicio: row.idServicio

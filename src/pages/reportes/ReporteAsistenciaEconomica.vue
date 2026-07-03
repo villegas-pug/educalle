@@ -135,7 +135,7 @@ export default {
                     nombreCentro: this.filtroCentro || ''
                 };
                 const { data } = await this.$axios.get(
-                    `${process.env.API_URL_SIGESU}/reporte/asistencia-economica`,
+                    `${process.env.API_URL}/reporte/asistencia-economica`,
                     { params }
                 );
                 this.dataTabla = Array.isArray(data) ? data : [];
@@ -159,7 +159,7 @@ export default {
                     nombreCentro: this.filtroCentro || ''
                 };
                 const { data, headers } = await this.$axios.get(
-                    `${process.env.API_URL_SIGESU}/reporte/asistencia-economica/excel`,
+                    `${process.env.API_URL}/reporte/asistencia-economica/excel`,
                     { params, responseType: 'blob' }
                 );
                 if (!data || data.size === 0) {
