@@ -4,10 +4,10 @@
                 <div class="q-pa-md">
 
                     <!-- FILTROS -->
-                    <div class="row q-col-gutter-md">
+                    <div class="row q-col-gutter-md justify-start">
 
                         <!-- AÑO -->
-                        <div class="col-12 col-md-4">
+                        <div class="col-12 col-sm-8 col-md-4 col-lg-3">
                             <q-select v-model="anioSeleccionado" :options="anios" label="PERIODO" option-label="anio"
                                 option-value="id" emit-value map-options outlined dense :loading="anioSeleccionado" />
                         </div>
@@ -19,29 +19,10 @@
                                 :loading="periodoSeleccionado" />
                         </div> -->
 
-                        <!-- TIPO -->
-                        <div class="col-12 col-md-4">
-                            <q-select v-model="tipoFicha" :options="tipos" label="TIPO" option-label="nombreTipo"
-                                option-value="id" emit-value map-options outlined dense :loading="tipoFicha" />
-                        </div>
-
-                        <!-- UNIDAD -->
-                        <div class="col-12 col-md-4">
-                            <q-select v-model="unidadSeleccionada" :options="unidades" label="UNIDAD"
-                                option-label="nombreUnidad" option-value="idUnidad" emit-value map-options outlined
-                                dense :loading="loadingUnidades" />
-                        </div>
-
-                        <!-- SERVICIO -->
-                        <div class="col-12 col-md-4">
-                            <q-select v-model="servicioSeleccionado" :options="servicios" label="SERVICIO"
-                                option-label="nombreServicio" option-value="idServicio" emit-value map-options outlined
-                                dense :disable="!unidadSeleccionada" :loading="loadingServicios" />
-                        </div>
                         <!-- CENTRO -->
-                        <div class="col-12 col-md-4">
+                        <div class="col-12 col-sm-8 col-md-5 col-lg-4">
                             <q-input v-model="centroNombre" label="ESPACIO DE INTERVENCIÓN" outlined dense readonly
-                                :disable="!unidadSeleccionada">
+                                :disable="!puedeSeleccionarEspacioIntervencion">
                                 <template v-slot:append>
 
                                     <!-- BOTÓN LIMPIAR -->
@@ -50,16 +31,10 @@
 
                                     <!-- BOTÓN BUSCAR -->
                                     <q-btn icon="search" flat round dense color="primary" @click="abrirDialogCentros"
-                                        :disable="!unidadSeleccionada" />
+                                        :disable="!puedeSeleccionarEspacioIntervencion" />
 
                                 </template>
                             </q-input>
-                        </div>
-                        <!-- ANEXO -->
-                        <div class="col-12 col-md-4">
-                            <q-select v-model="anexoSeleccionado" :options="anexos" label="INSTRUMENTO"
-                                :option-label="formatAnexoLabel" option-value="idAnexo" emit-value map-options outlined
-                                dense :disable="!servicioSeleccionado" :loading="loadingAnexos" />
                         </div>
 
                     </div>
@@ -2767,9 +2742,8 @@ export default {
             anios: [
                 { id: '20261', anio: '2026 - 1' },
                 { id: '20262', anio: '2026 - 2' },
-                { id: '20271', anio: '2027 - 1' },
+                { id: '20271', anio: '2027 - 1' }
                 // { id: '2028', anio: '2028' },
-                { id: null, anio: 'TODOS' }
             ],
             modoSupervision: null,
             modalidades: [
@@ -2785,8 +2759,7 @@ export default {
             tipoFicha: null,
             tipos: [
                 { id: 'PROGRAMADA', nombreTipo: 'PROGRAMADA' },
-                { id: 'INOPINADA', nombreTipo: 'INOPINADA' },
-                { id: null, nombreTipo: 'TODOS' }
+                { id: 'INOPINADA', nombreTipo: 'INOPINADA' }
             ],
             estadosMap: {
                 1: { label: 'REGISTRADO', color: 'positive', textColor: 'white', icon: 'check_circle' },
@@ -3938,22 +3911,17 @@ export default {
             }
 
         },
-        resetearFiltrosPrincipal() {
-            // Orden controlado para evitar estados intermedios inconsistentes por watchers
+        async resetearFiltrosPrincipal() {
             this.filtroTabla = "";
-
             this.anioSeleccionado = null;
-            this.tipoFicha = null;
+            this.autoseleccionarTipoOculto();
 
-            this.unidadSeleccionada = null;
-            this.servicioSeleccionado = null;
-            this.centroSeleccionado = null;
-            this.centroNombre = "";
-            this.anexoSeleccionado = null;
+            this.limpiarCentro();
 
-            this.servicios = [];
-            this.centros = [];
-            this.anexos = [];
+            if (!this.unidadSeleccionada && !this.autoseleccionarUnidadOculta()) return;
+            if (this.unidadSeleccionada && !this.servicioSeleccionado) await this.cargarServicios();
+            if (this.servicioSeleccionado && !this.anexoSeleccionado) await this.cargarAnexos();
+            if (this.servicioSeleccionado && this.centros.length === 0) await this.cargarCentros();
         },
         /* ========================================
            ABRIR DIALOG
@@ -3977,7 +3945,7 @@ export default {
             if (!this.unidadSeleccionada) {
                 this.$q.notify({
                     type: 'warning',
-                    message: 'Debe seleccionar: UNIDAD'
+                    message: 'No se pudo resolver la UNIDAD'
                 })
                 return
             }
@@ -3985,7 +3953,7 @@ export default {
             if (!this.servicioSeleccionado) {
                 this.$q.notify({
                     type: 'warning',
-                    message: 'Debe seleccionar: SERVICIO'
+                    message: 'No se pudo resolver el SERVICIO'
                 })
                 return
             }
@@ -4001,7 +3969,7 @@ export default {
             if (!this.anexoSeleccionado) {
                 this.$q.notify({
                     type: 'warning',
-                    message: 'Debe seleccionar: INSTRUMENTO'
+                    message: 'No se pudo resolver el INSTRUMENTO'
                 })
                 return
             }
@@ -4019,13 +3987,13 @@ export default {
             )
 
             // llenar form
-            this.form.idUnidad = unidad?.idUnidad || null
+            this.form.idUnidad = unidad?.idUnidad ?? this.unidadSeleccionada
             this.form.nombreUnidad = unidad?.nombreUnidad || ''
 
-            this.form.idServicio = servicio?.idServicio || null
+            this.form.idServicio = servicio?.idServicio ?? this.servicioSeleccionado
             this.form.nombreServicio = servicio?.nombreServicio || ''
 
-            this.form.idAnexo = anexo?.idAnexo || null
+            this.form.idAnexo = anexo?.idAnexo ?? this.anexoSeleccionado
             this.form.nombreAnexo = anexo?.nombreAnexo || ''
             this.form.codigoAnexo2 = anexo?.codigoAnexo2 || ''
             this.form.fechaRegistro = new Date().toISOString().substring(0, 10)
@@ -4052,13 +4020,16 @@ export default {
             this.cargarPreguntas()
         },
         async cargarCentros() {
+            if (!this.servicioSeleccionado) {
+                this.centros = [];
+                return;
+            }
 
             const res = await this.$axios.get(
                 process.env.API_URL_SIGESU + "/centros/listar",
                 {
                     params: {
-                        idServicio: this.servicioSeleccionado,
-                        tipoCentro: this.tipoCentroSeleccionado // 1 básico, 2 especializado, 3 urgencia
+                        idServicio: this.servicioSeleccionado
                     }
                 }
             )
@@ -4067,10 +4038,10 @@ export default {
         },
         async abrirDialogCentros() {
 
-            if (!this.unidadSeleccionada) {
+            if (!this.puedeSeleccionarEspacioIntervencion) {
                 this.$q.notify({
                     type: "warning",
-                    message: "Debe seleccionar una Unidad"
+                    message: "No se pudo resolver la unidad y el servicio"
                 })
                 return
             }
@@ -4086,8 +4057,7 @@ export default {
 
                     {
                         params: {
-                            idServicio: this.servicioSeleccionado,
-                            tipoCentro: this.tipoCentroSeleccionado
+                            idServicio: this.servicioSeleccionado
                         }
                     }
                 )
@@ -4700,6 +4670,53 @@ export default {
             pregunta.respuesta = this.serializarRespuestaPregunta(pregunta);
         },
 
+        obtenerOpcionesValidas(lista, valueKey) {
+            return (Array.isArray(lista) ? lista : []).filter(item => {
+                const value = item?.[valueKey];
+                return value !== null && value !== undefined && value !== '';
+            });
+        },
+
+        obtenerOpcionUnicaValida(lista, valueKey) {
+            const opciones = this.obtenerOpcionesValidas(lista, valueKey);
+            return opciones.length === 1 ? opciones[0] : null;
+        },
+
+        autoseleccionarTipoOculto() {
+            if (this.tipoFicha) return;
+            const tipo = this.obtenerOpcionUnicaValida(this.tipos, 'id');
+            if (tipo) {
+                this.tipoFicha = tipo.id;
+            }
+        },
+
+        autoseleccionarUnidadOculta() {
+            if (this.unidadSeleccionada) return false;
+            const unidad = this.obtenerOpcionUnicaValida(this.unidades, 'idUnidad');
+            if (!unidad) return false;
+
+            this.unidadSeleccionada = unidad.idUnidad;
+            return true;
+        },
+
+        autoseleccionarServicioOculto() {
+            if (this.servicioSeleccionado) return false;
+            const servicio = this.obtenerOpcionUnicaValida(this.servicios, 'idServicio');
+            if (!servicio) return false;
+
+            this.servicioSeleccionado = servicio.idServicio;
+            return true;
+        },
+
+        autoseleccionarAnexoOculto() {
+            if (this.anexoSeleccionado) return false;
+            const anexo = this.obtenerOpcionUnicaValida(this.anexos, 'idAnexo');
+            if (!anexo) return false;
+
+            this.anexoSeleccionado = anexo.idAnexo;
+            return true;
+        },
+
         onUnidadChange() {
             this.servicioSeleccionado = null
             this.centroSeleccionado = null
@@ -4721,7 +4738,8 @@ export default {
                 const res = await axios.get(`${process.env.API_URL_SIGESU}/anexo/unidadesSugesu`);
                 //const res = await axios.get('http://10.101.0.8:4004/api/ms-sigesu/anexo/unidadesSugesu');
                 this.unidades = res.data.data || [];
-                this.unidades.push({ idUnidad: null, nombreUnidad: 'TODOS' });
+                this.autoseleccionarTipoOculto();
+                this.autoseleccionarUnidadOculta();
             } catch (error) {
                 this.$q.notify({ type: 'negative', message: 'Error al cargar unidades' });
             } finally {
@@ -4739,6 +4757,7 @@ export default {
                     params: { idUnidadOrganica: this.unidadSeleccionada }
                 });
                 this.servicios = res.data.data || [];
+                this.autoseleccionarServicioOculto();
             } catch (error) {
                 this.$q.notify({ type: 'negative', message: 'Error al cargar servicios' });
             } finally {
@@ -4759,6 +4778,7 @@ export default {
                     }
                 });
                 this.anexos = res.data.data || [];
+                this.autoseleccionarAnexoOculto();
             } catch (error) {
                 this.$q.notify({ type: 'negative', message: 'Error al cargar anexos' });
             } finally {
@@ -5877,9 +5897,9 @@ export default {
     },
 
 
-    created() {
+    async created() {
 
-        this.cargarUnidades();
+        await this.cargarUnidades();
         this.cargarTablaAnexos();
         this.cargarResponsables()
     },
@@ -5887,23 +5907,27 @@ export default {
         this.removerEventosArrastreFooterFicha();
     },
     watch: {
-        unidadSeleccionada() {
+        async unidadSeleccionada() {
             this.servicioSeleccionado = null;
             this.anexoSeleccionado = null;
             this.servicios = [];
             this.anexos = [];
-            if (this.unidadSeleccionada) this.cargarServicios();
-
             this.centroSeleccionado = null
             this.centroNombre = ""
+
+            if (this.unidadSeleccionada) await this.cargarServicios();
         },
-        servicioSeleccionado() {
-            this.cargarCentros()
+        async servicioSeleccionado() {
             this.anexoSeleccionado = null;
             this.anexos = [];
             this.centroSeleccionado = null
             this.centroNombre = ""
-            if (this.servicioSeleccionado) this.cargarAnexos();
+            this.centros = [];
+
+            if (this.servicioSeleccionado) {
+                await this.cargarCentros();
+                await this.cargarAnexos();
+            }
         },
         acreVigente(val) {
             if (val !== '1') {
@@ -5913,6 +5937,10 @@ export default {
 
     },
     computed: {
+
+        puedeSeleccionarEspacioIntervencion() {
+            return !!this.unidadSeleccionada && !!this.servicioSeleccionado;
+        },
 
         fichaFooterFloatingStyle() {
             if (
