@@ -486,6 +486,63 @@
                                                                 </div>
                                                             </template>
 
+                                                            <template v-else-if="pregunta.tipoControl === 'timeRangeM'">
+                                                                <template v-if="esVisualizacion">
+                                                                    <div v-if="pregunta.respuesta && pregunta.respuesta.length" class="ficha-tags">
+                                                                        <span v-for="item in pregunta.respuesta" :key="item" class="ficha-tag">{{ item }}</span>
+                                                                    </div>
+                                                                    <span v-else class="ficha-valor">—</span>
+                                                                </template>
+                                                                <div v-else class="ficha-textm" :style="getPreguntaControlStyle(pregunta)">
+                                                                    <div class="ficha-textm__input-row">
+                                                                        <q-input
+                                                                            outlined
+                                                                            dense
+                                                                            class="ficha-textm__input"
+                                                                            type="time"
+                                                                            :value="pregunta._timeRangeStartDraft"
+                                                                            :style="getPreguntaControlStyle(pregunta)"
+                                                                            :readonly="esCampoSoloLectura(pregunta)"
+                                                                            @input="val => actualizarTimeRangeDraft(pregunta, 'start', val)"
+                                                                            @keyup.enter.prevent="agregarItemTimeRangeM(pregunta)"
+                                                                        />
+                                                                        <q-input
+                                                                            outlined
+                                                                            dense
+                                                                            class="ficha-textm__input"
+                                                                            type="time"
+                                                                            :value="pregunta._timeRangeEndDraft"
+                                                                            :style="getPreguntaControlStyle(pregunta)"
+                                                                            :readonly="esCampoSoloLectura(pregunta)"
+                                                                            :rules="validarPreguntaTimeRangeM(pregunta)"
+                                                                            @input="val => actualizarTimeRangeDraft(pregunta, 'end', val)"
+                                                                            @keyup.enter.prevent="agregarItemTimeRangeM(pregunta)"
+                                                                        />
+                                                                        <q-btn
+                                                                            dense
+                                                                            round
+                                                                            unelevated
+                                                                            color="primary"
+                                                                            icon="add"
+                                                                            :disable="esCampoSoloLectura(pregunta)"
+                                                                            @click="agregarItemTimeRangeM(pregunta)"
+                                                                        />
+                                                                    </div>
+                                                                    <div v-if="pregunta.respuesta && pregunta.respuesta.length" class="ficha-tags q-mt-sm">
+                                                                        <q-chip
+                                                                            v-for="(item, itemIndex) in pregunta.respuesta"
+                                                                            :key="`${pregunta.idPregunta}-timerangem-${itemIndex}-${item}`"
+                                                                            :removable="!esCampoSoloLectura(pregunta)"
+                                                                            color="blue-1"
+                                                                            text-color="primary"
+                                                                            @remove="eliminarItemTimeRangeM(pregunta, itemIndex)"
+                                                                        >
+                                                                            {{ item }}
+                                                                        </q-chip>
+                                                                    </div>
+                                                                </div>
+                                                            </template>
+
                                                             <template v-else>
                                                                 <template v-if="esVisualizacion">
                                                                     <span class="ficha-valor">{{ obtenerValorTextoPregunta(pregunta) || '—' }}</span>
@@ -3828,6 +3885,7 @@ export default {
                 case 'inputSearch':
                     return respuestaRaw || '';
                 case 'textM':
+                case 'timeRangeM':
                     if (Array.isArray(respuestaRaw)) return respuestaRaw;
                     if (!respuestaRaw) return [];
                     return String(respuestaRaw).split('|').map(item => item.trim()).filter(Boolean);
@@ -3868,7 +3926,9 @@ export default {
                 respuesta: null,
                 respuesta2: null,
                 otroTexto: null,
-                _textMDraft: ''
+                _textMDraft: '',
+                _timeRangeStartDraft: '',
+                _timeRangeEndDraft: ''
             };
 
             if (this.esPreguntaBranchedInputSearch(pregunta)) {
@@ -3893,7 +3953,7 @@ export default {
 
             pregunta.respuesta = this.normalizarRespuestaPregunta(pregunta, preguntaRaw.respuesta);
             pregunta.respuesta2 = this.inicializarRespuesta2Pregunta(pregunta, preguntaRaw.respuesta2);
-            if (String(pregunta.tipoControl || '').toLowerCase() === 'textm' && !Array.isArray(pregunta.respuesta)) {
+            if ([ 'textm', 'timerangem' ].includes(String(pregunta.tipoControl || '').toLowerCase()) && !Array.isArray(pregunta.respuesta)) {
                 pregunta.respuesta = [];
             }
 
@@ -4389,6 +4449,12 @@ export default {
                     : null;
             }
 
+            if (String(pregunta?.tipoControl || '').toLowerCase() === 'timerangem') {
+                return Array.isArray(pregunta.respuesta) && pregunta.respuesta.length
+                    ? pregunta.respuesta.join('|')
+                    : null;
+            }
+
             if (Array.isArray(pregunta.respuesta)) {
                 if (pregunta.respuesta.includes('OTRO') || pregunta.respuesta.includes('OTROS')) {
                     return pregunta.respuesta
@@ -4616,6 +4682,32 @@ export default {
             this.$set(pregunta, '_textMDraft', '');
         },
         eliminarItemTextM(pregunta, index) {
+            if (this.esCampoSoloLectura(pregunta)) return;
+            const items = Array.isArray(pregunta.respuesta) ? [...pregunta.respuesta] : [];
+            items.splice(index, 1);
+            this.$set(pregunta, 'respuesta', items);
+        },
+        actualizarTimeRangeDraft(pregunta, tipo, value) {
+            if (tipo === 'start') {
+                this.$set(pregunta, '_timeRangeStartDraft', value);
+                return;
+            }
+            this.$set(pregunta, '_timeRangeEndDraft', value);
+        },
+        agregarItemTimeRangeM(pregunta) {
+            if (this.esCampoSoloLectura(pregunta)) return;
+
+            const inicio = String(pregunta._timeRangeStartDraft || '').trim();
+            const fin = String(pregunta._timeRangeEndDraft || '').trim();
+            if (!inicio || !fin) return;
+
+            const items = Array.isArray(pregunta.respuesta) ? [...pregunta.respuesta] : [];
+            items.push(`${inicio} - ${fin}`);
+            this.$set(pregunta, 'respuesta', items);
+            this.$set(pregunta, '_timeRangeStartDraft', '');
+            this.$set(pregunta, '_timeRangeEndDraft', '');
+        },
+        eliminarItemTimeRangeM(pregunta, index) {
             if (this.esCampoSoloLectura(pregunta)) return;
             const items = Array.isArray(pregunta.respuesta) ? [...pregunta.respuesta] : [];
             items.splice(index, 1);
@@ -5609,6 +5701,25 @@ export default {
 
             return reglas
         },
+        validarPreguntaTimeRangeM(pregunta) {
+            const reglas = []
+
+            if (pregunta.obligatoria === 1) {
+                reglas.push(() => {
+                    const items = Array.isArray(pregunta?.respuesta) ? pregunta.respuesta : []
+                    return items.length > 0 || 'Este campo es obligatorio'
+                })
+            }
+
+            reglas.push(() => {
+                const inicio = String(pregunta?._timeRangeStartDraft || '').trim()
+                const fin = String(pregunta?._timeRangeEndDraft || '').trim()
+                if (!inicio && !fin) return true
+                return !!inicio && !!fin || 'Debe completar el rango de horas'
+            })
+
+            return reglas
+        },
         validarPregunta2(pregunta) {
 
             const reglas = []
@@ -5633,6 +5744,7 @@ export default {
                         switch (p.tipoControl) {
                             case 'text':    p.respuesta = ''; break
                             case 'textM':   p.respuesta = []; p._textMDraft = ''; break
+                            case 'timeRangeM': p.respuesta = []; p._timeRangeStartDraft = ''; p._timeRangeEndDraft = ''; break
                             case 'selectM': p.respuesta = []; break
                             case 'label':   p.respuesta = 2; break
                             default:        p.respuesta = null; break
