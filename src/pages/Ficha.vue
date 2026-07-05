@@ -554,16 +554,29 @@
                                                                     v-else
                                                                     outlined
                                                                     dense
+                                                                    bottom-slots
                                                                     :value="obtenerValorTextoPregunta(pregunta)"
                                                                     :type="obtenerTipoInputPregunta(pregunta)"
                                                                     :style="getPreguntaControlStyle(pregunta)"
+                                                                    :maxlength="getPreguntaMaxLength(pregunta)"
                                                                     :min="usaTipoNumero(pregunta) ? 0 : null"
                                                                     :autogrow="usaAutogrowPregunta(pregunta)"
                                                                     :readonly="esCampoSoloLectura(pregunta)"
                                                                     :rules="validarPregunta(pregunta)"
+                                                                    :error="tieneErrorLongitudPregunta(pregunta)"
+                                                                    :error-message="getMensajeErrorLongitudPregunta(pregunta)"
                                                                     input-style="resize: none; overflow-wrap: anywhere; word-break: break-word;"
+                                                                    @keydown="event => manejarKeydownRespuestaTextoPregunta(pregunta, event)"
+                                                                    @paste="event => manejarPasteRespuestaTextoPregunta(pregunta, event)"
                                                                     @input="val => actualizarRespuestaTextoPregunta(pregunta, val)"
-                                                                />
+                                                                >
+                                                                    <template v-if="debeMostrarContadorPregunta(pregunta) && !usaAutogrowPregunta(pregunta)" v-slot:append>
+                                                                        <span class="ficha-input-counter">{{ getContadorTextoPregunta(pregunta) }}</span>
+                                                                    </template>
+                                                                </q-input>
+                                                                <div v-if="debeMostrarContadorPregunta(pregunta) && usaAutogrowPregunta(pregunta)" class="ficha-input-meta-row">
+                                                                    <span v-if="debeMostrarContadorPregunta(pregunta) && usaAutogrowPregunta(pregunta)" class="ficha-input-counter">{{ getContadorTextoPregunta(pregunta) }}</span>
+                                                                </div>
                                                             </template>
                                                         </div>
                                                     </div>
@@ -1437,6 +1450,33 @@
 
 .ficha-textm__input {
     flex: 1;
+}
+
+.ficha-input-counter-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 4px;
+}
+
+.ficha-input-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.ficha-input-counter {
+    font-size: 0.75rem;
+    line-height: 1;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.ficha-input-error-text {
+    font-size: 0.75rem;
+    line-height: 1.2;
+    color: #c10015;
 }
 
 .ficha-campo--branched {
@@ -3862,6 +3902,129 @@ export default {
         esPreguntaRedirected(pregunta) {
             return String(pregunta?.modoControl || '').toLowerCase() === 'redirected';
         },
+        esPreguntaTextualPrincipal(pregunta) {
+            const tipo = String(pregunta?.tipoControl || '').toLowerCase();
+            return !this.esVistaBranched(pregunta) && (tipo === 'text' || tipo === 'textarea');
+        },
+        esPreguntaConRangoLongitudPrincipal(pregunta) {
+            const tipo = String(pregunta?.tipoControl || '').toLowerCase();
+            return !this.esVistaBranched(pregunta) && (tipo === 'text' || tipo === 'textarea' || tipo === 'number');
+        },
+        getRangoLongitudPregunta(pregunta) {
+            if (!this.esPreguntaConRangoLongitudPrincipal(pregunta) || pregunta?.rangoLongitud === null || pregunta?.rangoLongitud === undefined) {
+                return null;
+            }
+
+            const parseado = this.parseJsonFlexible(pregunta.rangoLongitud);
+            if (!parseado || typeof parseado !== 'object') return null;
+
+            const minRaw = this.resolverPropiedadCaseInsensitive(parseado, 'min');
+            const maxRaw = this.resolverPropiedadCaseInsensitive(parseado, 'max');
+            const min = Number(minRaw);
+            const max = Number(maxRaw);
+
+            return {
+                min: Number.isFinite(min) && min >= 0 ? min : null,
+                max: Number.isFinite(max) && max >= 0 ? max : null
+            };
+        },
+        usaReqAlfNum(pregunta) {
+            return this.esPreguntaTextualPrincipal(pregunta) && Number(pregunta?.reqAlfNum) === 1;
+        },
+        debeMostrarContadorPregunta(pregunta) {
+            return this.esPreguntaTextualPrincipal(pregunta) && Number(pregunta?.reqContador) === 1;
+        },
+        getLongitudTextoPregunta(pregunta) {
+            const valor = this.obtenerValorTextoPregunta(pregunta);
+            return valor === null || valor === undefined ? 0 : String(valor).length;
+        },
+        getContadorTextoPregunta(pregunta) {
+            const rango = this.getRangoLongitudPregunta(pregunta);
+            const max = rango && rango.max !== null ? rango.max : 0;
+            return `${this.getLongitudTextoPregunta(pregunta)}/${max}`;
+        },
+        getPreguntaMaxLength(pregunta) {
+            const rango = this.getRangoLongitudPregunta(pregunta);
+            return rango && rango.max !== null ? rango.max : null;
+        },
+        tieneErrorLongitudPregunta(pregunta) {
+            return !!this.getMensajeErrorLongitudPregunta(pregunta);
+        },
+        getMensajeErrorLongitudPregunta(pregunta) {
+            if (!this.esPreguntaConRangoLongitudPrincipal(pregunta)) return '';
+
+            const rango = this.getRangoLongitudPregunta(pregunta);
+            if (!rango) return '';
+
+            const longitud = this.getLongitudTextoPregunta(pregunta);
+            if (longitud === 0) return '';
+            if (rango.min !== null && longitud < rango.min) return `Min. ${rango.min} car.`;
+            if (rango.max !== null && longitud > rango.max) return `Max. ${rango.max} car.`;
+            return '';
+        },
+        sanitizarValorTextoPregunta(pregunta, value) {
+            let valorTexto = value === null || value === undefined ? '' : String(value);
+
+            if (this.usaTipoNumero(pregunta)) {
+                valorTexto = valorTexto.replace(/\D/g, '');
+            } else if (this.usaReqAlfNum(pregunta)) {
+                valorTexto = valorTexto.replace(/[^0-9A-Za-zÁÉÍÓÚáéíóúÑñÜü]/g, '');
+            }
+
+            const rango = this.getRangoLongitudPregunta(pregunta);
+            if (rango && rango.max !== null) {
+                valorTexto = valorTexto.slice(0, rango.max);
+            }
+
+            return valorTexto;
+        },
+        manejarKeydownRespuestaTextoPregunta(pregunta, event) {
+            if (!this.esPreguntaConRangoLongitudPrincipal(pregunta) || this.esCampoSoloLectura(pregunta)) return;
+
+            if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+            const teclasPermitidas = [
+                'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+                'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'
+            ];
+            if (teclasPermitidas.includes(event.key)) return;
+
+            const valorActual = this.obtenerValorTextoPregunta(pregunta);
+            const longitudActual = valorActual === null || valorActual === undefined ? 0 : String(valorActual).length;
+            const rango = this.getRangoLongitudPregunta(pregunta);
+
+            if (this.usaTipoNumero(pregunta)) {
+                if (!/^\d$/.test(event.key)) {
+                    event.preventDefault();
+                    return;
+                }
+            } else if (this.usaReqAlfNum(pregunta) && !/^[0-9A-Za-zÁÉÍÓÚáéíóúÑñÜü]$/.test(event.key)) {
+                event.preventDefault();
+                return;
+            }
+
+            const tieneSeleccion = event.target
+                && typeof event.target.selectionStart === 'number'
+                && typeof event.target.selectionEnd === 'number'
+                && event.target.selectionStart !== event.target.selectionEnd;
+
+            if (rango && rango.max !== null && longitudActual >= rango.max && !tieneSeleccion) {
+                event.preventDefault();
+            }
+        },
+        manejarPasteRespuestaTextoPregunta(pregunta, event) {
+            if (!this.esPreguntaConRangoLongitudPrincipal(pregunta) || this.esCampoSoloLectura(pregunta)) return;
+
+            const clipboard = event.clipboardData || window.clipboardData;
+            if (!clipboard) return;
+
+            event.preventDefault();
+
+            const pegado = clipboard.getData('text') || '';
+            const actual = this.obtenerValorTextoPregunta(pregunta);
+            const valor = `${actual === null || actual === undefined ? '' : String(actual)}${pegado}`;
+            this.actualizarRespuestaTextoPregunta(pregunta, valor);
+        },
         inicializarRespuesta2Pregunta(pregunta, respuesta2) {
             if (respuesta2 !== undefined && respuesta2 !== null) return respuesta2;
             switch (pregunta.tipoControl2) {
@@ -4662,15 +4825,14 @@ export default {
             if (this.esPreguntaRedirected(pregunta)) {
                 return this.getRefValue(pregunta._redirectRef);
             }
-            return pregunta?.respuesta || '';
+            return pregunta?.respuesta === null || pregunta?.respuesta === undefined ? '' : pregunta.respuesta;
         },
         actualizarRespuestaPregunta(pregunta, value) {
             this.$set(pregunta, 'respuesta', value);
         },
         actualizarRespuestaTextoPregunta(pregunta, value) {
-            const valorNormalizado = this.usaTipoNumero(pregunta)
-                ? this.normalizarNumeroNoNegativo(value)
-                : value;
+            const valorTexto = this.sanitizarValorTextoPregunta(pregunta, value);
+            const valorNormalizado = valorTexto === '' ? (this.usaTipoNumero(pregunta) ? null : '') : valorTexto;
             this.$set(pregunta, 'respuesta', valorNormalizado);
         },
         actualizarDraftTextM(pregunta, value) {
