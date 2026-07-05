@@ -1,8 +1,9 @@
 <template>
     <q-layout view="lHh Lpr lFf">
-        <q-header>
-            <q-toolbar>
+        <q-header class="app-header">
+            <q-toolbar class="app-toolbar">
                 <q-btn
+                    class="app-toolbar__menu"
                     flat
                     dense
                     round
@@ -11,28 +12,23 @@
                     @click="leftDrawerOpen = !leftDrawerOpen"
                 />
 
-                <q-toolbar-title>
-                    <img style="width: 360px;" alt="Logo INABIF"
-                         src="https://srvapp02.inabif.gob.pe/intranet/Img/LOGO_INABIF_2020.png">
+                <q-toolbar-title class="app-toolbar__title">
+                    <img
+                        class="app-toolbar__logo"
+                        alt="Logo INABIF"
+                        src="https://srvapp02.inabif.gob.pe/intranet/Img/LOGO_INABIF_2020.png"
+                    >
                 </q-toolbar-title>
 
-                <div class="row text-right">
-                    <div class="col-10">
-                        <strong>{{ this.$q.localStorage.getItem('sgs-nombreCompleto') }}</strong>
-                        <br>
-                        <span style="font-size: 85%;">{{ this.$q.localStorage.getItem('sgs-nombreUnidad') }}</span>
-                        <br>
-<!--                        <span style="font-size: 85%;">{{ this.$q.localStorage.getItem('sgs-idUsuario') }}</span>-->
-<!--                        <br>-->
-<!--                        <span style="font-size: 85%;">{{ this.$q.localStorage.getItem('sgs-numeroDocumento') }}</span>-->
-                    </div>
-                    <div class="col-2">
-                        <q-btn icon="exit_to_app" @click="salir" flat round
+                <div class="app-toolbar__identity">
+                    <strong class="app-toolbar__name">{{ this.$q.localStorage.getItem('sgs-nombreCompleto') }}</strong>
+                    <span class="app-toolbar__unit">{{ this.$q.localStorage.getItem('sgs-nombreUnidad') }}</span>
+                </div>
 
-                               style="font-size: 18px; transform: scaleX(-1);">
-                            <q-tooltip>REGRESAR</q-tooltip>
-                        </q-btn>
-                    </div>
+                <div class="app-toolbar__actions">
+                    <q-btn icon="exit_to_app" @click="salir" flat round class="app-toolbar__logout">
+                        <q-tooltip>REGRESAR</q-tooltip>
+                    </q-btn>
                 </div>
             </q-toolbar>
         </q-header>
@@ -129,9 +125,11 @@
         </q-page-container>
 
         <q-footer class="app-footer">
-            <div class="app-footer-texto">
-                &copy; {{ currentYear }} {{ organizationName }} | Todos los derechos reservados
-                <span v-if="showVersion" class="app-footer-version">(versión {{ appVersion }})</span>
+            <div class="app-footer-surface">
+                <div class="app-footer-texto">
+                    &copy; {{ currentYear }} {{ organizationName }} | Todos los derechos reservados
+                    <span v-if="showVersion" class="app-footer-version">(versión {{ appVersion }})</span>
+                </div>
             </div>
         </q-footer>
     </q-layout>
@@ -541,10 +539,89 @@ export default {
 </script>
 
 <style scoped>
+.app-header {
+    background: #ffffff;
+    border-bottom: 1px solid #e6edf5;
+}
+
+.app-toolbar {
+    min-height: 64px;
+    padding: 0 12px;
+    column-gap: 10px;
+}
+
+.app-toolbar__menu {
+    flex: 0 0 auto;
+    color: #ef5350;
+}
+
+.app-toolbar__title {
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: 0;
+}
+
+.app-toolbar__logo {
+    display: block;
+    width: 360px;
+    max-width: 100%;
+}
+
+.app-toolbar__identity {
+    min-width: 0;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    text-align: left;
+}
+
+.app-toolbar__name,
+.app-toolbar__unit {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.app-toolbar__name {
+    color: #111827;
+    font-size: 0.92rem;
+    line-height: 1.2;
+}
+
+.app-toolbar__unit {
+    margin-top: 2px;
+    color: #334155;
+    font-size: 0.78rem;
+    line-height: 1.2;
+}
+
+.app-toolbar__actions {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+}
+
+.app-toolbar__logout {
+    color: #ef5350;
+    font-size: 18px;
+    transform: scaleX(-1);
+}
+
 .app-footer {
     background-color: transparent;
     color: #000000;
-    padding: 8px 16px;
+    padding: 0;
+}
+
+.app-footer-surface {
+    width: 100%;
+    padding: 8px 16px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: #ffffff;
+    border-top: 1px solid #e6edf5;
 }
 
 .app-footer-texto {
@@ -560,5 +637,53 @@ export default {
 
 .drawer-root-item--spaced {
     margin-bottom: 8px;
+}
+
+@media (max-width: 1023px) {
+    .app-toolbar {
+        min-height: 60px;
+        padding: 0 10px;
+        column-gap: 8px;
+    }
+
+    .app-toolbar__logo {
+        width: 180px;
+    }
+
+    .app-toolbar__name {
+        font-size: 0.88rem;
+    }
+
+    .app-toolbar__unit {
+        font-size: 0.74rem;
+    }
+}
+
+@media (max-width: 599px) {
+    .app-toolbar {
+        min-height: 56px;
+        padding: 0 8px;
+    }
+
+    .app-toolbar__title {
+        display: none;
+    }
+
+    .app-toolbar__name {
+        font-size: 0.82rem;
+    }
+
+    .app-toolbar__unit {
+        font-size: 0.7rem;
+    }
+
+    .app-footer-surface {
+        padding: 6px 12px calc(6px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .app-footer-texto {
+        font-size: 0.76rem;
+        line-height: 1.35;
+    }
 }
 </style>

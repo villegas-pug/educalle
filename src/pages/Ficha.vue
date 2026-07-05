@@ -1,5 +1,5 @@
     <template>
-        <div>
+    <div class="ficha-page">
             <template>
                 <div class="q-pa-md">
 
@@ -45,19 +45,19 @@
             </template>
 
             <div class="row">
-                <div class="col-12 q-gutter-sm text-right q-mt-sm q-mb-md">
+                <div class="col-12 q-gutter-sm text-right q-mt-sm q-mb-md ficha-acciones-principales">
                     <q-btn
                         label="RESETEAR FILTROS"
                         color="grey-5"
                         text-color="white"
                         icon-right="restart_alt"
-                        class="btn-seccion-acciones"
+                        class="btn-seccion-acciones ficha-accion-principal"
                         size="sm"
                         @click="resetearFiltrosPrincipal"
                     />
-                    <q-btn label="NUEVO" icon="add" class="btn-inabif" size="sm" @click="abrirDialog"
+                    <q-btn label="NUEVO" icon="add" class="btn-inabif ficha-accion-principal" size="sm" @click="abrirDialog"
                         :disable="!puedeIntentarNuevo" />
-                    <q-btn label="EXCEL" icon="download" color="green" class="btn-seccion-acciones" size="sm" />
+                    <q-btn label="EXCEL" icon="download" color="green" class="btn-seccion-acciones ficha-accion-principal" size="sm" />
                 </div>
             </div>
             <!-- TABLA -->
@@ -217,7 +217,6 @@
                                 </div>
 
                                 <div class="contexto-ficha">
-                                    <div class="contexto-ficha__titulo">CONTEXTO FICHA</div>
                                     <div class="row q-col-gutter-md">
                                         <div v-for="item in fichaContexto" :key="item.label" class="col-12 col-md-4">
                                             <div class="contexto-ficha__item">
@@ -273,26 +272,16 @@
                                                             :key="`${pregunta.idPregunta}-rama-select-${ramaIndex}`"
                                                             class="ficha-campo ficha-campo--branched ficha-campo--branched-select"
                                                         >
-                                                            <div class="ficha-input" :class="{ 'modo-visualizacion': esVisualizacion }">
-                                                                <template v-if="esVisualizacion">
-                                                                    <div class="ficha-branched-select-visualizacion">
-                                                                        <span class="ficha-branched-select-visualizacion__label">
-                                                                            {{ rama.label }}
-                                                                            <span v-if="pregunta.obligatoria === 1" class="ficha-obligatorio">*</span>
-                                                                        </span>
-                                                                        <span class="ficha-valor ficha-branched-select-visualizacion__valor">{{ rama.value || '—' }}</span>
-                                                                    </div>
-                                                                </template>
+                                                            <div class="ficha-input ficha-input--branched-select" :class="{ 'modo-visualizacion': esVisualizacion }">
                                                                 <q-select
-                                                                    v-else
                                                                     outlined
                                                                     dense
                                                                     stack-label
                                                                     emit-value
                                                                     map-options
                                                                     hide-bottom-space
-                                                                    :value="rama.value"
-                                                                    :options="rama.options"
+                                                                    :value="getBranchedSelectDisplayValue(rama)"
+                                                                    :options="getBranchedSelectDisplayOptions(rama)"
                                                                     :loading="rama.loading"
                                                                     :label="rama.label"
                                                                     :style="getBifurcacionControlStyle(pregunta)"
@@ -1345,24 +1334,16 @@
 }
 
 .contexto-ficha {
-    margin-bottom: 20px;
-    padding: 16px;
+    margin-bottom: 16px;
+    padding: 12px;
     border: 1px solid #d9e2ec;
     border-radius: 8px;
     background: #f8fbff;
 }
 
-.contexto-ficha__titulo {
-    margin-bottom: 12px;
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: #34495e;
-    text-transform: uppercase;
-}
-
 .contexto-ficha__item {
-    min-height: 84px;
-    padding: 12px 14px;
+    min-height: 64px;
+    padding: 10px 12px;
     border-left: 4px solid #BF0411;
     border-radius: 6px;
     background: #fff;
@@ -1370,7 +1351,7 @@
 }
 
 .contexto-ficha__label {
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     font-size: 0.75rem;
     font-weight: 700;
     color: #5b7083;
@@ -1516,6 +1497,26 @@
     border-top: 0;
 }
 
+.ficha-input--branched-select {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    flex: 1;
+}
+
+.ficha-page {
+    min-width: 0;
+}
+
+.ficha-acciones-principales {
+    position: relative;
+    z-index: 1;
+}
+
+.ficha-accion-principal {
+    min-width: 0;
+}
+
 .ficha-branched-group {
     display: flex;
     flex-direction: column;
@@ -1527,7 +1528,7 @@
     flex-direction: row;
     flex-wrap: wrap;
     align-items: flex-start;
-    gap: 12px;
+    gap: 10px;
 }
 
 .ficha-textm {
@@ -1577,8 +1578,9 @@
 }
 
 .ficha-campo--branched-select {
-    flex: 1 1 220px;
-    min-width: 220px;
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
     padding-left: 0;
     border-left: 0;
 }
@@ -1917,24 +1919,25 @@
 
     .ficha-footer {
         position: absolute;
-        left: auto;
-        right: 12px;
-        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-        z-index: 5;
-        display: inline-flex;
-        width: max-content;
-        max-width: calc(100% - 24px);
-        padding: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10;
+        display: flex;
+        width: 100%;
+        max-width: 100%;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
         border: 0 !important;
-        border-top: 0 !important;
-        background: transparent !important;
-        background-color: transparent !important;
-        box-shadow: none;
+        border-top: 1px solid #e5edf6 !important;
+        background: #ffffff !important;
+        background-color: #ffffff !important;
+        box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.08);
+        border-radius: 0;
         column-gap: 8px;
         row-gap: 8px;
         flex-wrap: wrap;
         justify-content: flex-end;
-        pointer-events: none;
+        pointer-events: auto;
     }
 
     .ficha-footer .q-btn {
@@ -2579,7 +2582,7 @@ audio {
     flex: 0 0 auto;
     border-top: 1px solid #e0e0e0;
     padding: 16px 24px;
-    background-color: #fafbfc;
+    background-color: #ffffff;
 }
 
 .ficha-btn-guardar {
@@ -3083,6 +3086,183 @@ audio {
     min-height: 32px;
     border-radius: 50%;
     padding: 0;
+}
+
+@media (max-width: 1023px) {
+    .ficha-page {
+        padding-bottom: 164px;
+    }
+
+    .ficha-acciones-principales {
+        position: fixed;
+        right: 12px;
+        bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+        z-index: 20;
+        display: inline-flex;
+        width: max-content;
+        max-width: calc(100vw - 24px);
+        padding: 0;
+        margin: 0;
+        border: 0;
+        background: transparent;
+        column-gap: 8px;
+        row-gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        pointer-events: none;
+    }
+
+    .ficha-acciones-principales .ficha-accion-principal {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 56px;
+        width: 56px;
+        min-width: 56px !important;
+        max-width: 56px;
+        height: 56px;
+        min-height: 56px;
+        border-radius: 50%;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+        pointer-events: auto;
+    }
+
+    .ficha-acciones-principales .ficha-accion-principal :deep(.q-btn__wrapper) {
+        width: 100%;
+        height: 100%;
+        min-height: 56px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ficha-acciones-principales .ficha-accion-principal :deep(.q-btn__content) {
+        width: 100%;
+        height: 100%;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+    }
+
+    .ficha-acciones-principales .ficha-accion-principal :deep(.q-icon) {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1;
+    }
+
+    .ficha-acciones-principales .ficha-accion-principal :deep(.q-btn__content span:not(.q-icon)) {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .ficha-branched-group--selects-horizontal {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        margin-top: 6px;
+    }
+
+    .ficha-campo--branched-select {
+        flex: 0 0 auto;
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        min-width: 0;
+        gap: 2px;
+    }
+
+    .ficha-input--branched-select {
+        width: 100%;
+        flex: 0 0 auto;
+    }
+
+    .ficha-input--branched-select :deep(.q-field),
+    .ficha-input--branched-select :deep(.q-field__control),
+    .ficha-input--branched-select :deep(.q-field__native),
+    .ficha-input--branched-select :deep(.q-field__input) {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .seccion-cabecera {
+        display: none;
+    }
+
+    .ficha-pregunta--summary .ficha-campo--summary {
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .ficha-pregunta--summary .ficha-label--summary {
+        flex: 0 0 auto;
+        max-width: 100%;
+        width: 100%;
+        border-right: 0;
+        border-bottom: 1px solid #d8e3ef;
+        padding: 8px 12px;
+    }
+
+    .ficha-pregunta--summary .ficha-input {
+        flex: 0 0 auto;
+        max-width: 100%;
+        width: 100%;
+        justify-content: center;
+        padding: 8px 12px;
+    }
+
+    .ficha-pregunta--summary .ficha-input .q-field,
+    .ficha-pregunta--summary .ficha-input .ficha-valor {
+        max-width: 100%;
+    }
+
+    .ficha-textm__input-row {
+        flex-wrap: wrap;
+    }
+
+    .ficha-textm__input {
+        min-width: 0;
+        flex: 1 1 180px;
+    }
+
+    .ficha-textm__input-row .q-btn {
+        flex: 0 0 44px;
+        width: 44px;
+        min-width: 44px;
+        height: 44px;
+    }
+
+    .ficha-footer {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 10;
+        display: flex;
+        width: 100%;
+        max-width: 100%;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+        border: 0 !important;
+        border-top: 1px solid #e5edf6 !important;
+        border-radius: 0;
+        background: #ffffff !important;
+        background-color: #ffffff !important;
+        box-shadow: 0 -4px 14px rgba(15, 23, 42, 0.08);
+        column-gap: 8px;
+        row-gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        pointer-events: auto;
+    }
 }
 
 @media (max-width: 599px) {
@@ -4152,6 +4332,13 @@ export default {
             return texto;
         },
         buildControlWidthStyle(valor, { forSummary = false } = {}) {
+            if (this.$q && this.$q.screen && this.$q.screen.lt && this.$q.screen.lt.md) {
+                return {
+                    width: '100%',
+                    maxWidth: '100%'
+                };
+            }
+
             const ancho = this.normalizarAnchoControl(valor);
             if (!ancho) return null;
 
@@ -4159,6 +4346,29 @@ export default {
                 width: ancho,
                 maxWidth: forSummary ? ancho : ancho
             };
+        },
+        getBranchedSelectDisplayOptions(rama) {
+            const options = Array.isArray(rama && rama.options) ? [...rama.options] : [];
+            const value = rama ? rama.value : null;
+
+            if (value === null || value === undefined || value === '') {
+                return options;
+            }
+
+            const existe = options.some(item => item && item.value === value);
+            if (existe) return options;
+
+            options.push({
+                label: value,
+                value
+            });
+
+            return options;
+        },
+        getBranchedSelectDisplayValue(rama) {
+            return !rama || rama.value === null || rama.value === undefined || rama.value === ''
+                ? null
+                : rama.value;
         },
         getPreguntaControlStyle(pregunta) {
             return this.buildControlWidthStyle(pregunta?.lng, {
