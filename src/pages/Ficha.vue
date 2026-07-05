@@ -1578,9 +1578,9 @@
 }
 
 .ficha-campo--branched-select {
-    flex: 0 0 auto;
-    width: 100%;
-    min-width: 0;
+    flex: 1 1 220px;
+    min-width: 220px;
+    max-width: 320px;
     padding-left: 0;
     border-left: 0;
 }
@@ -3165,17 +3165,17 @@ audio {
     }
 
     .ficha-branched-group--selects-horizontal {
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: wrap;
         align-items: stretch;
         gap: 4px;
         margin-top: 6px;
     }
 
     .ficha-campo--branched-select {
-        flex: 0 0 auto;
-        flex-direction: column;
+        flex: 1 1 100%;
+        max-width: 100%;
         align-items: stretch;
-        width: 100%;
         min-width: 0;
         gap: 2px;
     }
