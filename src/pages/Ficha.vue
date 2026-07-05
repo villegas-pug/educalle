@@ -709,9 +709,101 @@
                                 @touchstart.prevent="iniciarArrastreFooterFicha"
                             />
                             <q-btn v-if="!esVisualizacion" label="Guardar" icon="save" type="submit" @click="guardarTodo" class="ficha-btn-guardar" title="Guardar" />
+                            <q-btn
+                                v-if="modoEdicion"
+                                label="Cerrar ficha"
+                                icon="fact_check"
+                                @click="iniciarCierreFicha"
+                                :loading="cerrandoFicha"
+                                class="ficha-btn-cerrar"
+                                title="Cerrar ficha"
+                            />
                             <q-btn label="Cancelar" icon="close" v-close-popup class="ficha-btn-cancelar" style="min-width: 70px;" title="Cancelar" />
                         </q-card-actions>
                     </div>
+                </q-card>
+            </q-dialog>
+            <q-dialog v-model="dialogPendientesCierre" persistent>
+                <q-card class="cierre-dialog">
+                    <q-card-section class="cierre-dialog__header bg-header-dialog">
+                        <div class="cierre-dialog__title-block">
+                            <div class="cierre-dialog__title text-body2 text-bold">NO SE PUEDE CERRAR LA FICHA</div>
+                            <div class="cierre-dialog__subtitle text-caption">
+                                Completa las preguntas obligatorias para cierre antes de suscribir la ficha.
+                            </div>
+                        </div>
+                        <q-btn icon="close" class="cierre-dialog__close" v-close-popup flat round dense size="sm"></q-btn>
+                    </q-card-section>
+
+                    <q-card-section class="cierre-dialog__body">
+                        <div
+                            v-for="(grupo, index) in pendientesCierreAgrupados"
+                            :key="`${grupo.seccion}-${index}`"
+                            class="cierre-pendiente-seccion"
+                        >
+                            <div class="cierre-pendiente-seccion__titulo">{{ grupo.seccion }}</div>
+                            <div
+                                v-for="(item, itemIndex) in grupo.items"
+                                :key="`${grupo.seccion}-${itemIndex}-${item.pregunta}`"
+                                class="cierre-pendiente-item"
+                                :class="{ 'cierre-pendiente-item--subpregunta': item.tipo === 'subpregunta' }"
+                            >
+                                <q-icon
+                                    :name="item.tipo === 'subpregunta' ? 'subdirectory_arrow_right' : 'help_outline'"
+                                    class="cierre-pendiente-item__icon"
+                                />
+                                <div class="cierre-pendiente-item__content">
+                                    <div v-if="item.tipo === 'subpregunta'" class="cierre-pendiente-item__parent">
+                                        Subpregunta de: {{ item.preguntaPadre }}
+                                    </div>
+                                    <div class="cierre-pendiente-item__label">{{ item.pregunta }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </q-card-section>
+
+                    <q-card-actions align="right" class="cierre-dialog__actions">
+                        <q-btn label="Entendido" icon="check" class="btn-inabif cierre-dialog__btn" v-close-popup />
+                    </q-card-actions>
+                </q-card>
+            </q-dialog>
+            <q-dialog v-model="dialogConfirmarCierreFicha" persistent>
+                <q-card class="cierre-dialog cierre-dialog--confirmacion">
+                    <q-card-section class="cierre-dialog__header bg-header-dialog">
+                        <div class="cierre-dialog__title-block">
+                            <div class="cierre-dialog__title text-body2 text-bold">CONFIRMAR CIERRE DE FICHA</div>
+                            <div class="cierre-dialog__subtitle text-caption">
+                                Se guardarán los cambios actuales y luego la ficha quedará suscrita.
+                            </div>
+                        </div>
+                        <q-btn icon="close" class="cierre-dialog__close" v-close-popup flat round dense size="sm"></q-btn>
+                    </q-card-section>
+
+                    <q-card-section class="cierre-dialog__body cierre-dialog__body--confirmacion">
+                        <div class="cierre-confirmacion-card">
+                            <q-icon name="fact_check" class="cierre-confirmacion-card__icon" />
+                            <div class="cierre-confirmacion-card__content">
+                                <div class="cierre-confirmacion-card__title">Ficha lista para cierre</div>
+                                <div class="cierre-confirmacion-card__text">
+                                    {{ tituloAnexo }}
+                                </div>
+                                <div class="cierre-confirmacion-card__meta">
+                                    Correlativo: {{ String(form.correlativo || 0).padStart(5, '0') }}
+                                </div>
+                            </div>
+                        </div>
+                    </q-card-section>
+
+                    <q-card-actions align="right" class="cierre-dialog__actions">
+                        <q-btn label="No, volver" icon="close" class="ficha-btn-cancelar cierre-dialog__btn" v-close-popup />
+                        <q-btn
+                            label="Si, cerrar ficha"
+                            icon="done_all"
+                            class="btn-inabif cierre-dialog__btn"
+                            :loading="cerrandoFicha"
+                            @click="confirmarCierreFicha"
+                        />
+                    </q-card-actions>
                 </q-card>
             </q-dialog>
             <q-dialog v-model="dialogHttpPregunta" persistent>
@@ -2494,6 +2586,10 @@ audio {
     min-width: 120px;
 }
 
+.ficha-btn-cerrar {
+    min-width: 140px;
+}
+
 .ficha-btn-cancelar {
     min-width: 100px;
 }
@@ -2718,6 +2814,172 @@ audio {
     color: #263238;
 }
 
+.cierre-dialog {
+    width: 760px;
+    max-width: 92vw;
+    max-height: 86vh;
+    overflow: hidden;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.cierre-dialog__header {
+    min-height: 48px;
+    padding: 12px 16px 10px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    column-gap: 12px;
+}
+
+.cierre-dialog__title-block {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.cierre-dialog__title {
+    color: #000;
+    line-height: 1.25;
+}
+
+.cierre-dialog__subtitle {
+    margin-top: 4px;
+    color: #334155;
+    line-height: 1.35;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.cierre-dialog__close {
+    flex: 0 0 auto;
+    color: #1f2d3d;
+}
+
+.cierre-dialog__body {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 16px;
+    flex: 1 1 auto;
+    background: #f8fafc;
+}
+
+.cierre-dialog__body--confirmacion {
+    display: flex;
+    align-items: center;
+}
+
+.cierre-dialog__actions {
+    padding: 12px 16px 16px;
+    border-top: 1px solid #e5edf6;
+    background: #fff;
+}
+
+.cierre-dialog__btn {
+    min-width: 138px;
+}
+
+.cierre-pendiente-seccion {
+    padding: 14px;
+    border: 1px solid #dbe7f3;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+}
+
+.cierre-pendiente-seccion + .cierre-pendiente-seccion {
+    margin-top: 12px;
+}
+
+.cierre-pendiente-seccion__titulo {
+    margin-bottom: 10px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #bf0411;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.cierre-pendiente-item {
+    display: flex;
+    align-items: flex-start;
+    column-gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.cierre-pendiente-item + .cierre-pendiente-item {
+    margin-top: 8px;
+}
+
+.cierre-pendiente-item--subpregunta {
+    margin-left: 20px;
+    background: #f1f5f9;
+    border-left: 3px solid #5c6bc0;
+}
+
+.cierre-pendiente-item__icon {
+    margin-top: 2px;
+    color: #bf0411;
+}
+
+.cierre-pendiente-item__content {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.cierre-pendiente-item__parent {
+    margin-bottom: 3px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #51606f;
+}
+
+.cierre-pendiente-item__label {
+    color: #1f2937;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.cierre-confirmacion-card {
+    display: flex;
+    align-items: center;
+    column-gap: 14px;
+    width: 100%;
+    padding: 18px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+    border: 1px solid #d8e6f3;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+.cierre-confirmacion-card__icon {
+    font-size: 38px;
+    color: #1f8b4c;
+}
+
+.cierre-confirmacion-card__content {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.cierre-confirmacion-card__title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1f2d3d;
+}
+
+.cierre-confirmacion-card__text,
+.cierre-confirmacion-card__meta {
+    margin-top: 4px;
+    color: #475569;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
 .validar-table {
     width: 100%;
     max-width: 100%;
@@ -2850,6 +3112,36 @@ audio {
         min-width: 0;
     }
 
+    .cierre-dialog {
+        width: calc(100vw - 20px);
+        max-width: calc(100vw - 20px);
+        max-height: 82vh;
+        margin: 10px;
+    }
+
+    .cierre-dialog__header {
+        padding: 10px 12px 8px;
+    }
+
+    .cierre-dialog__body {
+        padding: 12px;
+    }
+
+    .cierre-dialog__actions {
+        padding: 10px 12px 12px;
+        display: flex;
+        justify-content: flex-end;
+        column-gap: 8px;
+    }
+
+    .cierre-pendiente-item--subpregunta {
+        margin-left: 8px;
+    }
+
+    .cierre-confirmacion-card {
+        align-items: flex-start;
+    }
+
     .tabla-validar-ficha {
         font-size: 11px;
     }
@@ -2940,7 +3232,6 @@ export default {
                 offsetX: 0,
                 offsetY: 0
             },
-            modoEdicion: false,
             loadingUnidades: false,
             loadingServicios: false,
             loadingAnexos: false,
@@ -3198,6 +3489,10 @@ export default {
             dialogValidarFicha: false,
             fichaAValidar: null,
             personalValidacion: [],
+            dialogPendientesCierre: false,
+            dialogConfirmarCierreFicha: false,
+            cerrandoFicha: false,
+            pendientesCierre: [],
             columnasValidacion: [
                 {
                     name: "nro",
@@ -4073,6 +4368,8 @@ export default {
                 ...preguntaRaw,
                 obligatoria: Number(preguntaRaw.obligatoria ?? 0),
                 obligatoria2: Number(preguntaRaw.obligatoria2 ?? 0),
+                reqObligatoria1Cierre: Number(preguntaRaw.reqObligatoria1Cierre ?? 0),
+                reqObligatoria2Cierre: Number(preguntaRaw.reqObligatoria2Cierre ?? 0),
                 condicion: this.parseCondicion(preguntaRaw.condicion),
                 _editableRule: this.normalizarReglaEditable(preguntaRaw.editable),
                 _editableBifurcacionesRule: this.normalizarEditableBifurcaciones(preguntaRaw.editableBifurcaciones),
@@ -4637,6 +4934,102 @@ export default {
 
             return pregunta.respuesta ?? null;
         },
+        validarPreguntasObligatoriasGenerales() {
+            for (const seccion of this.secciones) {
+                for (const pregunta of seccion.preguntas) {
+                    if (!this.mostrarPregunta(pregunta)) continue;
+
+                    if (pregunta.obligatoria === 1 && !this.estaPreguntaRespondida(pregunta)) {
+                        this.$q.notify({
+                            type: 'warning',
+                            message: `Debe responder: ${pregunta.pregunta}`
+                        });
+                        return false;
+                    }
+
+                    if (this.mostrarPregunta2(pregunta) && pregunta.obligatoria2 === 1 && !pregunta.respuesta2) {
+                        this.$q.notify({
+                            type: 'warning',
+                            message: `Debe responder: ${pregunta.pregunta2}`
+                        });
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        },
+        async persistirFicha() {
+            this.limpiarRespuestasOcultas();
+            this.sincronizarResponsableSesion();
+
+            if (!this.validarPreguntasObligatoriasGenerales()) {
+                return false;
+            }
+
+            const respuestas = this.secciones.flatMap(seccion =>
+                seccion.preguntas
+                    .filter(p => this.mostrarPregunta(p))
+                    .map(p => ({
+                        idPregunta: p.idPregunta,
+                        respuesta: this.serializarRespuestaPregunta(p),
+                        respuesta2: (() => {
+                            if (p.respuesta2 === 'OTRO' || p.respuesta2 === 'OTROS') {
+                                return p.otroTexto2 || p.respuesta2;
+                            }
+                            return p.respuesta2 ?? null;
+                        })(),
+                        observacion: null,
+                        puntaje: null
+                    }))
+            );
+
+            const payload = {
+                idAnexo: this.form.idAnexo,
+                idCentro: this.form.idCentro,
+                centro: this.form.nombreCentro || '',
+                correlativo: this.form.correlativo,
+                periodo: this.fichaPeriodo,
+                acreditacionVigente: this.normalizarAcreditacionVigenteEntero(this.acreVigente),
+                fechaAcreditacion: this.normalizarFechaAcreditacionISO(this.fechaAcreditacion),
+                fechaAplicacion: new Date().toISOString().split('T')[0],
+                fechaRegistro: this.form.fechaRegistro,
+                idDirector: this.form.idDirector || null,
+                idRespSupervision: this.normalizarIdResponsable(this.form.idRespSupervision),
+                idSupervisado: this.buildIdSupervisadoPayload ? this.buildIdSupervisadoPayload() : '',
+                respuestas,
+                totales: {
+                    conforme: this.totalesRespuestas.CONFORME,
+                    noConforme: this.totalesRespuestas.NO_CONFORME,
+                    observacion: this.totalesRespuestas.OBSERVACION,
+                    noAplica: this.totalesRespuestas.NO_APLICA
+                }
+            };
+
+            this.validacionReseteadaEnEdicion = false;
+
+            if (this.modo === 'editar') {
+                payload.idCabecera = this.form.idAnexoCabecera;
+                payload.usuModifica = this.obtenerIdUsuarioSesion();
+
+                await this.$axios.put(`${process.env.API_URL}/updateAnexoCompleto`, payload);
+
+                // if (Number(this.form.reqObligatoriedad) !== 0) {
+                //     try {
+                //         await this.$axios.delete(
+                //             `${process.env.API_URL}/resetValidacionAnexoCabecera?idAnexoCabecera=${this.form.idAnexoCabecera}`
+                //         );
+                //         this.validacionReseteadaEnEdicion = true;
+                //     } catch (resetError) {
+                //     }
+                // }
+            } else {
+                payload.usuRegistra = this.obtenerIdUsuarioSesion();
+                await this.$axios.post(`${process.env.API_URL}/createAnexoCompleto`, payload);
+            }
+
+            return true;
+        },
         estaPreguntaRespondida(pregunta) {
             if (this.esPreguntaBranchedInputSearch(pregunta)) {
                 return !!this.obtenerValorDisparadorBranched(pregunta)
@@ -4656,96 +5049,15 @@ export default {
         },
         async guardarTodo() {
             try {
-                this.limpiarRespuestasOcultas();
-                this.sincronizarResponsableSesion();
-
-                for (const seccion of this.secciones) {
-                    for (const pregunta of seccion.preguntas) {
-                        if (!this.mostrarPregunta(pregunta)) continue;
-
-                        if (pregunta.obligatoria === 1 && !this.estaPreguntaRespondida(pregunta)) {
-                            this.$q.notify({
-                                type: 'warning',
-                                message: `Debe responder: ${pregunta.pregunta}`
-                            });
-                            return;
-                        }
-
-                        if (this.mostrarPregunta2(pregunta) && pregunta.obligatoria2 === 1 && !pregunta.respuesta2) {
-                            this.$q.notify({
-                                type: 'warning',
-                                message: `Debe responder: ${pregunta.pregunta2}`
-                            });
-                            return;
-                        }
-                    }
-                }
-
-                const respuestas = this.secciones.flatMap(seccion =>
-                    seccion.preguntas
-                        .filter(p => this.mostrarPregunta(p))
-                        .map(p => ({
-                            idPregunta: p.idPregunta,
-                            respuesta: this.serializarRespuestaPregunta(p),
-                            respuesta2: (() => {
-                                if (p.respuesta2 === 'OTRO' || p.respuesta2 === 'OTROS') {
-                                    return p.otroTexto2 || p.respuesta2;
-                                }
-                                return p.respuesta2 ?? null;
-                            })(),
-                            observacion: null,
-                            puntaje: null
-                        }))
-                );
-
-                const payload = {
-                    idAnexo: this.form.idAnexo,
-                    idCentro: this.form.idCentro,
-                    centro: this.form.nombreCentro || '',
-                    correlativo: this.form.correlativo,
-                    periodo: this.fichaPeriodo,
-                    acreditacionVigente: this.normalizarAcreditacionVigenteEntero(this.acreVigente),
-                    fechaAcreditacion: this.normalizarFechaAcreditacionISO(this.fechaAcreditacion),
-                    fechaAplicacion: new Date().toISOString().split('T')[0],
-                    fechaRegistro: this.form.fechaRegistro,
-                    idDirector: this.form.idDirector || null,
-                    idRespSupervision: this.normalizarIdResponsable(this.form.idRespSupervision),
-                    idSupervisado: this.buildIdSupervisadoPayload ? this.buildIdSupervisadoPayload() : '',
-                    respuestas,
-                    totales: {
-                        conforme: this.totalesRespuestas.CONFORME,
-                        noConforme: this.totalesRespuestas.NO_CONFORME,
-                        observacion: this.totalesRespuestas.OBSERVACION,
-                        noAplica: this.totalesRespuestas.NO_APLICA
-                    }
-                };
-
-                if (this.modo === 'editar') {
-                    payload.idCabecera = this.form.idAnexoCabecera;
-                    payload.usuModifica = this.obtenerIdUsuarioSesion();
-
-                    await this.$axios.put(`${process.env.API_URL}/updateAnexoCompleto`, payload);
-
-                    if (Number(this.form.reqObligatoriedad) !== 0) {
-                        try {
-                            await this.$axios.delete(
-                                `${process.env.API_URL}/resetValidacionAnexoCabecera?idAnexoCabecera=${this.form.idAnexoCabecera}`
-                            );
-                            this.validacionReseteadaEnEdicion = true;
-                        } catch (resetError) {
-                        }
-                    }
-                } else {
-                    payload.usuRegistra = this.obtenerIdUsuarioSesion();
-                    await this.$axios.post(`${process.env.API_URL}/createAnexoCompleto`, payload);
+                const guardadoExitoso = await this.persistirFicha();
+                if (!guardadoExitoso) {
+                    return;
                 }
 
                 this.$q.notify({
                     type: 'positive',
                     message: this.modo === 'editar'
-                        ? (this.validacionReseteadaEnEdicion
-                            ? 'Actualizado correctamente. Las validaciones previas han sido reseteadas.'
-                            : 'Actualizado correctamente')
+                        ? 'Actualizado correctamente'
                         : 'Registrado correctamente'
                 });
 
@@ -4757,6 +5069,115 @@ export default {
                     type: 'negative',
                     message: 'Error al guardar'
                 });
+            }
+        },
+        esValorVacioCierre(valor) {
+            if (Array.isArray(valor)) {
+                return valor.length === 0;
+            }
+
+            if (valor === null || valor === undefined) {
+                return true;
+            }
+
+            if (typeof valor === 'string') {
+                return valor.trim() === '';
+            }
+
+            return false;
+        },
+        estaPreguntaRespondidaParaCierre(pregunta) {
+            if (this.esPreguntaBranchedInputSearch(pregunta)) {
+                return !this.esValorVacioCierre(this.obtenerValorDisparadorBranched(pregunta))
+                    && (pregunta._ramificaciones || []).every(rama => !this.esValorVacioCierre(rama.value));
+            }
+
+            if (this.esPreguntaBranchedSelects(pregunta)) {
+                return (pregunta._branchedSelects || []).length > 0
+                    && pregunta._branchedSelects.every(rama => !this.esValorVacioCierre(rama.value));
+            }
+
+            return !this.esValorVacioCierre(pregunta.respuesta);
+        },
+        obtenerPendientesCierreFicha() {
+            const pendientes = [];
+
+            for (const seccion of this.secciones) {
+                for (const pregunta of seccion.preguntas) {
+                    if (!this.mostrarPregunta(pregunta)) continue;
+
+                    if (Number(pregunta.reqObligatoria1Cierre || 0) === 1 && !this.estaPreguntaRespondidaParaCierre(pregunta)) {
+                        pendientes.push({
+                            seccion: seccion.titulo || 'GENERAL',
+                            pregunta: pregunta.pregunta,
+                            tipo: 'principal'
+                        });
+                    }
+
+                    if (
+                        Number(pregunta.reqObligatoria2Cierre || 0) === 1
+                        && this.mostrarPregunta2(pregunta)
+                        && this.esValorVacioCierre(pregunta.respuesta2)
+                    ) {
+                        pendientes.push({
+                            seccion: seccion.titulo || 'GENERAL',
+                            pregunta: pregunta.pregunta2,
+                            preguntaPadre: pregunta.pregunta,
+                            tipo: 'subpregunta'
+                        });
+                    }
+                }
+            }
+
+            return pendientes;
+        },
+        iniciarCierreFicha() {
+            if (!this.modoEdicion) return;
+
+            const pendientes = this.obtenerPendientesCierreFicha();
+            this.pendientesCierre = pendientes;
+
+            if (pendientes.length > 0) {
+                this.dialogPendientesCierre = true;
+                return;
+            }
+
+            this.dialogConfirmarCierreFicha = true;
+        },
+        async confirmarCierreFicha() {
+            this.dialogConfirmarCierreFicha = false;
+            this.cerrandoFicha = true;
+            let guardadoExitoso = false;
+
+            try {
+                guardadoExitoso = await this.persistirFicha();
+                if (!guardadoExitoso) {
+                    return;
+                }
+
+                await this.$axios.patch(
+                    `${process.env.API_URL}/saveConformidadAnexoCabecera?idAnexoCabecera=${this.form.idAnexoCabecera}&estado=2`
+                );
+
+                this.$q.notify({
+                    type: 'positive',
+                    message: 'Ficha cerrada correctamente'
+                });
+
+                this.dialogPendientesCierre = false;
+                this.pendientesCierre = [];
+                this.validacionReseteadaEnEdicion = false;
+                this.dialog = false;
+                await this.cargarTablaAnexos();
+            } catch (error) {
+                this.$q.notify({
+                    type: 'negative',
+                    message: guardadoExitoso
+                        ? 'Se guardaron los cambios, pero no se pudo cerrar la ficha'
+                        : 'Error al guardar la ficha antes del cierre'
+                });
+            } finally {
+                this.cerrandoFicha = false;
             }
         },
         hidratarBranchedInputSearchDesdeRespuesta(pregunta) {
@@ -5232,6 +5653,7 @@ export default {
 
         resetModo() {
             this.resetFooterFichaFlotante();
+            this.resetCierreFicha();
             this.modo = null;
             this.seccionAbierta = null;
             this.modoSupervision = null;
@@ -6302,6 +6724,12 @@ export default {
             this.mostrarInputValidar = {};
             this.mostrarContrasenaValidar = {};
         },
+        resetCierreFicha() {
+            this.dialogPendientesCierre = false;
+            this.dialogConfirmarCierreFicha = false;
+            this.cerrandoFicha = false;
+            this.pendientesCierre = [];
+        },
 
         ocultarInputValidar(idPersonal) {
             this.$set(this.mostrarInputValidar, idPersonal, false);
@@ -6593,6 +7021,21 @@ export default {
         todosValidados() {
             return this.personalValidacion.length > 0 
                 && this.personalValidacion.every(p => p.validado === true);
+        },
+        pendientesCierreAgrupados() {
+            return this.pendientesCierre.reduce((grupos, item) => {
+                let grupo = grupos.find(entry => entry.seccion === item.seccion);
+                if (!grupo) {
+                    grupo = {
+                        seccion: item.seccion,
+                        items: []
+                    };
+                    grupos.push(grupo);
+                }
+
+                grupo.items.push(item);
+                return grupos;
+            }, []);
         }
 
     }
