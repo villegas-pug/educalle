@@ -20,15 +20,17 @@
                     >
                 </q-toolbar-title>
 
-                <div class="app-toolbar__identity">
-                    <strong class="app-toolbar__name">{{ this.$q.localStorage.getItem('sgs-nombreCompleto') }}</strong>
-                    <span class="app-toolbar__unit">{{ this.$q.localStorage.getItem('sgs-nombreUnidad') }}</span>
-                </div>
+                <div class="app-toolbar__right">
+                    <div class="app-toolbar__identity">
+                        <strong class="app-toolbar__name">{{ this.$q.localStorage.getItem('sgs-nombreCompleto') }}</strong>
+                        <span class="app-toolbar__unit">{{ this.$q.localStorage.getItem('sgs-nombreUnidad') }}</span>
+                    </div>
 
-                <div class="app-toolbar__actions">
-                    <q-btn icon="exit_to_app" @click="salir" flat round class="app-toolbar__logout">
-                        <q-tooltip>REGRESAR</q-tooltip>
-                    </q-btn>
+                    <div class="app-toolbar__actions">
+                        <q-btn icon="exit_to_app" @click="salir" flat round class="app-toolbar__logout">
+                            <q-tooltip>REGRESAR</q-tooltip>
+                        </q-btn>
+                    </div>
                 </div>
             </q-toolbar>
         </q-header>
@@ -541,13 +543,15 @@ export default {
 <style scoped>
 .app-header {
     background: #ffffff;
-    border-bottom: 1px solid #e6edf5;
+    border-bottom: 5px solid #f56a6a;
 }
 
 .app-toolbar {
-    min-height: 64px;
-    padding: 0 12px;
+    height: 60px;
+    min-height: 60px;
+    padding: 0 12px 0 8px;
     column-gap: 10px;
+    align-items: center;
 }
 
 .app-toolbar__menu {
@@ -565,16 +569,26 @@ export default {
     display: block;
     width: 360px;
     max-width: 100%;
+    margin-top: -2px;
+}
+
+.app-toolbar__right {
+    min-width: 0;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-left: auto;
 }
 
 .app-toolbar__identity {
     min-width: 0;
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: flex-end;
     justify-content: center;
-    text-align: left;
+    text-align: right;
 }
 
 .app-toolbar__name,
@@ -590,24 +604,27 @@ export default {
     color: #111827;
     font-size: 0.92rem;
     line-height: 1.2;
+    font-weight: 700;
 }
 
 .app-toolbar__unit {
     margin-top: 2px;
-    color: #334155;
+    color: #000000;
     font-size: 0.78rem;
     line-height: 1.2;
+    text-transform: uppercase;
 }
 
 .app-toolbar__actions {
     flex: 0 0 auto;
     display: flex;
     align-items: center;
+    margin-left: 10px;
 }
 
 .app-toolbar__logout {
     color: #ef5350;
-    font-size: 18px;
+    font-size: 24px;
     transform: scaleX(-1);
 }
 
@@ -641,13 +658,18 @@ export default {
 
 @media (max-width: 1023px) {
     .app-toolbar {
+        height: 60px;
         min-height: 60px;
-        padding: 0 10px;
+        padding: 0 10px 0 6px;
         column-gap: 8px;
     }
 
     .app-toolbar__logo {
         width: 180px;
+    }
+
+    .app-toolbar__actions {
+        margin-left: 8px;
     }
 
     .app-toolbar__name {
@@ -661,12 +683,17 @@ export default {
 
 @media (max-width: 599px) {
     .app-toolbar {
-        min-height: 56px;
-        padding: 0 8px;
+        height: 60px;
+        min-height: 60px;
+        padding: 0 8px 0 4px;
     }
 
     .app-toolbar__title {
         display: none;
+    }
+
+    .app-toolbar__right {
+        margin-left: 0;
     }
 
     .app-toolbar__name {

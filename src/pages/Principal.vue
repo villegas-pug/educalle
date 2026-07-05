@@ -18,24 +18,30 @@
                     <q-spinner color="primary" size="36px" />
                 </div>
 
-                <div v-else class="inicio-indicators">
-                    <div
-                        v-for="(item, index) in indicators"
-                        :key="item.label"
-                        class="inicio-indicator"
-                        :class="{ 'inicio-indicator--last': index === indicators.length - 1 }"
-                    >
-                        <div class="inicio-indicator-content">
-                            <div class="inicio-indicator-icon" :class="`inicio-indicator-icon--${item.color}`">
-                                <q-icon :name="item.icon" />
-                            </div>
-                            <div class="inicio-indicator-text">
-                                <div class="inicio-indicator-value">{{ item.value }}</div>
-                                <div class="inicio-indicator-label">{{ item.label }}</div>
-                                <div v-if="item.hint" class="inicio-indicator-hint">{{ item.hint }}</div>
+                <div v-else>
+                    <div v-if="!hasIndicadoresData" class="inicio-indicators-status">
+                        No se encontraron indicadores actualizados. Se muestran valores en cero.
+                    </div>
+
+                    <div class="inicio-indicators">
+                        <div
+                            v-for="item in indicators"
+                            :key="item.label"
+                            class="inicio-indicator"
+                        >
+                            <div class="inicio-indicator-content">
+                                <div class="inicio-indicator-icon" :class="`inicio-indicator-icon--${item.color}`">
+                                    <q-icon :name="item.icon" />
+                                </div>
+                                <div class="inicio-indicator-text">
+                                    <div class="inicio-indicator-value">{{ item.value }}</div>
+                                    <div class="inicio-indicator-label">{{ item.label }}</div>
+                                    <div v-if="item.hint" class="inicio-indicator-hint">{{ item.hint }}</div>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </div>
                 </div>
             </div>
         </div>
@@ -59,24 +65,8 @@ export default {
         }
     },
     computed: {
-        fechaConsultaFormateada() {
-            const fechaConsulta = this.indicadorCabecera && this.indicadorCabecera.fechaConsulta
-            if (!fechaConsulta) {
-                return ''
-            }
-
-            const fecha = new Date(fechaConsulta)
-            if (Number.isNaN(fecha.getTime())) {
-                return ''
-            }
-
-            return fecha.toLocaleString('es-PE', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            })
+        hasIndicadoresData() {
+            return !!this.indicadorCabecera
         }
     },
     created() {
@@ -177,11 +167,10 @@ export default {
 
 <style scoped>
 .inicio-page {
-    height: calc(100vh - 92px);
-    min-height: 0;
+    min-height: calc(100vh - 92px);
     background-color: #ffffff;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow: visible;
     padding: 10px 14px 8px;
 }
 
@@ -247,6 +236,17 @@ export default {
     min-height: 118px;
 }
 
+.inicio-indicators-status {
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    border: 1px solid #f5d9a6;
+    border-radius: 10px;
+    background-color: #fff8e8;
+    color: #8a5a00;
+    font-size: 0.84rem;
+    line-height: 1.4;
+}
+
 .inicio-loading {
     min-height: 118px;
     display: flex;
@@ -260,37 +260,39 @@ export default {
     width: 100%;
     background-color: #ffffff;
     border: 1px solid #c8c8c8;
-    border-radius: 8px;
-    display: flex;
-    align-items: stretch;
-    justify-content: space-between;
+    border-radius: 16px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
     min-height: 118px;
-    padding: 18px 28px;
+    padding: 20px;
     box-sizing: border-box;
 }
 
 .inicio-indicator {
-    flex: 1 1 0;
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 0 28px;
-    border-right: 1px solid #d0d0d0;
-}
-
-.inicio-indicator--last {
-    border-right: none;
+    min-width: 0;
+    padding: 18px 16px;
+    border: 1px solid #e4ebf3;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
 }
 
 .inicio-indicator-content {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 16px;
+    min-width: 0;
+    width: 100%;
 }
 
 .inicio-indicator-icon {
     width: 72px;
     height: 72px;
+    min-width: 72px;
+    min-height: 72px;
+    flex-shrink: 0;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -325,16 +327,22 @@ export default {
     line-height: 1.1;
 }
 
+.inicio-indicator-text {
+    min-width: 0;
+}
+
 .inicio-indicator-label {
     color: #000000;
     font-size: 0.95rem;
     margin-top: 8px;
+    line-height: 1.45;
 }
 
 .inicio-indicator-hint {
     margin-top: 6px;
     color: #617187;
     font-size: 0.78rem;
+    line-height: 1.4;
 }
 
 @media (max-width: 1280px) {
@@ -344,38 +352,43 @@ export default {
     }
 
     .inicio-indicators {
-        padding-left: 16px;
-        padding-right: 16px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        padding: 16px;
     }
 
     .inicio-indicator {
-        padding-left: 18px;
-        padding-right: 18px;
+        padding: 16px 14px;
     }
 }
 
 @media (max-width: 1024px) {
     .inicio-page {
         height: auto;
-        min-height: calc(100vh - 92px);
-        overflow: visible;
     }
 
     .inicio-content {
         height: auto;
     }
 
-    .inicio-indicators {
-        flex-wrap: wrap;
-        row-gap: 18px;
+    .inicio-title-text {
+        font-size: 1.7rem;
     }
 
-    .inicio-indicator {
-        flex-basis: 50%;
+    .inicio-indicator-content {
+        gap: 14px;
     }
 
-    .inicio-indicator:nth-child(2) {
-        border-right: none;
+    .inicio-indicator-icon {
+        width: 64px;
+        height: 64px;
+        min-width: 64px;
+        min-height: 64px;
+        font-size: 30px;
+    }
+
+    .inicio-indicator-value {
+        font-size: 1.65rem;
     }
 }
 
@@ -399,20 +412,14 @@ export default {
     }
 
     .inicio-indicators {
-        flex-direction: column;
+        grid-template-columns: 1fr;
         gap: 12px;
         min-height: 0;
         padding: 18px 12px;
     }
 
     .inicio-indicator {
-        border-right: none;
-        border-bottom: 1px solid #e0e6ef;
-        padding: 12px 4px;
-    }
-
-    .inicio-indicator--last {
-        border-bottom: none;
+        padding: 14px 12px;
     }
 
     .inicio-indicator-value {
