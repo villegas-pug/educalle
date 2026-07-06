@@ -6179,6 +6179,7 @@ export default {
                 this.audioFile = null;
                 this.fechaInscripcion = null;
                 await this.cargarAudios();
+                await this.cargarTablaAnexos();
             } catch (error) {
                 await this.cargarAudios();
                 this.$q.notify({ type: "negative", message: "Error al guardar la conformidad" });
