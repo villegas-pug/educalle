@@ -4272,7 +4272,26 @@ export default {
             return { id, valor };
         },
         normalizarEditableBifurcaciones(editableBifurcaciones) {
-            return this.normalizarReglaEditable(editableBifurcaciones);
+            if (editableBifurcaciones === null || editableBifurcaciones === undefined || editableBifurcaciones === '') {
+                return { mode: 'readonly-all' };
+            }
+
+            const parseado = this.parseJsonFlexible(editableBifurcaciones);
+            if (parseado === '*') {
+                return { mode: 'editable-all' };
+            }
+
+            if (!parseado || typeof parseado !== 'object') {
+                return { mode: 'readonly-all' };
+            }
+
+            const id = Number(this.resolverPropiedadCaseInsensitive(parseado, 'id'));
+            const valor = this.resolverPropiedadCaseInsensitive(parseado, 'valor');
+            if (!Number.isFinite(id) || valor === undefined || valor === null) {
+                return { mode: 'readonly-all' };
+            }
+
+            return { mode: 'conditional', id, valor };
         },
         obtenerValorLabelHttp(opciones) {
             const parseado = this.parseJsonFlexible(opciones);
@@ -5434,7 +5453,11 @@ export default {
         esRamificacionEditable(pregunta, rama) {
             if (this.esVisualizacion) return false;
             if (pregunta?._ramificacionesReadonlyHttp) return false;
-            if (pregunta?._editableBifurcacionesRule) return this.cumpleReglaEditable(pregunta._editableBifurcacionesRule);
+            if (pregunta?._editableBifurcacionesRule) {
+                if (pregunta._editableBifurcacionesRule.mode === 'readonly-all') return false;
+                if (pregunta._editableBifurcacionesRule.mode === 'editable-all') return true;
+                return this.cumpleReglaEditable(pregunta._editableBifurcacionesRule);
+            }
             if (pregunta?._editableRule) return this.cumpleReglaEditable(pregunta._editableRule);
             if (rama?.editable === undefined || rama?.editable === null) return false;
             const valor = String(rama.editable).toLowerCase();
