@@ -532,6 +532,41 @@
                                                                 </div>
                                                             </template>
 
+                                                            <template v-else-if="pregunta.tipoControl === 'dateInputs'">
+                                                                <template v-if="esVisualizacion">
+                                                                    <span class="ficha-valor">{{ obtenerValorTextoPregunta(pregunta) || '—' }}</span>
+                                                                </template>
+                                                                <div v-else class="ficha-date-inputs" :style="getPreguntaControlStyle(pregunta)">
+                                                                    <q-input
+                                                                        outlined
+                                                                        dense
+                                                                        type="number"
+                                                                        class="ficha-date-inputs__field"
+                                                                        label="Año(s)"
+                                                                        :value="pregunta._dateInputsYearDraft"
+                                                                        @input="val => actualizarDateInputsPart(pregunta, 'year', val)"
+                                                                    />
+                                                                    <q-input
+                                                                        outlined
+                                                                        dense
+                                                                        type="number"
+                                                                        class="ficha-date-inputs__field"
+                                                                        label="Mes(es)"
+                                                                        :value="pregunta._dateInputsMonthDraft"
+                                                                        @input="val => actualizarDateInputsPart(pregunta, 'month', val)"
+                                                                    />
+                                                                    <q-input
+                                                                        outlined
+                                                                        dense
+                                                                        type="number"
+                                                                        class="ficha-date-inputs__field"
+                                                                        label="Día(as)"
+                                                                        :value="pregunta._dateInputsDayDraft"
+                                                                        @input="val => actualizarDateInputsPart(pregunta, 'day', val)"
+                                                                    />
+                                                                </div>
+                                                            </template>
+
                                                             <template v-else>
                                                                 <template v-if="esVisualizacion">
                                                                     <span class="ficha-valor">{{ obtenerValorTextoPregunta(pregunta) || '—' }}</span>
@@ -1534,6 +1569,17 @@
 
 .ficha-textm__input {
     flex: 1;
+}
+
+.ficha-date-inputs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ficha-date-inputs__field {
+    flex: 1 1 110px;
+    min-width: 0;
 }
 
 .ficha-input-counter-row {
@@ -4561,6 +4607,7 @@ export default {
                     return respuestaRaw || '';
                 case 'text':
                 case 'date':
+                case 'dateInputs':
                 case 'number':
                 case 'textarea':
                 case 'inputSearch':
@@ -4612,7 +4659,10 @@ export default {
                 _textMDraft: '',
                 _timeRangeStartDraft: '',
                 _timeRangeEndDraft: '',
-                _timeRangeAttemptedAdd: false
+                _timeRangeAttemptedAdd: false,
+                _dateInputsYearDraft: '',
+                _dateInputsMonthDraft: '',
+                _dateInputsDayDraft: ''
             };
 
             if (this.esPreguntaBranchedInputSearch(pregunta)) {
@@ -4639,6 +4689,10 @@ export default {
             pregunta.respuesta2 = this.inicializarRespuesta2Pregunta(pregunta, preguntaRaw.respuesta2);
             if ([ 'textm', 'timerangem' ].includes(String(pregunta.tipoControl || '').toLowerCase()) && !Array.isArray(pregunta.respuesta)) {
                 pregunta.respuesta = [];
+            }
+
+            if (String(pregunta.tipoControl || '').toLowerCase() === 'dateinputs') {
+                this.hidratarDateInputsDesdeRespuesta(pregunta);
             }
 
             if (this.esPreguntaBranchedInputSearch(pregunta)) {
@@ -5139,6 +5193,13 @@ export default {
                     : null;
             }
 
+            if (String(pregunta?.tipoControl || '').toLowerCase() === 'dateinputs') {
+                const dia = String(pregunta._dateInputsDayDraft || '').trim();
+                const mes = String(pregunta._dateInputsMonthDraft || '').trim();
+                const anio = String(pregunta._dateInputsYearDraft || '').trim();
+                return dia && mes && anio ? `${dia}/${mes}/${anio}` : null;
+            }
+
             if (Array.isArray(pregunta.respuesta)) {
                 if (pregunta.respuesta.includes('OTRO') || pregunta.respuesta.includes('OTROS')) {
                     return pregunta.respuesta
@@ -5412,6 +5473,20 @@ export default {
             }));
             pregunta._ramificacionesReadonlyHttp = (pregunta._ramificaciones || []).some(rama => !!String(rama?.value || '').trim());
         },
+        hidratarDateInputsDesdeRespuesta(pregunta) {
+            const valor = String(pregunta?.respuesta || '').trim();
+            if (!valor) {
+                pregunta._dateInputsDayDraft = '';
+                pregunta._dateInputsMonthDraft = '';
+                pregunta._dateInputsYearDraft = '';
+                return;
+            }
+
+            const partes = valor.split('/').map(item => item.trim());
+            pregunta._dateInputsDayDraft = partes[0] || '';
+            pregunta._dateInputsMonthDraft = partes[1] || '';
+            pregunta._dateInputsYearDraft = partes[2] || '';
+        },
         obtenerValorDisparadorBranched(pregunta) {
             return pregunta?._branchedTriggerValue || '';
         },
@@ -5479,6 +5554,21 @@ export default {
             const valorTexto = this.sanitizarValorTextoPregunta(pregunta, value);
             const valorNormalizado = valorTexto === '' ? (this.usaTipoNumero(pregunta) ? null : '') : valorTexto;
             this.$set(pregunta, 'respuesta', valorNormalizado);
+        },
+        actualizarDateInputsPart(pregunta, part, value) {
+            const limpio = String(value === null || value === undefined ? '' : value).replace(/\D/g, '');
+            let clave = '_dateInputsDayDraft';
+            let limite = 2;
+
+            if (part === 'year') {
+                clave = '_dateInputsYearDraft';
+                limite = 4;
+            } else if (part === 'month') {
+                clave = '_dateInputsMonthDraft';
+            }
+
+            this.$set(pregunta, clave, limpio.slice(0, limite));
+            pregunta.respuesta = this.serializarRespuestaPregunta(pregunta);
         },
         actualizarDraftTextM(pregunta, value) {
             this.$set(pregunta, '_textMDraft', value);
@@ -6494,6 +6584,7 @@ export default {
                     if (!this.mostrarPregunta(p)) {
                         switch (p.tipoControl) {
                             case 'text':    p.respuesta = ''; break
+                            case 'dateInputs': p.respuesta = ''; p._dateInputsYearDraft = ''; p._dateInputsMonthDraft = ''; p._dateInputsDayDraft = ''; break
                             case 'textM':   p.respuesta = []; p._textMDraft = ''; break
                             case 'timeRangeM': p.respuesta = []; p._timeRangeStartDraft = ''; p._timeRangeEndDraft = ''; p._timeRangeAttemptedAdd = false; break
                             case 'selectM': p.respuesta = []; break
@@ -6582,6 +6673,7 @@ export default {
                 if (this.modo === 'nuevo') {
                     switch (pregunta.tipoControl) {
                         case 'text':    this.$set(pregunta, 'respuesta', ''); break
+                        case 'dateInputs': this.$set(pregunta, 'respuesta', ''); this.$set(pregunta, '_dateInputsYearDraft', ''); this.$set(pregunta, '_dateInputsMonthDraft', ''); this.$set(pregunta, '_dateInputsDayDraft', ''); break
                         case 'selectM': this.$set(pregunta, 'respuesta', []); break
                         case 'label':   this.$set(pregunta, 'respuesta', 2); break
                         default:        this.$set(pregunta, 'respuesta', null); break
@@ -6594,6 +6686,7 @@ export default {
                 if (this.modo === 'nuevo') {
                     switch (pregunta.tipoControl) {
                         case 'text':    this.$set(pregunta, 'respuesta', ''); break
+                        case 'dateInputs': this.$set(pregunta, 'respuesta', ''); this.$set(pregunta, '_dateInputsYearDraft', ''); this.$set(pregunta, '_dateInputsMonthDraft', ''); this.$set(pregunta, '_dateInputsDayDraft', ''); break
                         case 'selectM': this.$set(pregunta, 'respuesta', []); break
                         case 'label':   this.$set(pregunta, 'respuesta', 2); break
                         default:        this.$set(pregunta, 'respuesta', null); break
@@ -6610,6 +6703,7 @@ export default {
                 if (!cumple && this.modo === 'nuevo') {
                     switch (pregunta.tipoControl) {
                         case 'text':    this.$set(pregunta, 'respuesta', ''); break
+                        case 'dateInputs': this.$set(pregunta, 'respuesta', ''); this.$set(pregunta, '_dateInputsYearDraft', ''); this.$set(pregunta, '_dateInputsMonthDraft', ''); this.$set(pregunta, '_dateInputsDayDraft', ''); break
                         case 'selectM': this.$set(pregunta, 'respuesta', []); break
                         case 'label':   this.$set(pregunta, 'respuesta', 2); break
                         default:        this.$set(pregunta, 'respuesta', null); break
@@ -6623,6 +6717,7 @@ export default {
             if (!cumple && this.modo === 'nuevo') {
                 switch (pregunta.tipoControl) {
                     case 'text':    this.$set(pregunta, 'respuesta', ''); break
+                    case 'dateInputs': this.$set(pregunta, 'respuesta', ''); this.$set(pregunta, '_dateInputsYearDraft', ''); this.$set(pregunta, '_dateInputsMonthDraft', ''); this.$set(pregunta, '_dateInputsDayDraft', ''); break
                     case 'selectM': this.$set(pregunta, 'respuesta', []); break
                     case 'label':   this.$set(pregunta, 'respuesta', 2); break
                     default:        this.$set(pregunta, 'respuesta', null); break
@@ -6639,8 +6734,15 @@ export default {
         },
         normalizarCondicion(valorBase, condValor) {
             const n = v => v?.toString().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-            const bases = Array.isArray(valorBase) ? valorBase : [valorBase];
-            const conds = Array.isArray(condValor) ? condValor : [condValor];
+            const expandirValores = valor => {
+                if (Array.isArray(valor)) return valor;
+                if (typeof valor === 'string' && valor.includes('|')) {
+                    return valor.split('|').map(item => item.trim()).filter(Boolean);
+                }
+                return [valor];
+            };
+            const bases = expandirValores(valorBase);
+            const conds = expandirValores(condValor);
             const baseVals = bases.map(n).filter(v => v !== '');
             const condVals = conds.map(n).filter(v => v !== '');
             if (baseVals.length === 0 || condVals.length === 0) return false;
