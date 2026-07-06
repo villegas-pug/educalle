@@ -6057,7 +6057,7 @@ export default {
         },
 
         async generarCompromisoAudio() {
-            if (!this.audioRow || !this.audioRow.idAnexoCabecera) {
+            if (!this.audioRow || !this.audioRow.idAnexoCabecera || !this.audioRow.correlativo) {
                 this.$q.notify({ type: "warning", message: "No se encontró la ficha para generar el compromiso" });
                 return;
             }
@@ -6067,7 +6067,10 @@ export default {
                 const { data, headers } = await this.$axios.get(
                     `${process.env.API_URL}/anexo/compromiso-nna/pdf`,
                     {
-                        params: { idAnexoCabecera: this.audioRow.idAnexoCabecera },
+                        params: {
+                            idAnexoCabecera: this.audioRow.idAnexoCabecera,
+                            correlativo: this.audioRow.correlativo
+                        },
                         responseType: "blob"
                     }
                 );
