@@ -129,7 +129,7 @@
                             <q-td :props="scope">
                                 <q-btn-dropdown dropdown-icon="settings" class="q-mr-xs acciones" dense>
                                     <q-list class="menu-acciones-ficha">
-                                        <!-- Editar Evaluación -->
+                                        <!-- Editar Ficha -->
                                         <q-item
                                             :clickable="puedeEditar(scope.row)"
                                             v-close-popup
@@ -144,22 +144,22 @@
                                                     text-color="white"
                                                 />
                                             </q-item-section>
-                                            <q-item-section class="menu-accion-label">Editar Evaluación</q-item-section>
+                                            <q-item-section class="menu-accion-label">Editar Ficha</q-item-section>
                                         </q-item>
 
-                                        <!-- Eliminar Evaluación -->
+                                        <!-- Anular Ficha -->
                                         <q-item clickable v-close-popup @click="eliminarRegistro(scope.row)" class="menu-accion-item menu-accion-item--anular">
                                             <q-item-section avatar>
                                                 <q-avatar icon="delete" color="negative" text-color="white" />
                                             </q-item-section>
-                                            <q-item-section class="menu-accion-label">Anular Evaluación</q-item-section>
+                                            <q-item-section class="menu-accion-label">Anular Ficha</q-item-section>
                                         </q-item>
-                                        <!-- Visualizar Evaluación -->
+                                        <!-- Ver Ficha -->
                                         <q-item clickable v-close-popup @click="verRegistro(scope.row)" class="menu-accion-item menu-accion-item--ver">
                                             <q-item-section avatar>
                                                 <q-avatar icon="visibility" color="primary" text-color="white" />
                                             </q-item-section>
-                                            <q-item-section class="menu-accion-label">Ver Evaluación</q-item-section>
+                                            <q-item-section class="menu-accion-label">Ver Ficha</q-item-section>
                                         </q-item>
                                         <!-- Visualizar Evaluación -->
                                         <q-item clickable v-close-popup @click="abrirDialogAudios(scope.row)" class="menu-accion-item menu-accion-item--audio">
@@ -170,6 +170,7 @@
                                         </q-item>
                                         <!-- Validar Ficha -->
                                         <q-item
+                                            v-show="false"
                                             :clickable="puedeValidarFicha(scope.row)"
                                             v-close-popup
                                             @click="puedeValidarFicha(scope.row) && abrirDialogValidarFicha(scope.row)"
@@ -212,10 +213,6 @@
                         <q-card flat>
 
                             <q-card-section>
-                                <div v-if="esVisualizacion" class="ficha-pdf-bar">
-                                    <q-btn label="Descargar PDF" icon="picture_as_pdf" color="green" @click="descargarPDF" />
-                                </div>
-
                                 <div class="contexto-ficha">
                                     <div class="row q-col-gutter-md">
                                         <div v-for="item in fichaContexto" :key="item.label" class="col-12 col-md-4">
@@ -4064,8 +4061,8 @@ export default {
             if (!row || !row.idAnexoCabecera) return;
 
             this.$q.dialog({
-                title: "ANULAR EVALUACIÓN",
-                message: `¿Anular la evaluación <strong>${row.nombreAnexo || ''}</strong>?`,
+                title: "ANULAR FICHA",
+                message: `¿Anular la ficha <strong>${row.nombreAnexo || ''}</strong>?`,
                 html: true,
                 cancel: true,
                 persistent: true,
@@ -4092,14 +4089,14 @@ export default {
 
                     this.$q.notify({
                         type: "positive",
-                        message: "Evaluación anulada correctamente"
+                        message: "Ficha anulada correctamente"
                     });
 
                     await this.cargarTablaAnexos();
                 } catch (error) {
                     this.$q.notify({
                         type: "negative",
-                        message: "Error al anular la evaluación"
+                        message: "Error al anular la ficha"
                     });
                 }
             });
