@@ -536,7 +536,7 @@
                                                                 <template v-if="esVisualizacion">
                                                                     <span class="ficha-valor">{{ obtenerValorTextoPregunta(pregunta) || '—' }}</span>
                                                                 </template>
-                                                                <div v-else class="ficha-date-inputs" :style="getPreguntaControlStyle(pregunta)">
+                                                                <div v-else class="ficha-date-inputs">
                                                                     <q-input
                                                                         outlined
                                                                         dense
@@ -544,6 +544,7 @@
                                                                         class="ficha-date-inputs__field"
                                                                         label="Año(s)"
                                                                         :value="pregunta._dateInputsYearDraft"
+                                                                        :style="getPreguntaControlStyle(pregunta)"
                                                                         @input="val => actualizarDateInputsPart(pregunta, 'year', val)"
                                                                     />
                                                                     <q-input
@@ -553,6 +554,7 @@
                                                                         class="ficha-date-inputs__field"
                                                                         label="Mes(es)"
                                                                         :value="pregunta._dateInputsMonthDraft"
+                                                                        :style="getPreguntaControlStyle(pregunta)"
                                                                         @input="val => actualizarDateInputsPart(pregunta, 'month', val)"
                                                                     />
                                                                     <q-input
@@ -562,6 +564,7 @@
                                                                         class="ficha-date-inputs__field"
                                                                         label="Día(as)"
                                                                         :value="pregunta._dateInputsDayDraft"
+                                                                        :style="getPreguntaControlStyle(pregunta)"
                                                                         @input="val => actualizarDateInputsPart(pregunta, 'day', val)"
                                                                     />
                                                                 </div>
@@ -1573,12 +1576,13 @@
 
 .ficha-date-inputs {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    align-items: flex-start;
     gap: 8px;
 }
 
 .ficha-date-inputs__field {
-    flex: 1 1 110px;
+    flex: 1 1 0;
     min-width: 0;
 }
 
