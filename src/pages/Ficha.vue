@@ -1196,6 +1196,16 @@
                     </q-card-section>
 
                     <q-card-actions align="right" class="audio-dialog__actions">
+                        <q-btn
+                            label="GENERAR COMPROMISO"
+                            icon="picture_as_pdf"
+                            size="sm"
+                            color="primary"
+                            class="audio-btn"
+                            :loading="generandoCompromiso"
+                            :disable="!esFichaSuscrita(audioRow) || loadingAudios || generandoCompromiso"
+                            @click="generarCompromisoAudio"
+                        />
                         <q-btn label="Cerrar" icon="close" size="sm" class="ficha-btn-cancelar audio-btn" v-close-popup />
                     </q-card-actions>
                 </q-card>
@@ -3707,6 +3717,7 @@ export default {
             audioRow: null,
             audiosList: [],
             loadingAudios: false,
+            generandoCompromiso: false,
             audioFile: null,
             audioBlobUrl: null,
             audioReemplazando: null,
@@ -5969,6 +5980,45 @@ export default {
             this.audioRow = row;
             this.dialogAudios = true;
             this.cargarAudios();
+        },
+
+        async generarCompromisoAudio() {
+            if (!this.audioRow || !this.audioRow.idAnexoCabecera) {
+                this.$q.notify({ type: "warning", message: "No se encontró la ficha para generar el compromiso" });
+                return;
+            }
+
+            this.generandoCompromiso = true;
+            try {
+                const { data, headers } = await this.$axios.get(
+                    `${process.env.API_URL}/anexo/compromiso-nna/pdf`,
+                    {
+                        params: { idAnexoCabecera: this.audioRow.idAnexoCabecera },
+                        responseType: "blob"
+                    }
+                );
+
+                const disposition = headers && (headers["content-disposition"] || headers["Content-Disposition"]);
+                let filename = `compromiso_${this.audioRow.idAnexoCabecera}.pdf`;
+                if (disposition) {
+                    const match = /filename="?([^\"]+)"?/.exec(disposition);
+                    if (match && match[1]) filename = match[1];
+                }
+
+                const blob = new Blob([data], { type: "application/pdf" });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                this.$q.notify({ type: "negative", message: "Error al generar el compromiso" });
+            } finally {
+                this.generandoCompromiso = false;
+            }
         },
 
         async cargarAudios() {
