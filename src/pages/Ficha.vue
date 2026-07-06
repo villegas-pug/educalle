@@ -164,9 +164,9 @@
                                         <!-- Visualizar Evaluación -->
                                         <q-item clickable v-close-popup @click="abrirDialogAudios(scope.row)" class="menu-accion-item menu-accion-item--audio">
                                             <q-item-section avatar>
-                                                <q-avatar icon="mic" color="secondary" text-color="white" />
+                                                <q-avatar icon="description" color="secondary" text-color="white" />
                                             </q-item-section>
-                                            <q-item-section class="menu-accion-label">Agregar Audio</q-item-section>
+                                            <q-item-section class="menu-accion-label">Agregar conformidad</q-item-section>
                                         </q-item>
                                         <!-- Validar Ficha -->
                                         <q-item
@@ -1037,12 +1037,12 @@
                 </q-card>
             </q-dialog>
 
-            <!-- DIALOGO GESTION DE AUDIOS -->
+            <!-- DIALOGO GESTION DE COMPROMISO -->
             <q-dialog v-model="dialogAudios" persistent @hide="limpiarAudioDialog">
                 <q-card class="audio-dialog">
                     <q-card-section class="audio-dialog__header bg-header-dialog">
                         <div class="audio-dialog__title-block">
-                            <div class="audio-dialog__title text-body2 text-bold">GESTIÓN DE AUDIOS</div>
+                            <div class="audio-dialog__title text-body2 text-bold">GESTIÓN DE COMPROMISO</div>
                             <div class="audio-dialog__subtitle text-caption" v-if="audioRow">
                                 {{ audioRow.codigoAnexo2 }} - Correlativo: {{ audioRow.correlativo }}
                             </div>
@@ -1059,19 +1059,19 @@
                     </q-card-section>
 
                     <q-card-section class="audio-dialog__body">
-                        <!-- Zona de subida / reemplazo -->
+                        <!-- Zona de carga de conformidad -->
                         <div class="audio-upload-row row q-col-gutter-sm items-center q-mb-md">
                             <div class="col-12 col-sm">
                                 <q-file
                                     ref="audioFileInput"
                                     v-model="audioFile"
-                                    label="Seleccionar audio"
+                                    label="Seleccionar conformidad firmada"
                                     class="audio-file-field"
                                     outlined
                                     dense
                                     clearable
-                                    accept="audio/*,.mpeg"
-                                    :disable="loadingAudios"
+                                    accept=".pdf,application/pdf"
+                                    :disable="loadingAudios || tieneConformidadRegistrada"
                                 >
                                     <template v-slot:prepend>
                                         <q-icon name="attach_file" class="audio-field-icon" />
@@ -1079,45 +1079,34 @@
                                 </q-file>
                             </div>
                             <div class="col-12 col-sm-auto">
+                                <q-input
+                                    v-model="fechaInscripcion"
+                                    outlined
+                                    dense
+                                    type="date"
+                                    label="Fecha inscripción"
+                                    class="audio-file-field"
+                                    :disable="loadingAudios || tieneConformidadRegistrada"
+                                />
+                            </div>
+                            <div class="col-12 col-sm-auto">
                                 <q-btn
-                                    v-if="!audioReemplazando"
                                     label="Subir"
                                     icon="upload"
                                     class="audio-btn btn-inabif"
                                     size="sm"
                                     :loading="loadingAudios"
-                                    :disable="!audioFile"
+                                    :disable="!puedeSubirConformidad"
                                     @click="subirAudio"
-                                />
-                                <q-btn
-                                    v-else
-                                    label="Reemplazar"
-                                    icon="swap_horiz"
-                                    class="audio-btn btn-inabif"
-                                    size="sm"
-                                    :loading="loadingAudios"
-                                    :disable="!audioFile"
-                                    @click="subirAudio"
-                                />
-                            </div>
-                            <div class="col-12 col-sm-auto" v-if="audioReemplazando">
-                                <q-btn
-                                    label="Cancelar"
-                                    icon="close"
-                                    class="audio-btn audio-btn--cancel"
-                                    outline
-                                    size="sm"
-                                    color="grey"
-                                    @click="cancelarReemplazo"
                                 />
                             </div>
                         </div>
 
-                        <div v-if="audioReemplazando" class="audio-replacing-banner text-caption q-mb-sm">
-                            Reemplazando: <strong>{{ audioReemplazando.nombreArchivo }}</strong>
+                        <div v-if="tieneConformidadRegistrada" class="audio-replacing-banner text-caption q-mb-sm">
+                            Ya existe una conformidad registrada. Elimine el documento actual para cargar otro.
                         </div>
 
-                        <!-- Tabla de audios -->
+                        <!-- Tabla de conformidades -->
                         <q-table
                             class="audio-table"
                             :data="audiosList"
@@ -1143,32 +1132,32 @@
                             </template>
 
                             <template v-slot:body-cell-acciones="props">
-                                <q-td :props="props">
-                                    <div class="audio-actions-row">
-                                        <q-btn
-                                            icon="play_circle"
-                                            color="primary"
-                                            class="audio-action-btn audio-action-btn--play"
-                                            flat
-                                            round
-                                            size="sm"
-                                            @click="reproducirAudio(props.row)"
-                                        >
-                                            <q-tooltip>Reproducir</q-tooltip>
-                                        </q-btn>
-                                        <q-btn
-                                            icon="edit"
-                                            color="warning"
-                                            class="audio-action-btn audio-action-btn--edit"
-                                            flat
-                                            round
-                                            size="sm"
-                                            @click="iniciarReemplazo(props.row)"
-                                        >
-                                            <q-tooltip>Reemplazar</q-tooltip>
-                                        </q-btn>
-                                        <q-btn
-                                            icon="delete"
+                                        <q-td :props="props">
+                                            <div class="audio-actions-row">
+                                                <q-btn
+                                                    icon="download"
+                                                    color="primary"
+                                                    class="audio-action-btn audio-action-btn--play"
+                                                    flat
+                                                    round
+                                                    size="sm"
+                                                    @click="descargarConformidad(props.row)"
+                                                >
+                                                    <q-tooltip>Descargar</q-tooltip>
+                                                </q-btn>
+                                                <q-btn
+                                                    icon="picture_as_pdf"
+                                                    color="info"
+                                                    class="audio-action-btn audio-action-btn--edit"
+                                                    flat
+                                                    round
+                                                    size="sm"
+                                                    @click="verPdfConformidad(props.row)"
+                                                >
+                                                    <q-tooltip>Ver PDF</q-tooltip>
+                                                </q-btn>
+                                                <q-btn
+                                                    icon="delete"
                                             color="negative"
                                             class="audio-action-btn audio-action-btn--delete"
                                             flat
@@ -1184,15 +1173,10 @@
 
                             <template v-slot:no-data>
                                 <div class="full-width row flex-center q-pa-md text-grey">
-                                    No hay audios registrados
+                                    No hay conformidad registrada
                                 </div>
                             </template>
                         </q-table>
-
-                        <!-- Reproductor -->
-                        <div v-if="audioBlobUrl" class="q-mt-md">
-                            <audio controls :src="audioBlobUrl" type="audio/mpeg" class="audio-player-inline"></audio>
-                        </div>
                     </q-card-section>
 
                     <q-card-actions align="right" class="audio-dialog__actions">
@@ -3719,14 +3703,13 @@ export default {
             loadingAudios: false,
             generandoCompromiso: false,
             audioFile: null,
-            audioBlobUrl: null,
-            audioReemplazando: null,
+            fechaInscripcion: null,
             fichaPeriodo: null,
             fichaTipo: null,
             columnasAudios: [
                 { name: "nro", label: "N°", field: "nro", align: "center", sortable: false, style: "width: 50px;" },
                 { name: "nombreArchivo", label: "NOMBRE DE ARCHIVO", field: "nombreArchivo", align: "left", sortable: true },
-                { name: "acciones", label: "ACCIONES", field: "acciones", align: "center", style: "width: 180px;" }
+                { name: "acciones", label: "ACCIONES", field: "acciones", align: "center", style: "width: 200px;" }
             ]
 
         }
@@ -6038,136 +6021,37 @@ export default {
                     estado: item.ACA_ESTADO
                 }));
             } catch (error) {
-                this.$q.notify({ type: "negative", message: "Error al cargar audios" });
+                this.$q.notify({ type: "negative", message: "Error al cargar la conformidad" });
             } finally {
                 this.loadingAudios = false;
             }
         },
 
+        esArchivoPdf(file) {
+            if (!file) return false;
+            const nombre = String(file.name || "").toLowerCase();
+            const mime = String(file.type || "").toLowerCase();
+            return nombre.endsWith(".pdf") || mime === "application/pdf";
+        },
+
         async subirAudio() {
             if (!this.audioFile) {
-                this.$q.notify({ type: "warning", message: "Seleccione un archivo de audio" });
+                this.$q.notify({ type: "warning", message: "Seleccione un archivo PDF" });
                 return;
             }
 
-            const extensionesAudioPermitidas = new Set([
-                "mp1", "mp2", "mp3", "mpeg",
-                "aac", "m4a",
-                "ogg", "oga", "opus",
-                "wav", "wave", "pcm", "lpcm",
-                "flac", "alac", "aif", "aiff",
-                "ape", "wv", "tta", "tak", "shn",
-                "wma", "amr", "awb",
-                "ac3", "eac3", "ec3", "dts", "dtshd", "thd", "mlp",
-                "ra", "ram", "au", "caf", "voc", "gsm", "spx",
-                "mid", "midi", "kar", "rmi",
-                "mod", "xm", "s3m", "it",
-                "dsd", "dsf", "dff",
-                "mpc", "oma", "aa3", "at3",
-                "webm", "weba"
-            ]);
+            if (!this.fechaInscripcion) {
+                this.$q.notify({ type: "warning", message: "Ingrese la fecha de inscripción" });
+                return;
+            }
 
-            const mimeAudioPermitidos = new Set([
-                "audio/mpeg",
-                "audio/mp1",
-                "audio/mp2",
-                "audio/mp3",
-                "audio/aac",
-                "audio/aacp",
-                "audio/mp4",
-                "audio/x-m4a",
-                "audio/ogg",
-                "audio/vorbis",
-                "audio/opus",
-                "audio/wav",
-                "audio/wave",
-                "audio/x-wav",
-                "audio/vnd.wave",
-                "audio/pcm",
-                "audio/lpcm",
-                "audio/l16",
-                "audio/l24",
-                "audio/flac",
-                "audio/x-flac",
-                "audio/alac",
-                "audio/x-alac",
-                "audio/aiff",
-                "audio/x-aiff",
-                "audio/ape",
-                "audio/x-ape",
-                "audio/wavpack",
-                "audio/x-wavpack",
-                "audio/tta",
-                "audio/x-tta",
-                "audio/x-tak",
-                "audio/x-shorten",
-                "audio/x-ms-wma",
-                "audio/amr",
-                "audio/amr-wb",
-                "audio/ac3",
-                "audio/eac3",
-                "audio/vnd.dolby.dd-raw",
-                "audio/vnd.dolby.ddplus",
-                "audio/vnd.dolby.mlp",
-                "audio/vnd.dts",
-                "audio/vnd.dts.hd",
-                "audio/vnd.rn-realaudio",
-                "audio/x-pn-realaudio",
-                "audio/basic",
-                "audio/x-caf",
-                "audio/x-voc",
-                "audio/gsm",
-                "audio/speex",
-                "audio/midi",
-                "audio/x-midi",
-                "audio/sp-midi",
-                "audio/mod",
-                "audio/x-mod",
-                "audio/xm",
-                "audio/s3m",
-                "audio/it",
-                "audio/dsd",
-                "audio/dsf",
-                "audio/dff",
-                "audio/musepack",
-                "audio/x-musepack",
-                "audio/atrac",
-                "audio/x-oma",
-                "audio/aa3",
-                "audio/at3",
-                "audio/webm",
-                "audio/weba"
-            ]);
+            if (this.tieneConformidadRegistrada) {
+                this.$q.notify({ type: "warning", message: "Solo se permite una conformidad registrada" });
+                return;
+            }
 
-            const obtenerExtension = (nombreArchivo) => {
-                if (!nombreArchivo || typeof nombreArchivo !== "string") return "";
-                const partes = nombreArchivo.toLowerCase().split(".");
-                return partes.length > 1 ? partes.pop().trim() : "";
-            };
-
-            const esArchivoAudio = (file) => {
-                if (!file) return false;
-
-                const mime = (file.type || "").toLowerCase();
-                const extension = obtenerExtension(file.name || "");
-
-                if (extension && extensionesAudioPermitidas.has(extension)) {
-                    return true;
-                }
-
-                if (mime) {
-                    if (mimeAudioPermitidos.has(mime)) return true;
-                    if (mime.startsWith("audio/")) {
-                        return !!extension && extensionesAudioPermitidas.has(extension);
-                    }
-                    return false;
-                }
-
-                return false;
-            };
-
-            if (!esArchivoAudio(this.audioFile)) {
-                this.$q.notify({ type: "negative", message: "Solo se permiten archivos de audio" });
+            if (!this.esArchivoPdf(this.audioFile)) {
+                this.$q.notify({ type: "negative", message: "Solo se permiten archivos PDF" });
                 return;
             }
 
@@ -6175,70 +6059,44 @@ export default {
             try {
                 const formData = new FormData();
                 formData.append("audio", this.audioFile);
+                formData.append("idAnexoCabecera", this.audioRow.idAnexoCabecera);
 
-                if (this.audioReemplazando) {
-                    formData.append("idAudio", this.audioReemplazando.idAudio);
-                    formData.append("estado", 1);
+                await this.$axios.post(
+                    `${process.env.API_URL}/anexo-cabecera-audio`,
+                    formData,
+                    {
+                        headers: { "Content-Type": "multipart/form-data" }
+                    }
+                );
 
-                    await this.$axios.put(
-                        `${process.env.API_URL}/anexo-cabecera-audio`,
-                        formData,
-                        {
-                            headers: { "Content-Type": "multipart/form-data" }
+                await this.$axios.patch(
+                    `${process.env.API_URL}/save-conformidad-nna`,
+                    null,
+                    {
+                        params: {
+                            idAnexoCabecera: this.audioRow.idAnexoCabecera,
+                            fechaInscripcion: this.fechaInscripcion
                         }
-                    );
+                    }
+                );
 
-                    this.$q.notify({ type: "positive", message: "Audio reemplazado correctamente" });
-                    this.audioReemplazando = null;
-                } else {
-                    formData.append("idAnexoCabecera", this.audioRow.idAnexoCabecera);
-
-                    await this.$axios.post(
-                        `${process.env.API_URL}/anexo-cabecera-audio`,
-                        formData,
-                        {
-                            headers: { "Content-Type": "multipart/form-data" }
-                        }
-                    );
-
-                    this.$q.notify({ type: "positive", message: "Audio subido correctamente" });
-                }
+                this.$q.notify({ type: "positive", message: "Conformidad registrada correctamente" });
 
                 this.audioFile = null;
-                this.cargarAudios();
+                this.fechaInscripcion = null;
+                await this.cargarAudios();
             } catch (error) {
-                this.$q.notify({ type: "negative", message: "Error al guardar el audio" });
+                await this.cargarAudios();
+                this.$q.notify({ type: "negative", message: "Error al guardar la conformidad" });
             } finally {
                 this.loadingAudios = false;
             }
         },
 
-        iniciarReemplazo(row) {
-            this.audioReemplazando = row;
-            this.audioFile = null;
-            this.$nextTick(() => {
-                this.abrirSelectorAudio();
-            });
-        },
-        abrirSelectorAudio() {
-            const qFile = this.$refs.audioFileInput;
-            if (!qFile || !qFile.$el) return;
-
-            const input = qFile.$el.querySelector('input[type="file"]');
-            if (!input) return;
-
-            input.click();
-        },
-
-        cancelarReemplazo() {
-            this.audioReemplazando = null;
-            this.audioFile = null;
-        },
-
         async eliminarAudio(row) {
             this.$q.dialog({
-                title: "ELIMINAR AUDIO",
-                message: `¿Eliminar el audio <strong>${row.nombreArchivo}</strong>?`,
+                title: "ELIMINAR CONFORMIDAD",
+                message: `¿Eliminar la conformidad <strong>${row.nombreArchivo}</strong>?`,
                 html: true,
                 persistent: true,
                 class: "audio-delete-dialog dialog-mensaje",
@@ -6266,47 +6124,59 @@ export default {
                         }
                     );
 
-                    this.$q.notify({ type: "positive", message: "Audio eliminado correctamente" });
-
-                    if (this.audioReemplazando && this.audioReemplazando.idAudio === row.idAudio) {
-                        this.audioReemplazando = null;
-                        this.audioFile = null;
-                    }
-
-                    this.liberarAudioBlob();
-                    this.cargarAudios();
+                    this.$q.notify({ type: "positive", message: "Conformidad eliminada correctamente" });
+                    await this.cargarAudios();
                 } catch (error) {
-                    this.$q.notify({ type: "negative", message: "Error al eliminar el audio" });
+                    this.$q.notify({ type: "negative", message: "Error al eliminar la conformidad" });
                 } finally {
                     this.loadingAudios = false;
                 }
             });
         },
 
-        async reproducirAudio(row) {
-            try {
-                const res = await this.$axios.get(
-                    `${process.env.API_URL}/anexo-cabecera-audio`,
-                    {
-                        params: {
-                            idAnexoCabecera: this.audioRow.idAnexoCabecera,
-                            idAudio: row.idAudio
-                        },
-                        responseType: "blob"
-                    }
-                );
+        async obtenerBlobConformidad(row) {
+            const res = await this.$axios.get(
+                `${process.env.API_URL}/anexo-cabecera-audio`,
+                {
+                    params: {
+                        idAnexoCabecera: this.audioRow.idAnexoCabecera,
+                        idAudio: row.idAudio
+                    },
+                    responseType: "blob"
+                }
+            );
 
-                this.liberarAudioBlob();
-                this.audioBlobUrl = window.URL.createObjectURL(res.data);
+            return res.data;
+        },
+
+        async descargarConformidad(row) {
+            try {
+                const data = await this.obtenerBlobConformidad(row);
+                const blob = new Blob([data], { type: "application/pdf" });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = row.nombreArchivo || `conformidad_${row.idAudio}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
             } catch (error) {
-                this.$q.notify({ type: "negative", message: "Error al reproducir el audio" });
+                this.$q.notify({ type: "negative", message: "Error al descargar la conformidad" });
             }
         },
 
-        liberarAudioBlob() {
-            if (this.audioBlobUrl) {
-                window.URL.revokeObjectURL(this.audioBlobUrl);
-                this.audioBlobUrl = null;
+        async verPdfConformidad(row) {
+            try {
+                const data = await this.obtenerBlobConformidad(row);
+                const blob = new Blob([data], { type: "application/pdf" });
+                const url = window.URL.createObjectURL(blob);
+                window.open(url, "_blank");
+                window.setTimeout(() => {
+                    window.URL.revokeObjectURL(url);
+                }, 1000);
+            } catch (error) {
+                this.$q.notify({ type: "negative", message: "Error al visualizar el PDF" });
             }
         },
 
@@ -6314,8 +6184,7 @@ export default {
             this.audioRow = null;
             this.audiosList = [];
             this.audioFile = null;
-            this.audioReemplazando = null;
-            this.liberarAudioBlob();
+            this.fechaInscripcion = null;
         },
 
         async cargarResponsables() {
@@ -7099,6 +6968,17 @@ export default {
 
         puedeSeleccionarEspacioIntervencion() {
             return !!this.unidadSeleccionada && !!this.servicioSeleccionado;
+        },
+
+        tieneConformidadRegistrada() {
+            return Array.isArray(this.audiosList) && this.audiosList.length > 0;
+        },
+
+        puedeSubirConformidad() {
+            return !!this.audioFile
+                && !!this.fechaInscripcion
+                && !this.loadingAudios
+                && !this.tieneConformidadRegistrada;
         },
 
         fichaFooterFloatingStyle() {
