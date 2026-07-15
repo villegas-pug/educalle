@@ -1,200 +1,43 @@
     <template>
     <div class="ficha-page">
-            <template>
-                <div class="q-pa-md">
+            <component
+                :is="filtersComponent"
+                :anio-seleccionado="anioSeleccionado"
+                :anios="anios"
+                :centro-nombre="centroNombre"
+                :centro-seleccionado="centroSeleccionado"
+                :puede-seleccionar-espacio-intervencion="puedeSeleccionarEspacioIntervencion"
+                @update:anioSeleccionado="anioSeleccionado = $event"
+                @limpiar-centro="limpiarCentro"
+                @seleccionar-centro="abrirDialogCentros"
+            />
 
-                    <!-- FILTROS -->
-                    <div class="row q-col-gutter-md justify-start">
-
-                        <!-- AÑO -->
-                        <div class="col-12 col-sm-8 col-md-4 col-lg-3">
-                            <q-select v-model="anioSeleccionado" :options="anios" label="PERIODO" option-label="anio"
-                                option-value="id" emit-value map-options outlined dense :loading="anioSeleccionado" />
-                        </div>
-
-                        <!-- PERIORO 
-                        <div class="col-12 col-md-2">
-                            <q-select v-model="periodoSeleccionado" :options="periodos" label="PERIODO"
-                                option-label="nombrePeriodo" option-value="id" emit-value map-options outlined dense
-                                :loading="periodoSeleccionado" />
-                        </div> -->
-
-                        <!-- CENTRO -->
-                        <div class="col-12 col-sm-8 col-md-5 col-lg-4">
-                            <q-input v-model="centroNombre" label="ESPACIO DE INTERVENCIÓN" outlined dense readonly
-                                :disable="!puedeSeleccionarEspacioIntervencion">
-                                <template v-slot:append>
-
-                                    <!-- BOTÓN LIMPIAR -->
-                                    <q-btn v-if="centroSeleccionado" icon="close" flat round dense color="negative"
-                                        @click="limpiarCentro" />
-
-                                    <!-- BOTÓN BUSCAR -->
-                                    <q-btn icon="search" flat round dense color="primary" @click="abrirDialogCentros"
-                                        :disable="!puedeSeleccionarEspacioIntervencion" />
-
-                                </template>
-                            </q-input>
-                        </div>
-
-                    </div>
-
-
-
-                </div>
-            </template>
-
-            <div class="row">
-                <div class="col-12 q-gutter-sm text-right q-mt-sm q-mb-md ficha-acciones-principales">
-                    <q-btn
-                        label="RESETEAR FILTROS"
-                        color="grey-5"
-                        text-color="white"
-                        icon-right="restart_alt"
-                        class="btn-seccion-acciones ficha-accion-principal"
-                        size="sm"
-                        @click="resetearFiltrosPrincipal"
-                    />
-                    <q-btn label="NUEVO" icon="add" class="btn-inabif ficha-accion-principal" size="sm" @click="abrirDialog"
-                        :disable="!puedeIntentarNuevo" />
-                    <q-btn label="EXCEL" icon="download" color="green" class="btn-seccion-acciones ficha-accion-principal" size="sm" />
-                </div>
-            </div>
-            <!-- TABLA -->
-            <div class="q-pa-md">
-                <div class="col-12">
-
-                    <q-table class="tabla-anexos" :data="dataTableFiltrada" :columns="columnasTableAnexos" row-key="idAnexoCabecera"
-                        table-header-class="bg-inabif text-bold" :rows-per-page-options="[10, 20, 50]"
-                        :filter="filtroTabla" :loading="loadingTabla" dense flat bordered>
-                        <!-- SLOT PARA ESTADO -->
-                        <template v-slot:body-cell-estado="props">
-                            <q-td :props="props">
-                                <q-chip
-                                    class="chip-estado"
-                                    :class="`chip-estado--${String(props.row.estado)}`"
-                                    :color="estadosMap[props.row.estado]?.color || 'grey'"
-                                    :text-color="estadosMap[props.row.estado]?.textColor || 'white'"
-                                    :icon="estadosMap[props.row.estado]?.icon || 'help'"
-                                    size="sm"
-                                >
-                                    {{ estadosMap[props.row.estado]?.label || 'DESCONOCIDO' }}
-                                </q-chip>
-                            </q-td>
-                        </template>
-
-                        <!-- SLOTS PARA TEXTO LARGO CON TOOLTIP -->
-                        <template v-slot:body-cell-nombreUnidad="props">
-                            <q-td :props="props">
-                                <div class="ellipsis" :title="props.row.nombreUnidad">
-                                    {{ props.row.nombreUnidad }}
-                                </div>
-                            </q-td>
-                        </template>
-
-                        <template v-slot:body-cell-nombreServicio="props">
-                            <q-td :props="props">
-                                <div class="ellipsis" :title="props.row.nombreServicio">
-                                    {{ props.row.nombreServicio }}
-                                </div>
-                            </q-td>
-                        </template>
-
-                        <template v-slot:body-cell-nombreCentro="props">
-                            <q-td :props="props">
-                                <div class="ellipsis" :title="props.row.nombreCentro">
-                                    {{ props.row.nombreCentro }}
-                                </div>
-                            </q-td>
-                        </template>
-
-                        <template v-slot:body-cell-nombreAnexo="props">
-                            <q-td :props="props">
-                                <div class="ellipsis" :title="props.row.nombreAnexo">
-                                    {{ props.row.nombreAnexo }}
-                                </div>
-                            </q-td>
-                        </template>
-
-                        <!-- SLOT PARA BUSCADOR -->
-                        <template v-slot:top-right>
-                            <q-input dense outlined debounce="300" v-model="filtroTabla" placeholder="Buscar...">
-                                <template v-slot:append>
-                                    <q-icon name="search" />
-                                </template>
-                            </q-input>
-                        </template>
-
-                        <template v-slot:body-cell-acciones="scope">
-                            <q-td :props="scope">
-                                <q-btn-dropdown dropdown-icon="settings" class="q-mr-xs acciones" dense>
-                                    <q-list class="menu-acciones-ficha">
-                                        <!-- Editar Ficha -->
-                                        <q-item
-                                            :clickable="puedeEditar(scope.row)"
-                                            v-close-popup
-                                            @click="puedeEditar(scope.row) && editarRegistro(scope.row)"
-                                            class="menu-accion-item menu-accion-item--editar"
-                                            :class="{ 'text-grey-6': !puedeEditar(scope.row) }"
-                                        >
-                                            <q-item-section avatar>
-                                                <q-avatar
-                                                    icon="edit"
-                                                    :color="puedeEditar(scope.row) ? 'warning' : 'grey'"
-                                                    text-color="white"
-                                                />
-                                            </q-item-section>
-                                            <q-item-section class="menu-accion-label">Editar Ficha</q-item-section>
-                                        </q-item>
-
-                                        <!-- Anular Ficha -->
-                                        <q-item clickable v-close-popup @click="eliminarRegistro(scope.row)" class="menu-accion-item menu-accion-item--anular">
-                                            <q-item-section avatar>
-                                                <q-avatar icon="delete" color="negative" text-color="white" />
-                                            </q-item-section>
-                                            <q-item-section class="menu-accion-label">Anular Ficha</q-item-section>
-                                        </q-item>
-                                        <!-- Ver Ficha -->
-                                        <q-item clickable v-close-popup @click="verRegistro(scope.row)" class="menu-accion-item menu-accion-item--ver">
-                                            <q-item-section avatar>
-                                                <q-avatar icon="visibility" color="primary" text-color="white" />
-                                            </q-item-section>
-                                            <q-item-section class="menu-accion-label">Ver Ficha</q-item-section>
-                                        </q-item>
-                                        <!-- Visualizar Evaluación -->
-                                        <q-item clickable v-close-popup @click="abrirDialogAudios(scope.row)" class="menu-accion-item menu-accion-item--audio">
-                                            <q-item-section avatar>
-                                                <q-avatar icon="description" color="secondary" text-color="white" />
-                                            </q-item-section>
-                                            <q-item-section class="menu-accion-label">Agregar conformidad</q-item-section>
-                                        </q-item>
-                                        <!-- Validar Ficha -->
-                                        <q-item
-                                            v-show="false"
-                                            :clickable="puedeValidarFicha(scope.row)"
-                                            v-close-popup
-                                            @click="puedeValidarFicha(scope.row) && abrirDialogValidarFicha(scope.row)"
-                                            class="menu-accion-item menu-accion-item--validar"
-                                            :class="{ 'text-grey-6': !puedeValidarFicha(scope.row) }"
-                                        >
-                                            <q-item-section avatar>
-                                                <q-avatar
-                                                    icon="verified"
-                                                    :color="puedeValidarFicha(scope.row) ? 'positive' : 'grey'"
-                                                    text-color="white"
-                                                />
-                                            </q-item-section>
-                                            <q-item-section class="menu-accion-label">Validar Ficha</q-item-section>
-                                        </q-item>
-                                    </q-list>
-                                </q-btn-dropdown>
-                            </q-td>
-                        </template>
-
-                    </q-table>
-
-                </div>
-            </div>
+            <component
+                :is="primaryActionsComponent"
+                :mostrar-resetear="mostrarAccionPrincipal('resetear')"
+                :mostrar-nuevo="mostrarAccionPrincipal('nuevo')"
+                :mostrar-excel="mostrarAccionPrincipal('excel')"
+                :puede-intentar-nuevo="puedeIntentarNuevo"
+                @resetear="resetearFiltrosPrincipal"
+                @nuevo="abrirDialog"
+            />
+            <component
+                :is="tableComponent"
+                :rows="dataTableFiltrada"
+                :columns="columnasTableAnexos"
+                :estados-map="estadosMap"
+                :filter="filtroTabla"
+                :loading="loadingTabla"
+                :acciones="accionesTablaConfiguradas"
+                :puede-editar="puedeEditar"
+                :puede-validar="puedeValidarFicha"
+                @update:filter="filtroTabla = $event"
+                @editar="editarRegistro"
+                @anular="eliminarRegistro"
+                @ver="verRegistro"
+                @conformidad="abrirDialogAudios"
+                @validar="abrirDialogValidarFicha"
+            />
             <q-dialog v-model="dialog" persistent @hide="resetModo">
                 <q-card class="ficha-dialog">
                     <div ref="fichaScrollWrapper" class="ficha-scroll-wrapper">
@@ -830,83 +673,24 @@
                     </q-card-actions>
                 </q-card>
             </q-dialog>
-            <q-dialog v-model="dialogHttpPregunta" persistent>
-                <q-card class="ficha-http-dialog">
-                    <q-card-section class="bg-header-dialog ficha-http-dialog__header">
-                        <div class="text-body2 text-bold">{{ tituloModalHttpPregunta }}</div>
-                        <q-btn icon="close" flat round dense v-close-popup />
-                    </q-card-section>
-
-                    <q-card-section class="ficha-http-dialog__body">
-                        <div class="row q-col-gutter-md">
-                            <div
-                                v-for="campo in camposModalHttpPregunta"
-                                :key="campo.paramKey"
-                                class="col-12"
-                            >
-                                <q-input
-                                    outlined
-                                    dense
-                                    :type="campo.type"
-                                    :label="campo.label"
-                                    :value="formHttpPregunta[campo.paramKey]"
-                                    @input="val => $set(formHttpPregunta, campo.paramKey, val)"
-                                />
-                            </div>
-                        </div>
-                    </q-card-section>
-
-                    <q-card-actions align="right" class="ficha-http-dialog__actions">
-                        <q-btn flat label="Cancelar" color="grey-7" v-close-popup />
-                        <q-btn
-                            unelevated
-                            color="primary"
-                            icon="search"
-                            label="Buscar"
-                            :loading="loadingHttpPregunta"
-                            @click="ejecutarBusquedaPreguntaHttp"
-                        />
-                    </q-card-actions>
-                </q-card>
-            </q-dialog>
-            <q-dialog v-model="dialogCentros" persistent>
-                <q-card style="width:800px; max-width:100vw">
-
-                    <q-card-section class="bg-header-dialog">
-                        <span style="float: right;">
-                            <q-btn icon="close" v-close-popup flat round size="sm"></q-btn>
-                        </span>
-
-                        <div class="text-body2 text-bold">SELECCIONAR CENTRO</div>
-                    </q-card-section>
-
-                    <q-card-section>
-
-                        <q-table :data="centros" :columns="columnasCentros" row-key="idUnidadOrganica"
-                            table-header-class="bg-inabif text-bold" dense flat bordered :loading="loadingCentros"
-                            :filter="filtroCentros" :rows-per-page-options="[5, 10, 20, 50]">
-                            <template v-slot:top-right>
-                                <q-input dense outlined debounce="300" v-model="filtroCentros"
-                                    placeholder="Buscar centro..." clearable>
-                                    <template v-slot:append>
-                                        <q-icon name="search" />
-                                    </template>
-                                </q-input>
-                            </template>
-
-                            <template v-slot:body-cell-accion="props">
-                                <q-td :props="props">
-                                    <q-btn label="Seleccionar" class="btn-inabif" size="sm"
-                                        @click="seleccionarCentro(props.row)" />
-                                </q-td>
-                            </template>
-
-                        </q-table>
-
-                    </q-card-section>
-
-                </q-card>
-            </q-dialog>
+            <ficha-http-search-dialog
+                :value="dialogHttpPregunta"
+                :title="tituloModalHttpPregunta"
+                :fields="camposModalHttpPregunta"
+                :form="formHttpPregunta"
+                :loading="loadingHttpPregunta"
+                @input="dialogHttpPregunta = $event"
+                @update:form="actualizarFormHttpPregunta"
+                @search="ejecutarBusquedaPreguntaHttp"
+            />
+            <ficha-center-selector-dialog
+                :value="dialogCentros"
+                :centros="centros"
+                :columns="columnasCentros"
+                :loading="loadingCentros"
+                @input="dialogCentros = $event"
+                @select="seleccionarCentro"
+            />
 
             <!-- DIALOGO SUPERVISADOS -->
             <q-dialog v-model="dialogSupervisados" persistent>
@@ -3431,10 +3215,58 @@ audio {
 import axios from "axios";
 import { IMAGE_MAP } from "src/constants/image-map.constant";
 import { normalizeTextSpacing } from "src/utils/normalize-text-spacing.util";
+import questionEngine from "src/modules/nna/dynamic-engine/question-engine";
+import {
+    obtenerAnexos,
+    obtenerCatalogoPreguntas,
+    obtenerResponsablesCentro,
+    obtenerResponsablesSupervision,
+    obtenerServicios,
+    obtenerUnidades,
+    listarAnexos,
+    listarCentros
+} from "src/services/ficha-catalog.service";
+import {
+    actualizarFicha,
+    anularFicha,
+    crearFicha,
+    descargarCompromisoPdf,
+    descargarFichaPdf,
+    eliminarAudio,
+    guardarConformidadFicha,
+    guardarConformidadNna,
+    listarAnexosCabecera,
+    listarAudios,
+    obtenerAudioBlob,
+    obtenerRespuestas,
+    subirAudio,
+    validarPersonal
+} from "src/services/ficha-record.service";
+import { executeDynamicHttp } from "src/services/ficha-dynamic-http.service";
+import FichaFilters from "src/components/ficha/FichaFilters.vue";
+import FichaPrimaryActions from "src/components/ficha/FichaPrimaryActions.vue";
+import FichaTable from "src/components/ficha/FichaTable.vue";
+import FichaCenterSelectorDialog from "src/components/ficha/FichaCenterSelectorDialog.vue";
+import FichaHttpSearchDialog from "src/components/ficha/FichaHttpSearchDialog.vue";
 
 export default {
 
-    name: 'Ficha',
+    name: 'FichaDynamicEditor',
+
+    components: {
+        FichaFilters,
+        FichaPrimaryActions,
+        FichaTable,
+        FichaCenterSelectorDialog,
+        FichaHttpSearchDialog
+    },
+
+    props: {
+        pageConfig: {
+            type: Object,
+            default: () => ({})
+        }
+    },
 
     data() {
         return {
@@ -3705,8 +3537,6 @@ export default {
                     align: "center"
                 }
             ],
-            filtroCentros: "",
-
             dialogValidarFicha: false,
             fichaAValidar: null,
             personalValidacion: [],
@@ -3762,6 +3592,14 @@ export default {
         }
     },
     methods: {
+
+        mostrarAccionPrincipal(accion) {
+            return this.accionesPrincipalesConfiguradas[accion] !== false;
+        },
+
+        mostrarAccionTabla(accion) {
+            return this.accionesTablaConfiguradas[accion] !== false;
+        },
 
         resetFooterFichaFlotante() {
             this.fichaFooterPosicion = { x: null, y: null };
@@ -3977,15 +3815,7 @@ export default {
             );
         },
         async obtenerIdsPersonalValidaPersistidos(idAnexoCabecera, correlativo) {
-            const res = await this.$axios.get(
-                `${process.env.API_URL}/obtenerRespuestas`,
-                {
-                    params: {
-                        idAnexoCabecera,
-                        correlativo
-                    }
-                }
-            );
+            const res = await obtenerRespuestas(this.$axios, idAnexoCabecera, correlativo);
 
             const detalleData = res.data?.data || res.data || null;
             const idsPersonalValida = this.normalizarListaIds(
@@ -4133,9 +3963,7 @@ export default {
                 }
             }).onOk(async () => {
                 try {
-                    await this.$axios.patch(
-                        `${process.env.API_URL}/saveEstadoConformidadAnexoCabecera?idAnexoCabecera=${row.idAnexoCabecera}&estado=0`
-                    );
+                    await anularFicha(this.$axios, row.idAnexoCabecera);
 
                     this.$q.notify({
                         type: "positive",
@@ -4181,9 +4009,7 @@ export default {
             }
         },
         normalizarTextoComparacion(value) {
-            return value === null || value === undefined
-                ? ''
-                : String(value).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+            return questionEngine.normalizeComparisonText(value);
         },
         getRefValue(refName) {
             const ref = this.normalizarTextoComparacion(refName);
@@ -4217,167 +4043,40 @@ export default {
             return refs[ref] !== undefined ? refs[ref] : '';
         },
         parseJsonFlexible(value) {
-            if (value === null || value === undefined || value === '') return null;
-            if (typeof value !== 'string') return value;
-
-            const texto = value.trim();
-            if (!texto) return null;
-            if (texto === '*') return '*';
-
-            try {
-                return JSON.parse(texto);
-            } catch (error) {
-                const textoCorregido = texto
-                    .replace(/([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)(\s*:)/g, '$1"$2"$3')
-                    .replace(/'/g, '"');
-                try {
-                    return JSON.parse(textoCorregido);
-                } catch (secondError) {
-                    return null;
-                }
-            }
+            return questionEngine.parseJsonFlexible(value);
         },
         resolverPropiedadCaseInsensitive(obj, key) {
-            if (!obj || !key) return undefined;
-            const clave = this.normalizarTextoComparacion(key);
-            const encontrada = Object.keys(obj).find(item => this.normalizarTextoComparacion(item) === clave);
-            return encontrada ? obj[encontrada] : undefined;
+            return questionEngine.getCaseInsensitiveProperty(obj, key);
         },
         esHttpParamsWildcard(httpParams) {
-            if (httpParams === '*') return true;
-            return typeof httpParams === 'string' && httpParams.trim() === '*';
+            return questionEngine.isHttpParamsWildcard(httpParams);
         },
         parseOpciones(opciones) {
-            const parseado = this.parseJsonFlexible(opciones);
-            if (Array.isArray(parseado)) {
-                return parseado
-                    .map(item => {
-                        if (item === null || item === undefined) return null;
-                        if (typeof item !== 'object') {
-                            const valor = String(item).trim();
-                            return valor ? { label: valor, value: valor } : null;
-                        }
-                        const label = this.resolverPropiedadCaseInsensitive(item, 'label')
-                            || this.resolverPropiedadCaseInsensitive(item, 't')
-                            || this.resolverPropiedadCaseInsensitive(item, 'text')
-                            || this.resolverPropiedadCaseInsensitive(item, 'descripcion')
-                            || this.resolverPropiedadCaseInsensitive(item, 'nombre');
-                        const value = this.resolverPropiedadCaseInsensitive(item, 'value') ?? label;
-                        return label !== undefined && label !== null && String(label).trim()
-                            ? { label: String(label).trim(), value: value !== undefined && value !== null ? value : String(label).trim(), raw: item }
-                            : null;
-                    })
-                    .filter(Boolean);
-            }
-
-            if (typeof opciones !== 'string') return [];
-
-            return opciones
-                .split('|')
-                .map(op => op.trim())
-                .filter(Boolean)
-                .map(op => ({ label: op, value: op }));
+            return questionEngine.parseOptions(opciones);
         },
         normalizarHttpParams(httpParams) {
-            if (this.esHttpParamsWildcard(httpParams)) return [];
-            const parseado = this.parseJsonFlexible(httpParams);
-            if (!Array.isArray(parseado)) return [];
-
-            return parseado.map(item => {
-                if (!item || typeof item !== 'object') {
-                    return {
-                        label: '',
-                        paramKey: '',
-                        valueKey: '',
-                        type: 'text',
-                        raw: {}
-                    };
-                }
-
-                return {
-                    label: this.resolverPropiedadCaseInsensitive(item, 't') || this.resolverPropiedadCaseInsensitive(item, 'label') || '',
-                    paramKey: this.resolverPropiedadCaseInsensitive(item, 'p') || this.resolverPropiedadCaseInsensitive(item, 'param') || '',
-                    valueKey: this.resolverPropiedadCaseInsensitive(item, 'v') || this.resolverPropiedadCaseInsensitive(item, 'valueKey') || '',
-                    type: this.resolverPropiedadCaseInsensitive(item, 'tipo') || this.resolverPropiedadCaseInsensitive(item, 'type') || 'text',
-                    editable: this.resolverPropiedadCaseInsensitive(item, 'editable'),
-                    raw: item
-                };
-            });
+            return questionEngine.normalizeHttpParams(httpParams);
         },
         normalizarReglaEditable(editable) {
-            const parseado = this.parseJsonFlexible(editable);
-            if (!parseado || typeof parseado !== 'object') return null;
-            const id = Number(this.resolverPropiedadCaseInsensitive(parseado, 'id'));
-            const valor = this.resolverPropiedadCaseInsensitive(parseado, 'valor');
-            if (!Number.isFinite(id) || valor === undefined || valor === null) return null;
-            return { id, valor };
+            return questionEngine.normalizeEditableRule(editable);
         },
         normalizarEditableBifurcaciones(editableBifurcaciones) {
-            if (editableBifurcaciones === null || editableBifurcaciones === undefined || editableBifurcaciones === '') {
-                return { mode: 'readonly-all' };
-            }
-
-            const parseado = this.parseJsonFlexible(editableBifurcaciones);
-            if (parseado === '*') {
-                return { mode: 'editable-all' };
-            }
-
-            if (!parseado || typeof parseado !== 'object') {
-                return { mode: 'readonly-all' };
-            }
-
-            const id = Number(this.resolverPropiedadCaseInsensitive(parseado, 'id'));
-            const valor = this.resolverPropiedadCaseInsensitive(parseado, 'valor');
-            if (!Number.isFinite(id) || valor === undefined || valor === null) {
-                return { mode: 'readonly-all' };
-            }
-
-            return { mode: 'conditional', id, valor };
+            return questionEngine.normalizeEditableBranches(editableBifurcaciones);
         },
         obtenerValorLabelHttp(opciones) {
-            const parseado = this.parseJsonFlexible(opciones);
-            if (!parseado || Array.isArray(parseado) || typeof parseado !== 'object') return 'nombre';
-            return this.resolverPropiedadCaseInsensitive(parseado, 'v') || 'nombre';
+            return questionEngine.getHttpLabelField(opciones);
         },
         normalizarRamificacionesInputSearch(opciones) {
-            const parseado = this.parseJsonFlexible(opciones);
-            if (!Array.isArray(parseado)) return [];
-            return parseado
-                .map(item => {
-                    if (!item || typeof item !== 'object') return null;
-                    const label = this.resolverPropiedadCaseInsensitive(item, 't') || this.resolverPropiedadCaseInsensitive(item, 'label');
-                    const prop = this.resolverPropiedadCaseInsensitive(item, 'p') || this.resolverPropiedadCaseInsensitive(item, 'prop');
-                    if (!label || !prop) return null;
-                    return {
-                        label,
-                        prop,
-                        value: '',
-                        editable: this.resolverPropiedadCaseInsensitive(item, 'editable')
-                    };
-                })
-                .filter(Boolean);
+            return questionEngine.normalizeInputSearchBranches(opciones);
         },
         normalizarRamificacionesSelect(opciones) {
-            const parseado = this.parseJsonFlexible(opciones);
-            if (!Array.isArray(parseado)) return [];
-            return parseado
-                .map(item => {
-                    if (!item || typeof item !== 'object') return null;
-                    const label = this.resolverPropiedadCaseInsensitive(item, 't') || this.resolverPropiedadCaseInsensitive(item, 'label');
-                    const valueField = this.resolverPropiedadCaseInsensitive(item, 'v') || 'nombre';
-                    if (!label) return null;
-                    return {
-                        label,
-                        valueField
-                    };
-                })
-                .filter(Boolean);
+            return questionEngine.normalizeSelectBranches(opciones);
         },
         esVistaSummaryRow(pregunta) {
-            return String(pregunta?.vistaControl || '').toLowerCase() === 'summaryrow';
+            return questionEngine.isSummaryRowView(pregunta);
         },
         esVistaBranched(pregunta) {
-            return String(pregunta?.vistaControl || '').toLowerCase() === 'branched';
+            return questionEngine.isBranchedView(pregunta);
         },
         normalizarAnchoControl(valor) {
             if (valor === null || valor === undefined) return null;
@@ -4444,28 +4143,16 @@ export default {
             });
         },
         esPreguntaBranchedInputSearch(pregunta) {
-            return this.esVistaBranched(pregunta)
-                && String(pregunta?.tipoControl || '').toLowerCase() === 'text'
-                && String(pregunta?.modoControl || '').toLowerCase() === 'http'
-                && Number(pregunta?.reqDisparador) === 1
-                && !this.esHttpParamsWildcard(pregunta?.httpParams)
-                && Array.isArray(pregunta?._httpParamsParsed)
-                && pregunta._httpParamsParsed.length > 0;
+            return questionEngine.isBranchedInputSearch(pregunta);
         },
         esPreguntaBranchedSelects(pregunta) {
-            return this.esVistaBranched(pregunta)
-                && String(pregunta?.tipoControl || '').toLowerCase() === 'select'
-                && String(pregunta?.modoControl || '').toLowerCase() === 'http'
-                && Number(pregunta?.reqDisparador) === 0;
+            return questionEngine.isBranchedSelects(pregunta);
         },
         esPreguntaSelectHttpSimple(pregunta) {
-            return String(pregunta?.tipoControl || '').toLowerCase() === 'select'
-                && String(pregunta?.modoControl || '').toLowerCase() === 'http'
-                && this.esHttpParamsWildcard(pregunta?.httpParams)
-                && String(pregunta?._httpMethod || pregunta?.httpMetodo || 'GET').toUpperCase() === 'GET';
+            return questionEngine.isSimpleHttpSelect(pregunta);
         },
         esPreguntaRedirected(pregunta) {
-            return String(pregunta?.modoControl || '').toLowerCase() === 'redirected';
+            return questionEngine.isRedirected(pregunta);
         },
         esPreguntaTextualPrincipal(pregunta) {
             const tipo = String(pregunta?.tipoControl || '').toLowerCase();
@@ -4602,108 +4289,10 @@ export default {
             }
         },
         normalizarRespuestaPregunta(pregunta, respuestaRaw) {
-            if (this.esPreguntaBranchedInputSearch(pregunta) || this.esPreguntaBranchedSelects(pregunta)) {
-                return respuestaRaw || null;
-            }
-
-            switch (pregunta.tipoControl) {
-                case 'label':
-                    return respuestaRaw || '';
-                case 'text':
-                case 'date':
-                case 'dateInputs':
-                case 'number':
-                case 'textarea':
-                case 'inputSearch':
-                    return respuestaRaw || '';
-                case 'textM':
-                case 'timeRangeM':
-                    if (Array.isArray(respuestaRaw)) return respuestaRaw;
-                    if (!respuestaRaw) return [];
-                    return String(respuestaRaw).split('|').map(item => item.trim()).filter(Boolean);
-                case 'radio':
-                case 'select':
-                    if (respuestaRaw === null || respuestaRaw === undefined || respuestaRaw === '') return null;
-                    if (!Array.isArray(pregunta.opciones) || pregunta.opciones.length === 0) return respuestaRaw;
-                    return pregunta.opciones.find(op => this.normalizarTextoComparacion(op.value) === this.normalizarTextoComparacion(respuestaRaw))?.value || respuestaRaw;
-                case 'selectM':
-                    if (Array.isArray(respuestaRaw)) return respuestaRaw;
-                    if (!respuestaRaw) return [];
-                    return String(respuestaRaw).split('|').map(item => item.trim()).filter(Boolean);
-                default:
-                    return respuestaRaw || null;
-            }
+            return questionEngine.normalizeAnswer(pregunta, respuestaRaw);
         },
         construirPreguntaDinamica(preguntaRaw) {
-            const pregunta = {
-                ...preguntaRaw,
-                obligatoria: Number(preguntaRaw.obligatoria ?? 0),
-                obligatoria2: Number(preguntaRaw.obligatoria2 ?? 0),
-                reqObligatoria1Cierre: Number(preguntaRaw.reqObligatoria1Cierre ?? 0),
-                reqObligatoria2Cierre: Number(preguntaRaw.reqObligatoria2Cierre ?? 0),
-                condicion: this.parseCondicion(preguntaRaw.condicion),
-                _editableRule: this.normalizarReglaEditable(preguntaRaw.editable),
-                _editableBifurcacionesRule: this.normalizarEditableBifurcaciones(preguntaRaw.editableBifurcaciones),
-                _httpMethod: String(preguntaRaw.httpMetodo || 'GET').toUpperCase(),
-                _httpParamsParsed: this.normalizarHttpParams(preguntaRaw.httpParams),
-                _redirectRef: this.resolverPropiedadCaseInsensitive(this.parseJsonFlexible(preguntaRaw.opciones), 'ref')
-                    || this.resolverPropiedadCaseInsensitive(this.parseJsonFlexible(preguntaRaw.opciones), 'REF')
-                    || null,
-                _ramificaciones: [],
-                _ramificacionesReadonlyHttp: false,
-                _branchedSelects: [],
-                _loadingHttp: false,
-                _httpLoaded: false,
-                _labelHttpField: this.obtenerValorLabelHttp(preguntaRaw.opciones),
-                opciones: [],
-                opciones2: this.parseOpciones(preguntaRaw.opciones2),
-                respuesta: null,
-                respuesta2: null,
-                otroTexto: null,
-                _textMDraft: '',
-                _timeRangeStartDraft: '',
-                _timeRangeEndDraft: '',
-                _timeRangeAttemptedAdd: false,
-                _dateInputsYearDraft: '',
-                _dateInputsMonthDraft: '',
-                _dateInputsDayDraft: ''
-            };
-
-            if (this.esPreguntaBranchedInputSearch(pregunta)) {
-                pregunta._ramificaciones = this.normalizarRamificacionesInputSearch(preguntaRaw.opciones);
-            }
-
-            if (this.esPreguntaBranchedSelects(pregunta)) {
-                pregunta._branchedDefs = this.normalizarRamificacionesSelect(preguntaRaw.opciones);
-                pregunta._branchedSelects = pregunta._branchedDefs.map(def => ({
-                    label: def.label,
-                    valueField: def.valueField,
-                    value: '',
-                    selectedOption: null,
-                    options: [],
-                    loading: false
-                }));
-            }
-
-            if (!this.esPreguntaBranchedInputSearch(pregunta) && !this.esPreguntaBranchedSelects(pregunta) && !this.esPreguntaSelectHttpSimple(pregunta)) {
-                pregunta.opciones = this.parseOpciones(preguntaRaw.opciones);
-            }
-
-            pregunta.respuesta = this.normalizarRespuestaPregunta(pregunta, preguntaRaw.respuesta);
-            pregunta.respuesta2 = this.inicializarRespuesta2Pregunta(pregunta, preguntaRaw.respuesta2);
-            if ([ 'textm', 'timerangem' ].includes(String(pregunta.tipoControl || '').toLowerCase()) && !Array.isArray(pregunta.respuesta)) {
-                pregunta.respuesta = [];
-            }
-
-            if (String(pregunta.tipoControl || '').toLowerCase() === 'dateinputs') {
-                this.hidratarDateInputsDesdeRespuesta(pregunta);
-            }
-
-            if (this.esPreguntaBranchedInputSearch(pregunta)) {
-                this.hidratarBranchedInputSearchDesdeRespuesta(pregunta);
-            }
-
-            return pregunta;
+            return questionEngine.buildQuestion(preguntaRaw);
         },
         agruparPreguntasEnSecciones(lista = []) {
             const ordenadas = [...lista].sort((a, b) => (a.numGrupo - b.numGrupo) || (a.numPregunta - b.numPregunta));
@@ -4769,12 +4358,7 @@ export default {
                         anexo: this.form.idAnexo,
                         idServicio: this.form.idServicio
                     }),
-                    this.$axios.get(`${process.env.API_URL}/obtenerRespuestas`, {
-                        params: {
-                            idAnexoCabecera: this.form.idAnexoCabecera,
-                            correlativo: this.form.correlativo
-                        }
-                    })
+                    obtenerRespuestas(this.$axios, this.form.idAnexoCabecera, this.form.correlativo)
                 ]);
 
                 const data = res.data?.data;
@@ -4817,10 +4401,7 @@ export default {
 
             try {
 
-                const res = await this.$axios.get(
-                    `${process.env.API_URL}/listarAnexosCabecera`
-                    //  'http://10.101.0.8:4004/api/ms-sigesu/listarAnexosCabecera'
-                )
+                const res = await listarAnexosCabecera(this.$axios)
 
                 // si tu backend devuelve { data: [...] }
                 this.anexosRaw = res.data.data || res.data
@@ -4976,14 +4557,7 @@ export default {
                 return;
             }
 
-            const res = await this.$axios.get(
-                process.env.API_URL + "/centros/listar",
-                {
-                    params: {
-                        idServicio: this.servicioSeleccionado
-                    }
-                }
-            )
+                const res = await listarCentros(this.$axios, this.servicioSeleccionado)
 
             this.centros = res.data
         },
@@ -5003,15 +4577,7 @@ export default {
 
             try {
 
-                const res = await axios.get(
-                    `${process.env.API_URL}/centros/listar`,
-
-                    {
-                        params: {
-                            idServicio: this.servicioSeleccionado
-                        }
-                    }
-                )
+                const res = await listarCentros(axios, this.servicioSeleccionado)
 
                 this.centros = res.data
 
@@ -5079,17 +4645,7 @@ export default {
             this.loading = true;
 
             try {
-                const res = await this.$axios.get(
-                    `${process.env.API_URL}/anexo/listar`,
-                    // 'http://10.101.0.8:4004/api/ms-sigesu/anexo/listar',
-                    {
-                        params: {
-                            idUnidadOrganica: this.unidadSeleccionada,
-                            idServicio: this.servicioSeleccionado,
-                            anexo: this.anexoSeleccionado
-                        }
-                    }
-                );
+                const res = await listarAnexos(this.$axios, this.unidadSeleccionada, this.servicioSeleccionado, this.anexoSeleccionado);
 
                 const data = res.data.data || [];
 
@@ -5113,12 +4669,7 @@ export default {
                 return [];
             }
 
-            const res = await this.$axios.get(`${process.env.API_URL}/findAllAnexoPregustasByParams2`, {
-                params: {
-                    anexo: anexoParam,
-                    idServicio: servicioParam
-                }
-            });
+            const res = await obtenerCatalogoPreguntas(this.$axios, anexoParam, servicioParam);
 
             return res.data?.data || [];
         },
@@ -5172,52 +4723,7 @@ export default {
         ======================================== */
 
         serializarRespuestaPregunta(pregunta) {
-            if (this.esPreguntaBranchedInputSearch(pregunta)) {
-                const partes = [this.obtenerValorDisparadorBranched(pregunta), ...pregunta._ramificaciones.map(rama => rama.value || '')]
-                    .filter(valor => valor !== null && valor !== undefined && valor !== '');
-                return partes.length ? partes.join('|') : null;
-            }
-
-            if (this.esPreguntaBranchedSelects(pregunta)) {
-                const partes = pregunta._branchedSelects
-                    .map(rama => rama.value)
-                    .filter(valor => valor !== null && valor !== undefined && valor !== '');
-                return partes.length ? partes.join('|') : null;
-            }
-
-            if (String(pregunta?.tipoControl || '').toLowerCase() === 'textm') {
-                return Array.isArray(pregunta.respuesta) && pregunta.respuesta.length
-                    ? pregunta.respuesta.join('|')
-                    : null;
-            }
-
-            if (String(pregunta?.tipoControl || '').toLowerCase() === 'timerangem') {
-                return Array.isArray(pregunta.respuesta) && pregunta.respuesta.length
-                    ? pregunta.respuesta.join('|')
-                    : null;
-            }
-
-            if (String(pregunta?.tipoControl || '').toLowerCase() === 'dateinputs') {
-                const dia = String(pregunta._dateInputsDayDraft || '').trim();
-                const mes = String(pregunta._dateInputsMonthDraft || '').trim();
-                const anio = String(pregunta._dateInputsYearDraft || '').trim();
-                return dia && mes && anio ? `${dia}/${mes}/${anio}` : null;
-            }
-
-            if (Array.isArray(pregunta.respuesta)) {
-                if (pregunta.respuesta.includes('OTRO') || pregunta.respuesta.includes('OTROS')) {
-                    return pregunta.respuesta
-                        .map(r => (r === 'OTRO' || r === 'OTROS') ? (pregunta.otroTexto || r) : r)
-                        .join('|');
-                }
-                return pregunta.respuesta.join('|');
-            }
-
-            if (pregunta.respuesta === 'OTRO' || pregunta.respuesta === 'OTROS') {
-                return pregunta.otroTexto || pregunta.respuesta;
-            }
-
-            return pregunta.respuesta ?? null;
+            return questionEngine.serializeAnswer(pregunta);
         },
         validarPreguntasObligatoriasGenerales() {
             for (const seccion of this.secciones) {
@@ -5258,12 +4764,7 @@ export default {
                     .map(p => ({
                         idPregunta: p.idPregunta,
                         respuesta: this.serializarRespuestaPregunta(p),
-                        respuesta2: (() => {
-                            if (p.respuesta2 === 'OTRO' || p.respuesta2 === 'OTROS') {
-                                return p.otroTexto2 || p.respuesta2;
-                            }
-                            return p.respuesta2 ?? null;
-                        })(),
+                        respuesta2: questionEngine.serializeAnswer2(p),
                         observacion: null,
                         puntaje: null
                     }))
@@ -5297,7 +4798,7 @@ export default {
                 payload.idCabecera = this.form.idAnexoCabecera;
                 payload.usuModifica = this.obtenerIdUsuarioSesion();
 
-                await this.$axios.put(`${process.env.API_URL}/updateAnexoCompleto`, payload);
+                await actualizarFicha(this.$axios, payload);
 
                 // if (Number(this.form.reqObligatoriedad) !== 0) {
                 //     try {
@@ -5310,7 +4811,7 @@ export default {
                 // }
             } else {
                 payload.usuRegistra = this.obtenerIdUsuarioSesion();
-                await this.$axios.post(`${process.env.API_URL}/createAnexoCompleto`, payload);
+                await crearFicha(this.$axios, payload);
             }
 
             return true;
@@ -5440,9 +4941,7 @@ export default {
                     return;
                 }
 
-                await this.$axios.patch(
-                    `${process.env.API_URL}/saveConformidadAnexoCabecera?idAnexoCabecera=${this.form.idAnexoCabecera}&estado=2`
-                );
+                await guardarConformidadFicha(this.$axios, this.form.idAnexoCabecera);
 
                 this.$q.notify({
                     type: 'positive',
@@ -5466,30 +4965,10 @@ export default {
             }
         },
         hidratarBranchedInputSearchDesdeRespuesta(pregunta) {
-            const valores = String(pregunta.respuesta || '')
-                .split('|')
-                .map(item => item.trim());
-
-            pregunta._branchedTriggerValue = valores[0] || '';
-            pregunta._ramificaciones = (pregunta._ramificaciones || []).map((rama, index) => ({
-                ...rama,
-                value: valores[index + 1] || ''
-            }));
-            pregunta._ramificacionesReadonlyHttp = (pregunta._ramificaciones || []).some(rama => !!String(rama?.value || '').trim());
+            Object.assign(pregunta, questionEngine.hydrateBranchedInputSearch(pregunta));
         },
         hidratarDateInputsDesdeRespuesta(pregunta) {
-            const valor = String(pregunta?.respuesta || '').trim();
-            if (!valor) {
-                pregunta._dateInputsDayDraft = '';
-                pregunta._dateInputsMonthDraft = '';
-                pregunta._dateInputsYearDraft = '';
-                return;
-            }
-
-            const partes = valor.split('/').map(item => item.trim());
-            pregunta._dateInputsDayDraft = partes[0] || '';
-            pregunta._dateInputsMonthDraft = partes[1] || '';
-            pregunta._dateInputsYearDraft = partes[2] || '';
+            Object.assign(pregunta, questionEngine.hydrateDateInputs(pregunta));
         },
         obtenerValorDisparadorBranched(pregunta) {
             return pregunta?._branchedTriggerValue || '';
@@ -5505,33 +4984,16 @@ export default {
             pregunta.respuesta = this.serializarRespuestaPregunta(pregunta);
         },
         cumpleReglaEditable(regla) {
-            if (!regla || !regla.id) return true;
-            const preguntaBase = this.buscarPregunta(regla.id);
-            if (!preguntaBase) return false;
-            return this.normalizarCondicion(preguntaBase.respuesta, regla.valor);
+            return questionEngine.matchesEditableRule(regla, id => this.buscarPregunta(id));
         },
         esCampoSoloLectura(pregunta) {
-            if (this.esVisualizacion) return true;
-            const modo = String(pregunta?.modoControl || '').toLowerCase();
-            if (modo === 'readonly' || modo === 'redirected') return true;
-            if (pregunta?._editableRule) return !this.cumpleReglaEditable(pregunta._editableRule);
-            return false;
+            return questionEngine.isReadOnly(pregunta, { isView: this.esVisualizacion, findQuestion: id => this.buscarPregunta(id) });
         },
         esControlDeshabilitado(pregunta) {
             return this.esVisualizacion || this.esCampoSoloLectura(pregunta);
         },
         esRamificacionEditable(pregunta, rama) {
-            if (this.esVisualizacion) return false;
-            if (pregunta?._ramificacionesReadonlyHttp) return false;
-            if (pregunta?._editableBifurcacionesRule) {
-                if (pregunta._editableBifurcacionesRule.mode === 'readonly-all') return false;
-                if (pregunta._editableBifurcacionesRule.mode === 'editable-all') return true;
-                return this.cumpleReglaEditable(pregunta._editableBifurcacionesRule);
-            }
-            if (pregunta?._editableRule) return this.cumpleReglaEditable(pregunta._editableRule);
-            if (rama?.editable === undefined || rama?.editable === null) return false;
-            const valor = String(rama.editable).toLowerCase();
-            return valor === 'true' || valor === '1';
+            return questionEngine.isBranchEditable(pregunta, rama, { isView: this.esVisualizacion, findQuestion: id => this.buscarPregunta(id) });
         },
         obtenerTipoInputPregunta(pregunta) {
             if (String(pregunta?.tipoControl || '').toLowerCase() === 'date') return 'date';
@@ -5633,6 +5095,11 @@ export default {
         puedeAbrirBusquedaHttp(pregunta) {
             return !this.esVisualizacion && !this.esCampoSoloLectura(pregunta);
         },
+        actualizarFormHttpPregunta(formActualizado) {
+            Object.keys(formActualizado).forEach(paramKey => {
+                this.$set(this.formHttpPregunta, paramKey, formActualizado[paramKey]);
+            });
+        },
         abrirModalHttpPregunta(pregunta) {
             if (!this.puedeAbrirBusquedaHttp(pregunta)) return;
 
@@ -5691,12 +5158,7 @@ export default {
             }
         },
         async executeDynamicHttp({ url, method = 'GET', params = null, body = null }) {
-            if (!url) throw new Error('URL de servicio no definida');
-            const fullUrl = `${process.env.API_URL}${url}`;
-            if (String(method).toUpperCase() === 'POST') {
-                return this.$axios.post(fullUrl, body || {});
-            }
-            return this.$axios.get(fullUrl, { params: params || {} });
+            return executeDynamicHttp(this.$axios, { url, method, params, body });
         },
         extraerDataHttp(response) {
             return response?.data?.data ?? response?.data ?? [];
@@ -5899,7 +5361,7 @@ export default {
         async cargarUnidades() {
             this.loadingUnidades = true;
             try {
-                const res = await axios.get(`${process.env.API_URL}/anexo/unidadesSugesu`);
+                const res = await obtenerUnidades(axios);
                 //const res = await axios.get('http://10.101.0.8:4004/api/ms-sigesu/anexo/unidadesSugesu');
                 this.unidades = res.data.data || [];
                 this.autoseleccionarTipoOculto();
@@ -5916,10 +5378,7 @@ export default {
             if (!this.unidadSeleccionada) return;
             this.loadingServicios = true;
             try {
-                const res = await axios.get(`${process.env.API_URL}/anexo/unidades-serviciosSugesu`, {
-                    // const res = await axios.get('http://10.101.0.8:4004/api/ms-sigesu/anexo/unidades-serviciosSugesu', {
-                    params: { idUnidadOrganica: this.unidadSeleccionada }
-                });
+                const res = await obtenerServicios(axios, this.unidadSeleccionada);
                 this.servicios = res.data.data || [];
                 this.autoseleccionarServicioOculto();
             } catch (error) {
@@ -5934,13 +5393,7 @@ export default {
             if (!this.unidadSeleccionada || !this.servicioSeleccionado) return;
             this.loadingAnexos = true;
             try {
-                const res = await axios.get(`${process.env.API_URL}/anexo/anexos-por-servicioSugesu`, {
-                    //  const res = await axios.get('http://10.101.0.8:4004/api/ms-sigesu/anexo/anexos-por-servicioSugesu', {
-                    params: {
-                        idUnidadOrganica: this.unidadSeleccionada,
-                        idServicio: this.servicioSeleccionado
-                    }
-                });
+                const res = await obtenerAnexos(axios, this.unidadSeleccionada, this.servicioSeleccionado);
                 this.anexos = res.data.data || [];
                 this.autoseleccionarAnexoOculto();
             } catch (error) {
@@ -5953,14 +5406,7 @@ export default {
             if (!this.unidadSeleccionada || !this.servicioSeleccionado || !this.anexoSeleccionado) return;
             this.loadingResultados = true;
             try {
-                const res = await axios.get(`${process.env.API_URL}/anexo/listar`, {
-                    // const res = await this.$axios.get('http://10.101.0.8:4004/api/ms-sigesu/anexo/listar', {
-                    params: {
-                        idUnidadOrganica: this.unidadSeleccionada,
-                        idServicio: this.servicioSeleccionado,
-                        anexo: this.anexoSeleccionado
-                    }
-                });
+                const res = await listarAnexos(axios, this.unidadSeleccionada, this.servicioSeleccionado, this.anexoSeleccionado);
                 this.resultados = res.data.data || [];
             } catch (error) {
                 this.$q.notify({ type: 'negative', message: 'Error al cargar resultados' });
@@ -6020,17 +5466,7 @@ export default {
         async descargarPDF() {
             try {
 
-                const response = await this.$axios.get(
-                    `${process.env.API_URL}/anexo/pdf`,
-                    // "http://10.101.0.8:4004/api/ms-sigesu/anexo/pdf",
-                    {
-                        params: {
-                            idAnexoCabecera: this.form.idAnexoCabecera,
-                            correlativo: this.form.correlativo
-                        },
-                        responseType: "blob"
-                    }
-                );
+                const response = await descargarFichaPdf(this.$axios, this.form.idAnexoCabecera, this.form.correlativo);
 
                 const blob = new Blob([response.data], { type: "application/pdf" });
                 const url = window.URL.createObjectURL(blob);
@@ -6064,16 +5500,7 @@ export default {
 
             this.generandoCompromiso = true;
             try {
-                const { data, headers } = await this.$axios.get(
-                    `${process.env.API_URL}/anexo/compromiso-nna/pdf`,
-                    {
-                        params: {
-                            idAnexoCabecera: this.audioRow.idAnexoCabecera,
-                            correlativo: this.audioRow.correlativo
-                        },
-                        responseType: "blob"
-                    }
-                );
+                const { data, headers } = await descargarCompromisoPdf(this.$axios, this.audioRow.idAnexoCabecera, this.audioRow.correlativo);
 
                 const disposition = headers && (headers["content-disposition"] || headers["Content-Disposition"]);
                 let filename = `compromiso_${this.audioRow.idAnexoCabecera}.pdf`;
@@ -6102,12 +5529,7 @@ export default {
             if (!this.audioRow) return;
             this.loadingAudios = true;
             try {
-                const res = await this.$axios.get(
-                    `${process.env.API_URL}/anexo-cabecera-audio/listar`,
-                    {
-                        params: { idAnexoCabecera: this.audioRow.idAnexoCabecera }
-                    }
-                );
+                const res = await listarAudios(this.$axios, this.audioRow.idAnexoCabecera);
                 const data = res.data?.data || [];
                 this.audiosList = data.map(item => ({
                     idAudio: item.ACA_ID_AUDIO,
@@ -6155,24 +5577,9 @@ export default {
                 formData.append("audio", this.audioFile);
                 formData.append("idAnexoCabecera", this.audioRow.idAnexoCabecera);
 
-                await this.$axios.post(
-                    `${process.env.API_URL}/anexo-cabecera-audio`,
-                    formData,
-                    {
-                        headers: { "Content-Type": "multipart/form-data" }
-                    }
-                );
+                await subirAudio(this.$axios, formData);
 
-                await this.$axios.patch(
-                    `${process.env.API_URL}/save-conformidad-nna`,
-                    null,
-                    {
-                        params: {
-                            idAnexoCabecera: this.audioRow.idAnexoCabecera,
-                            fechaInscripcion: this.fechaInscripcion
-                        }
-                    }
-                );
+                await guardarConformidadNna(this.$axios, this.audioRow.idAnexoCabecera, this.fechaInscripcion);
 
                 this.$q.notify({ type: "positive", message: "Conformidad registrada correctamente" });
 
@@ -6212,12 +5619,7 @@ export default {
             }).onOk(async () => {
                 this.loadingAudios = true;
                 try {
-                    await this.$axios.delete(
-                        `${process.env.API_URL}/anexo-cabecera-audio`,
-                        {
-                            params: { idAudio: row.idAudio }
-                        }
-                    );
+                    await eliminarAudio(this.$axios, row.idAudio);
 
                     this.$q.notify({ type: "positive", message: "Conformidad eliminada correctamente" });
                     await this.cargarAudios();
@@ -6230,16 +5632,7 @@ export default {
         },
 
         async obtenerBlobConformidad(row) {
-            const res = await this.$axios.get(
-                `${process.env.API_URL}/anexo-cabecera-audio`,
-                {
-                    params: {
-                        idAnexoCabecera: this.audioRow.idAnexoCabecera,
-                        idAudio: row.idAudio
-                    },
-                    responseType: "blob"
-                }
-            );
+            const res = await obtenerAudioBlob(this.$axios, this.audioRow.idAnexoCabecera, row.idAudio);
 
             return res.data;
         },
@@ -6285,14 +5678,7 @@ export default {
         async cargarResponsables() {
             try {
 
-                const res = await this.$axios.get(
-                    process.env.API_URL + "/responsables-supervision",
-                    {
-                        params: {
-                            abreviatura: "UNIDAD DE FORTALECIMIENTO DE SERVICIOS Y COORDINACIÓN TERRITORIAL"
-                        }
-                    }
-                )
+                const res = await obtenerResponsablesSupervision(this.$axios)
 
                 const responsables = Array.isArray(res.data) ? res.data : []
                 this.responsables = responsables
@@ -6329,14 +5715,7 @@ export default {
                     return
                 }
 
-                const res = await this.$axios.get(
-                    process.env.API_URL + "/responsables-centro",
-                    {
-                        params: {
-                            idUnidadOrganica
-                        }
-                    }
-                )
+                const res = await obtenerResponsablesCentro(this.$axios, idUnidadOrganica)
 
                 update(() => {
                     this.trabajadoresCentro = res.data.map(t => ({
@@ -6466,14 +5845,7 @@ export default {
             const idUnidadOrganica = this.obtenerIdUnidadOrganicaCentro()
             if (!idUnidadOrganica) return
             try {
-                const res = await this.$axios.get(
-                    process.env.API_URL + "/responsables-centro",
-                    {
-                        params: {
-                            idUnidadOrganica
-                        }
-                    }
-                )
+                const res = await obtenerResponsablesCentro(this.$axios, idUnidadOrganica)
                 this.trabajadoresCentro = res.data.map(t => ({
                     ...t,
                     idPersonal: String(t.idPersonal)
@@ -6624,105 +5996,13 @@ export default {
         },
 
         mostrarPregunta2(pregunta) {
-            if (!pregunta.pregunta2) return false
-
-            const resp = pregunta.respuesta
-            if (!resp) {
-                if (this.modo === 'nuevo') this.$set(pregunta, 'respuesta2', null)
-                return false
-            }
-
-            const cond = pregunta.condicion
-            if (!cond) return true
-
-            if (cond.id) {
-                const preguntaBase = this.buscarPregunta(cond.id)
-                if (!preguntaBase || !preguntaBase.respuesta) {
-                    if (this.modo === 'nuevo') this.$set(pregunta, 'respuesta2', null)
-                    return false
-                }
-
-                const valorBase = preguntaBase.respuesta
-
-                if (!isNaN(cond.valor)) {
-                    const cumple = Number(valorBase) >= Number(cond.valor)
-                    if (!cumple && this.modo === 'nuevo') this.$set(pregunta, 'respuesta2', null)
-                    return cumple
-                }
-
-                const base = valorBase.toString().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                const condValor = cond.valor.toString().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-
-                const cumple = base === condValor
-                if (!cumple && this.modo === 'nuevo') this.$set(pregunta, 'respuesta2', null)
-                return cumple
-            }
-
-            const valor = resp.toString().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-            const condValor = cond.valor?.toString().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-
-            const cumple = valor === condValor
-            if (!cumple && this.modo === 'nuevo') this.$set(pregunta, 'respuesta2', null)
-            return cumple
+            const visible = questionEngine.isQuestion2Visible(pregunta, id => this.buscarPregunta(id))
+            if (!visible && pregunta.pregunta2 && this.modo === 'nuevo') this.$set(pregunta, 'respuesta2', null)
+            return visible
         },
         mostrarPregunta(pregunta) {
-
-            if (!pregunta.condicion) return true
-
-            const cond = pregunta.condicion
-
-            // 🔴 si no tiene id → no es de este tipo
-            if (!cond.id) return true
-
-            const preguntaBase = this.buscarPregunta(cond.id)
-
-            // Si la pregunta base no existe o no tiene respuesta válida, ocultar la condicional
-            if (!preguntaBase) {
-                if (this.modo === 'nuevo') {
-                    switch (pregunta.tipoControl) {
-                        case 'text':    this.$set(pregunta, 'respuesta', ''); break
-                        case 'dateInputs': this.$set(pregunta, 'respuesta', ''); this.$set(pregunta, '_dateInputsYearDraft', ''); this.$set(pregunta, '_dateInputsMonthDraft', ''); this.$set(pregunta, '_dateInputsDayDraft', ''); break
-                        case 'selectM': this.$set(pregunta, 'respuesta', []); break
-                        case 'label':   this.$set(pregunta, 'respuesta', 2); break
-                        default:        this.$set(pregunta, 'respuesta', null); break
-                    }
-                }
-                return false
-            }
-            const baseRespuesta = preguntaBase.respuesta
-            if (baseRespuesta === null || baseRespuesta === undefined || baseRespuesta === '') {
-                if (this.modo === 'nuevo') {
-                    switch (pregunta.tipoControl) {
-                        case 'text':    this.$set(pregunta, 'respuesta', ''); break
-                        case 'dateInputs': this.$set(pregunta, 'respuesta', ''); this.$set(pregunta, '_dateInputsYearDraft', ''); this.$set(pregunta, '_dateInputsMonthDraft', ''); this.$set(pregunta, '_dateInputsDayDraft', ''); break
-                        case 'selectM': this.$set(pregunta, 'respuesta', []); break
-                        case 'label':   this.$set(pregunta, 'respuesta', 2); break
-                        default:        this.$set(pregunta, 'respuesta', null); break
-                    }
-                }
-                return false
-            }
-
-            const valorBase = preguntaBase.respuesta
-
-            // NUMÉRICO
-            if (!isNaN(cond.valor)) {
-                const cumple = Number(valorBase) >= Number(cond.valor)
-                if (!cumple && this.modo === 'nuevo') {
-                    switch (pregunta.tipoControl) {
-                        case 'text':    this.$set(pregunta, 'respuesta', ''); break
-                        case 'dateInputs': this.$set(pregunta, 'respuesta', ''); this.$set(pregunta, '_dateInputsYearDraft', ''); this.$set(pregunta, '_dateInputsMonthDraft', ''); this.$set(pregunta, '_dateInputsDayDraft', ''); break
-                        case 'selectM': this.$set(pregunta, 'respuesta', []); break
-                        case 'label':   this.$set(pregunta, 'respuesta', 2); break
-                        default:        this.$set(pregunta, 'respuesta', null); break
-                    }
-                }
-                return cumple
-            }
-
-            // TEXTO (soporta base simple, base array, condicion simple y condicion array)
-            const cumple = this.normalizarCondicion(valorBase, cond.valor)
-            if (!cumple && this.modo === 'nuevo') {
+            const visible = questionEngine.isQuestionVisible(pregunta, id => this.buscarPregunta(id))
+            if (!visible && this.modo === 'nuevo') {
                 switch (pregunta.tipoControl) {
                     case 'text':    this.$set(pregunta, 'respuesta', ''); break
                     case 'dateInputs': this.$set(pregunta, 'respuesta', ''); this.$set(pregunta, '_dateInputsYearDraft', ''); this.$set(pregunta, '_dateInputsMonthDraft', ''); this.$set(pregunta, '_dateInputsDayDraft', ''); break
@@ -6731,7 +6011,7 @@ export default {
                     default:        this.$set(pregunta, 'respuesta', null); break
                 }
             }
-            return cumple
+            return visible
         },
         buscarPregunta(id) {
             for (const seccion of this.secciones) {
@@ -6741,51 +6021,10 @@ export default {
             return null
         },
         normalizarCondicion(valorBase, condValor) {
-            const n = v => v?.toString().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-            const expandirValores = valor => {
-                if (Array.isArray(valor)) return valor;
-                if (typeof valor === 'string' && valor.includes('|')) {
-                    return valor.split('|').map(item => item.trim()).filter(Boolean);
-                }
-                return [valor];
-            };
-            const bases = expandirValores(valorBase);
-            const conds = expandirValores(condValor);
-            const baseVals = bases.map(n).filter(v => v !== '');
-            const condVals = conds.map(n).filter(v => v !== '');
-            if (baseVals.length === 0 || condVals.length === 0) return false;
-            return baseVals.some(b => condVals.includes(b));
+            return questionEngine.matchesCondition(valorBase, condValor);
         },
         parseCondicion(condicion) {
-
-            if (!condicion) return null
-
-            try {
-                // 🔹 intenta JSON primero
-                return JSON.parse(condicion)
-            } catch (e) {
-
-                // 🔹 fallback formato antiguo (edad tipo: 2240; > 13)
-                try {
-
-                    const partes = condicion.split(';')
-
-                    if (partes.length === 2) {
-
-                        const id = parseInt(partes[0].trim())
-                        const valor = partes[1].replace(/[^\d]/g, '').trim()
-
-                        return {
-                            id: id,
-                            valor: Number(valor)
-                        }
-                    }
-
-                } catch (err) {
-                }
-
-                return null
-            }
+            return questionEngine.parseCondition(condicion);
         },
 
         async abrirDialogValidarFicha(row) {
@@ -6838,10 +6077,7 @@ export default {
                 if (!idUnidadOrganica) {
                     this.$q.notify({ type: "warning", message: "No se pudo obtener el centro para cargar personal" });
                 } else {
-                const res = await this.$axios.get(
-                    process.env.API_URL + "/responsables-centro",
-                    { params: { idUnidadOrganica } }
-                );
+                const res = await obtenerResponsablesCentro(this.$axios, idUnidadOrganica);
                 const data = res.data?.data || res.data || [];
                 trabajadores = Array.isArray(data) ? data.map(t => ({
                     ...t,
@@ -6920,9 +6156,7 @@ export default {
 
             try {
                 const idPersonalParam = this.construirIdPersonalValidacion(item);
-                await this.$axios.patch(
-                    `${process.env.API_URL}/validatePersonalAnexoCabecera?idAnexoCabecera=${this.fichaAValidar.idAnexoCabecera}&idPersonal=${encodeURIComponent(idPersonalParam)}&password=${encodeURIComponent(item.contrasena)}`
-                );
+                await validarPersonal(this.$axios, this.fichaAValidar.idAnexoCabecera, idPersonalParam, item.contrasena);
 
                 item.validado = true;
                 item.contrasena = '';
@@ -6961,9 +6195,7 @@ export default {
             this.validandoConformidad = true;
 
             try {
-                await this.$axios.patch(
-                    `${process.env.API_URL}/saveConformidadAnexoCabecera?idAnexoCabecera=${this.fichaAValidar.idAnexoCabecera}&estado=2`
-                );
+                await guardarConformidadFicha(this.$axios, this.fichaAValidar.idAnexoCabecera);
 
                 this.$q.notify({ type: "positive", message: "Ficha validada con conformidad" });
                 this.dialogValidarFicha = false;
@@ -7006,14 +6238,7 @@ export default {
             if (!row?.idServicio) return null;
 
             try {
-                const res = await this.$axios.get(
-                    `${process.env.API_URL}/centros/listar`,
-                    {
-                        params: {
-                            idServicio: row.idServicio
-                        }
-                    }
-                );
+                const res = await listarCentros(this.$axios, row.idServicio);
 
                 const centros = res.data || [];
                 if (!Array.isArray(centros) || centros.length === 0) return null;
@@ -7072,6 +6297,26 @@ export default {
 
     },
     computed: {
+
+        accionesPrincipalesConfiguradas() {
+            return this.pageConfig.accionesPrincipales || {};
+        },
+
+        accionesTablaConfiguradas() {
+            return this.pageConfig.accionesTabla || {};
+        },
+
+        filtersComponent() {
+            return this.pageConfig.components?.filters || 'FichaFilters';
+        },
+
+        primaryActionsComponent() {
+            return this.pageConfig.components?.primaryActions || 'FichaPrimaryActions';
+        },
+
+        tableComponent() {
+            return this.pageConfig.components?.table || 'FichaTable';
+        },
 
         puedeSeleccionarEspacioIntervencion() {
             return !!this.unidadSeleccionada && !!this.servicioSeleccionado;

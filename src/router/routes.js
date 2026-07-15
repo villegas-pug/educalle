@@ -11,8 +11,8 @@ const routes = [
         component: () => import('layouts/MainLayout.vue'),
         children: [
             {path: '/inicio', component: () => import('pages/Principal.vue')},
-            {path: '/ficha', component: () => import('pages/Ficha.vue')},
-            {path: '/registro-nna', component: () => import('pages/Ficha.vue')},
+            {path: '/registro-nna', name: 'registro-nna', component: () => import('pages/RegistroNna.vue')},
+            {path: '/usuario-nna', name: 'usuario-nna', component: () => import('pages/UsuarioNna.vue')},
 
             //REPORTES
             {path: '/asistencia-economica', component: () => import('pages/reportes/ReporteAsistenciaEconomica.vue')},
