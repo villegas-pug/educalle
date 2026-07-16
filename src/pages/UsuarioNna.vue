@@ -1,7 +1,7 @@
 <template>
     <div class="usuario-nna">
         <div v-if="pageTitle" class="q-pa-md q-pb-none">
-            <div class="text-h6 text-weight-bold">{{ pageTitle }}</div>
+            <div class="text-h6 text-weight-bold text-center">{{ pageTitle }}</div>
         </div>
         <ficha-workflow :page-config="pageConfig" />
     </div>

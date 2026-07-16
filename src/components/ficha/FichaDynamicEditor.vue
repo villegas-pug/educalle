@@ -24,7 +24,7 @@
             <component
                 :is="tableComponent"
                 :rows="dataTableFiltrada"
-                :columns="columnasTableAnexos"
+                :columns="columnasTablaConfiguradas"
                 :estados-map="estadosMap"
                 :filter="filtroTabla"
                 :loading="loadingTabla"
@@ -424,6 +424,7 @@
                                                                     bottom-slots
                                                                     :value="obtenerValorTextoPregunta(pregunta)"
                                                                     :type="obtenerTipoInputPregunta(pregunta)"
+                                                                    :input-id="esPreguntaFecha(pregunta) ? getPreguntaInputId(pregunta) : null"
                                                                     :style="getPreguntaControlStyle(pregunta)"
                                                                     :maxlength="getPreguntaMaxLength(pregunta)"
                                                                     :min="usaTipoNumero(pregunta) ? 0 : null"
@@ -543,6 +544,35 @@
                                         </div>
                                     </div>
                                 </div>
+                            </q-card-section>
+
+                            <q-card-section v-if="mostrarConformidadSoloLectura" class="q-pt-none">
+                                <div class="text-subtitle2 text-weight-bold q-mb-sm">CONFORMIDAD</div>
+                                <q-table
+                                    :data="audiosList"
+                                    :columns="columnasAudiosSoloLectura"
+                                    row-key="idAudio"
+                                    table-header-class="bg-inabif text-bold"
+                                    dense
+                                    flat
+                                    bordered
+                                    :loading="loadingAudios"
+                                    :rows-per-page-options="[10, 20, 50]"
+                                >
+                                    <template v-slot:body-cell-nro="props">
+                                        <q-td :props="props">{{ props.rowIndex + 1 }}</q-td>
+                                    </template>
+                                    <template v-slot:body-cell-acciones="props">
+                                        <q-td :props="props">
+                                            <q-btn icon="picture_as_pdf" color="info" flat round size="sm" @click="verPdfConformidad(props.row)">
+                                                <q-tooltip>Ver PDF</q-tooltip>
+                                            </q-btn>
+                                        </q-td>
+                                    </template>
+                                    <template v-slot:no-data>
+                                        <div class="full-width row flex-center q-pa-md text-grey">No hay conformidad registrada</div>
+                                    </template>
+                                </q-table>
                             </q-card-section>
 
                         </q-card>
@@ -3937,6 +3967,10 @@ export default {
                 this.dialog = true;
 
                 await this.cargarRespuestas();
+                if (this.conformidadSoloLecturaEnVer) {
+                    this.audioRow = row;
+                    await this.cargarAudios();
+                }
 
             } catch (error) {
                 this.$q.notify({ type: "negative", message: "Error al visualizar registro" });
@@ -4882,16 +4916,34 @@ export default {
             this.indiceAlertaReglas = (this.indiceAlertaReglas + 1) % reglasInvalidas.length;
             this.alertasReglasCanceladas = false;
             this.alertaReglasActiva = true;
+            let debeEnfocarPregunta = false;
             this.alertaReglasDialog = this.$q.dialog({
                 title: 'VALIDACIÓN DE FICHA',
                 message: regla.message,
                 ok: { label: 'Corregir', color: 'primary' },
                 class: 'ficha-regla-bloqueante-dialog',
                 persistent: false
+            }).onOk(() => {
+                debeEnfocarPregunta = true;
             }).onDismiss(() => {
                 this.alertaReglasDialog = null;
                 this.alertaReglasActiva = false;
+                if (debeEnfocarPregunta) this.enfocarPreguntaReglaBloqueante(regla.question);
                 this.programarSiguienteAlertaRegla();
+            });
+        },
+        esPreguntaFecha(pregunta) {
+            return String(pregunta?.tipoControl || '').toLowerCase() === 'date';
+        },
+        getPreguntaInputId(pregunta) {
+            return `ficha-pregunta-${pregunta.idPregunta}-input`;
+        },
+        enfocarPreguntaReglaBloqueante(pregunta) {
+            this.$nextTick(() => {
+                const input = document.getElementById(this.getPreguntaInputId(pregunta));
+                if (!input) return;
+                input.scrollIntoView({ block: 'center' });
+                input.focus();
             });
         },
         onPreguntaDateBlur(pregunta) {
@@ -6403,6 +6455,26 @@ export default {
             return this.pageConfig.accionesTabla || {};
         },
 
+        columnasTablaConfiguradas() {
+            return this.pageConfig.tableColumns || this.columnasTableAnexos;
+        },
+
+        conformidadSoloLecturaEnVer() {
+            return this.pageConfig.conformidadSoloLecturaEnVer === true;
+        },
+
+        mostrarConformidadSoloLectura() {
+            return this.esVisualizacion && this.conformidadSoloLecturaEnVer;
+        },
+
+        columnasAudiosSoloLectura() {
+            return [
+                { name: 'nro', label: 'N°', field: 'nro', align: 'center', sortable: false, style: 'width: 50px;' },
+                { name: 'nombreArchivo', label: 'NOMBRE DE ARCHIVO', field: 'nombreArchivo', align: 'left', sortable: true },
+                { name: 'acciones', label: 'ACCIONES', field: 'acciones', align: 'center', style: 'width: 100px;' }
+            ];
+        },
+
         filtersComponent() {
             return this.pageConfig.components?.filters || 'FichaFilters';
         },
@@ -6546,6 +6618,7 @@ export default {
                         edad: Number(row.edad || 0),
                         genero: row.genero || '-',
                         nombreCentro: row.nombreCentro || '-',
+                        nombrePersonal: row.nombrePersonal || '-',
                         fechaIngresoFormateada: this.formatearFechaTabla(row.fechaIngreso),
                         fechaAbordajeFormateada: this.formatearFechaTabla(row.fechaAbordaje)
                     }));
@@ -6573,6 +6646,7 @@ export default {
                     edad: Number(row.edad || 0),
                     genero: row.genero || '-',
                     nombreCentro: row.nombreCentro || '-',
+                    nombrePersonal: row.nombrePersonal || '-',
                     fechaIngresoFormateada: this.formatearFechaTabla(row.fechaIngreso),
                     fechaAbordajeFormateada: this.formatearFechaTabla(row.fechaAbordaje)
                 }));
