@@ -61,7 +61,12 @@
                                         <div v-for="item in fichaContexto" :key="item.label" class="col-12 col-md-4">
                                             <div class="contexto-ficha__item">
                                                 <div class="contexto-ficha__label">{{ item.label }}</div>
-                                                <div class="contexto-ficha__valor">{{ item.value || '—' }}</div>
+                                                <div
+                                                    class="contexto-ficha__valor"
+                                                    :class="{ 'contexto-ficha__valor--una-linea': item.label === 'EDUCADOR DE CALLE' }"
+                                                >
+                                                    {{ item.value || '—' }}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -950,7 +955,7 @@
                                     outlined
                                     dense
                                     type="date"
-                                    label="Fecha inscripción"
+                                    label="Fecha de ingreso"
                                     class="audio-file-field"
                                     :disable="loadingAudios || tieneConformidadRegistrada"
                                 />
@@ -1255,6 +1260,12 @@
     font-size: 0.95rem;
     font-weight: 600;
     word-break: break-word;
+}
+
+.contexto-ficha__valor--una-linea {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .ficha-campo {
@@ -6570,9 +6581,15 @@ export default {
             };
         },
         fichaContexto() {
+            const responsable = this.form.respSupervision || this.obtenerNombreCompletoSesion() || '';
+            const responsableNormalizado = String(responsable)
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toUpperCase();
+
             return [
                 { label: 'PERIODO', value: this.fichaPeriodo || this.anioSeleccionado || '' },
-                { label: 'RESPONSABLE SUPERVISIÓN', value: this.form.respSupervision || this.obtenerNombreCompletoSesion() || '' },
+                { label: 'EDUCADOR DE CALLE', value: responsableNormalizado },
                 { label: 'FECHA REGISTRO', value: this.form.fechaRegistro || '' }
             ];
         },
