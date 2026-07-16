@@ -6672,7 +6672,14 @@ export default {
         },
 
         dataTableFiltrada() {
-            const base = this.anexosRaw.filter(row => Number(row.estado) !== 0);
+            const estadosVisibles = Array.isArray(this.pageConfig.visibleEstados)
+                ? this.pageConfig.visibleEstados.map(estado => Number(estado))
+                : null;
+            const base = this.anexosRaw.filter(row => {
+                const estado = Number(row.estado);
+                if (estado === 0) return false;
+                return !estadosVisibles || estadosVisibles.includes(estado);
+            });
             // Si no hay ningun filtro activo, devolver todos los registros
             if (!this.anioSeleccionado && !this.tipoFicha && !this.unidadSeleccionada &&
                 !this.servicioSeleccionado && !this.centroSeleccionado && !this.anexoSeleccionado) {

@@ -23,6 +23,7 @@ export default {
             { name: 'estado', label: 'ESTADO', field: 'estado', align: 'center', sortable: true, style: 'width: 130px; min-width: 130px;' },
             { name: 'acciones', label: 'ACCIONES', field: 'acciones', align: 'center', style: 'width: 80px; min-width: 80px; max-width: 80px;' }
         ],
+        visibleEstados: [2],
         conformidadSoloLecturaEnVer: true
     }
 };
