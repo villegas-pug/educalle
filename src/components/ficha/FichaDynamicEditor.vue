@@ -3418,7 +3418,7 @@ export default {
                 { id: 'INOPINADA', nombreTipo: 'INOPINADA' }
             ],
             estadosMap: {
-                1: { label: 'REGISTRADO', color: 'positive', textColor: 'white', icon: 'check_circle' },
+                1: { label: 'EN REGISTRO', color: 'positive', textColor: 'white', icon: 'check_circle' },
                 2: { label: 'SUSCRITO', color: 'info', textColor: 'white', icon: 'verified' },
                 0: { label: 'ANULADO',    color: 'negative', textColor: 'white', icon: 'cancel' }
             },
@@ -3555,7 +3555,7 @@ export default {
                     align: "center",
                     sortable: true,
                     sort: (a, b) => {
-                        const map = { 1: 'REGISTRADO', 2: 'SUSCRITO', 0: 'ANULADO' };
+                        const map = { 1: 'EN REGISTRO', 2: 'SUSCRITO', 0: 'ANULADO' };
                         return (map[a] || '').localeCompare(map[b] || '');
                     },
                     style: "width: 130px; min-width: 130px; max-width: 130px;"
