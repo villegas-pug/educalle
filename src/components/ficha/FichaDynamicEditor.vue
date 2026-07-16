@@ -3597,7 +3597,7 @@ export default {
             columnasCentros: [
                 {
                     name: "nombreUnidad",
-                    label: "CENTRO",
+                    label: "ESPACIO INTERVENCIÓN",
                     field: "nombreUnidad",
                     align: "left",
                     sortable: true

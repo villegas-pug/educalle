@@ -6,7 +6,7 @@
                     <q-btn icon="close" v-close-popup flat round size="sm"></q-btn>
                 </span>
 
-                <div class="text-body2 text-bold">SELECCIONAR CENTRO</div>
+                <div class="text-body2 text-bold">ESPACIO INTERVENCIÓN</div>
             </q-card-section>
 
             <q-card-section>
