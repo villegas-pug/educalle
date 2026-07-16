@@ -547,32 +547,48 @@
                             </q-card-section>
 
                             <q-card-section v-if="mostrarConformidadSoloLectura" class="q-pt-none">
-                                <div class="text-subtitle2 text-weight-bold q-mb-sm">CONFORMIDAD</div>
-                                <q-table
-                                    :data="audiosList"
-                                    :columns="columnasAudiosSoloLectura"
-                                    row-key="idAudio"
-                                    table-header-class="bg-inabif text-bold"
-                                    dense
-                                    flat
-                                    bordered
-                                    :loading="loadingAudios"
-                                    :rows-per-page-options="[10, 20, 50]"
-                                >
-                                    <template v-slot:body-cell-nro="props">
-                                        <q-td :props="props">{{ props.rowIndex + 1 }}</q-td>
-                                    </template>
-                                    <template v-slot:body-cell-acciones="props">
-                                        <q-td :props="props">
-                                            <q-btn icon="picture_as_pdf" color="info" flat round size="sm" @click="verPdfConformidad(props.row)">
-                                                <q-tooltip>Ver PDF</q-tooltip>
-                                            </q-btn>
-                                        </q-td>
-                                    </template>
-                                    <template v-slot:no-data>
-                                        <div class="full-width row flex-center q-pa-md text-grey">No hay conformidad registrada</div>
-                                    </template>
-                                </q-table>
+                                <q-card flat bordered class="conformidad-solo-lectura">
+                                    <q-card-section class="conformidad-solo-lectura__header">
+                                        <q-icon name="verified_user" size="22px" class="conformidad-solo-lectura__icon" />
+                                        <div>
+                                            <div class="text-subtitle2 text-weight-bold">CONFORMIDAD</div>
+                                            <div class="text-caption">Documento registrado · Solo lectura</div>
+                                        </div>
+                                    </q-card-section>
+
+                                    <q-table
+                                        class="conformidad-solo-lectura__table"
+                                        :data="audiosList"
+                                        :columns="columnasAudiosSoloLectura"
+                                        row-key="idAudio"
+                                        table-header-class="bg-inabif text-bold"
+                                        dense
+                                        flat
+                                        :loading="loadingAudios"
+                                        :rows-per-page-options="[10, 20, 50]"
+                                    >
+                                        <template v-slot:body-cell-nro="props">
+                                            <q-td :props="props">{{ props.rowIndex + 1 }}</q-td>
+                                        </template>
+                                        <template v-slot:body-cell-nombreArchivo="props">
+                                            <q-td :props="props">
+                                                <div class="u-ellipsis" :title="props.row.nombreArchivo">{{ props.row.nombreArchivo }}</div>
+                                                <q-tooltip>{{ props.row.nombreArchivo }}</q-tooltip>
+                                            </q-td>
+                                        </template>
+                                        <template v-slot:body-cell-acciones="props">
+                                            <q-td :props="props">
+                                                <q-btn label="Ver PDF" icon="picture_as_pdf" color="info" outline size="sm" no-caps @click="verPdfConformidad(props.row)" />
+                                            </q-td>
+                                        </template>
+                                        <template v-slot:no-data>
+                                            <div class="full-width column flex-center q-pa-lg text-grey-7">
+                                                <q-icon name="description" size="32px" class="q-mb-sm" />
+                                                <div>No hay conformidad registrada</div>
+                                            </div>
+                                        </template>
+                                    </q-table>
+                                </q-card>
                             </q-card-section>
 
                         </q-card>
@@ -1129,6 +1145,38 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.conformidad-solo-lectura {
+    border-color: #d6e1ec;
+    background: #f8fbfe;
+}
+
+.conformidad-solo-lectura__header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    color: #1f2d3d;
+    border-bottom: 1px solid #d6e1ec;
+}
+
+.conformidad-solo-lectura__icon {
+    color: #2d6a8d;
+}
+
+.conformidad-solo-lectura__table {
+    background: #fff;
+}
+
+.conformidad-solo-lectura__table :deep(th),
+.conformidad-solo-lectura__table :deep(td) {
+    padding-top: 7px;
+    padding-bottom: 7px;
+}
+
+.conformidad-solo-lectura__table :deep(tbody td:nth-child(2)) {
+    max-width: 1px;
 }
 
 .ficha-header {
