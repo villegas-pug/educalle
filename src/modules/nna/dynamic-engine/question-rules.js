@@ -20,6 +20,7 @@ export function isRedirected(question) { return String(question?.modoControl || 
 
 export function parseCondition(condition) {
     if (!condition) return null;
+    if (Array.isArray(condition) || typeof condition === 'object') return condition;
     try { return JSON.parse(condition); } catch (error) {
         try {
             const parts = condition.split(';');
@@ -36,26 +37,47 @@ export function matchesCondition(baseValue, conditionValue) {
     return baseValues.length > 0 && conditionValues.length > 0 && baseValues.some(value => conditionValues.includes(value));
 }
 
-export function isQuestionVisible(question, findQuestion) {
-    if (!question?.condicion || !question.condicion.id) return true;
-    const baseQuestion = findQuestion(question.condicion.id);
+function isEmptyValue(value) {
+    return value === null || value === undefined || value === '';
+}
+
+function isRangeConditionVisible(condition, findQuestion) {
+    if (!condition.id) return false;
+    const baseValue = findQuestion(condition.id)?.respuesta;
+    if (isEmptyValue(baseValue) || Array.isArray(baseValue)) return false;
+
+    const answer = Number(baseValue);
+    const min = Number(condition.min);
+    const max = Number(condition.max);
+    return Number.isFinite(answer) && Number.isFinite(min) && Number.isFinite(max)
+        && answer >= min && answer <= max;
+}
+
+function isLegacyConditionVisible(condition, findQuestion) {
+    // El formato legado sin tipo conserva la regla id/valor existente.
+    if (!condition.id) return true;
+    const baseQuestion = findQuestion(condition.id);
     const baseValue = baseQuestion?.respuesta;
-    if (baseValue === null || baseValue === undefined || baseValue === '') return false;
-    return !isNaN(question.condicion.valor)
-        ? Number(baseValue) >= Number(question.condicion.valor)
-        : matchesCondition(baseValue, question.condicion.valor);
+    if (isEmptyValue(baseValue)) return false;
+    return !isNaN(condition.valor)
+        ? Number(baseValue) >= Number(condition.valor)
+        : matchesCondition(baseValue, condition.valor);
+}
+
+export function evaluateQuestionConditions(condition, findQuestion) {
+    const conditions = Array.isArray(condition) ? condition : [condition];
+    return conditions.filter(Boolean).every(item => String(item.tipo || '').toUpperCase() === 'RANGO'
+        ? isRangeConditionVisible(item, findQuestion)
+        : isLegacyConditionVisible(item, findQuestion));
+}
+
+export function isQuestionVisible(question, findQuestion) {
+    return evaluateQuestionConditions(question?.condicion, findQuestion);
 }
 
 export function isQuestion2Visible(question, findQuestion) {
     if (!question?.pregunta2 || !question.respuesta) return false;
-    const condition = question.condicion;
-    if (!condition) return true;
-    if (!condition.id) return normalizeComparisonText(question.respuesta) === normalizeComparisonText(condition.valor);
-    const baseQuestion = findQuestion(condition.id);
-    if (!baseQuestion?.respuesta) return false;
-    return !isNaN(condition.valor)
-        ? Number(baseQuestion.respuesta) >= Number(condition.valor)
-        : normalizeComparisonText(baseQuestion.respuesta) === normalizeComparisonText(condition.valor);
+    return evaluateQuestionConditions(question.condicion, findQuestion);
 }
 
 export function matchesEditableRule(rule, findQuestion) {

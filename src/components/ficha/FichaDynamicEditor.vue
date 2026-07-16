@@ -6269,22 +6269,6 @@ export default {
                 reglas.push(v => v === null || v === '' || Number(v) >= 0 || 'No se permiten valores negativos')
             }
 
-            if (pregunta.condicion && pregunta.condicion.tipo === 'RANGO') {
-
-                const min = pregunta.condicion.min
-                const max = pregunta.condicion.max
-
-                reglas.push(val => {
-                    if (!val) return true
-                    return Number(val) >= min || `Mínimo permitido: ${min}`
-                })
-
-                reglas.push(val => {
-                    if (!val) return true
-                    return Number(val) <= max || `Máximo permitido: ${max}`
-                })
-            }
-
             return reglas
         },
         validarPreguntaTextM(pregunta) {
