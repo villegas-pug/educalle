@@ -85,3 +85,55 @@ export function getRedirectRef(options) {
     const parsed = parseJsonFlexible(options);
     return getCaseInsensitiveProperty(parsed, 'ref') || getCaseInsensitiveProperty(parsed, 'REF') || null;
 }
+
+function parseIsoDate(value) {
+    const match = String(value || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) return null;
+    const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    return Number.isNaN(date.getTime())
+        || date.getFullYear() !== Number(match[1])
+        || date.getMonth() !== Number(match[2]) - 1
+        || date.getDate() !== Number(match[3])
+        ? null
+        : date;
+}
+
+export function calculateCompleteAge(birthDate, referenceDate) {
+    const birth = parseIsoDate(birthDate);
+    const reference = parseIsoDate(referenceDate);
+    if (!birth || !reference || birth > reference) return null;
+    let age = reference.getFullYear() - birth.getFullYear();
+    if (reference.getMonth() < birth.getMonth() || (reference.getMonth() === birth.getMonth() && reference.getDate() < birth.getDate())) age -= 1;
+    return age;
+}
+
+export function matchesComparator(actual, comparator, expected) {
+    switch (String(comparator || '<').trim()) {
+        case '<': return actual < expected;
+        case '<=': return actual <= expected;
+        case '>': return actual > expected;
+        case '>=': return actual >= expected;
+        case '=': case '==': case '===': return actual === expected;
+        case '!=': case '<>': return actual !== expected;
+        default: return false;
+    }
+}
+
+export function evaluateBlockSubmitInvalidRule(question, { findQuestion, referenceDate }) {
+    const rule = question?._bloqSubmitSiInvalidoRule;
+    if (!rule) return null;
+    if (rule.type !== 'MENOR') return null;
+
+    const expected = Number(rule.value);
+    const auxiliaryId = rule.auxiliaryId;
+    const auxiliaryQuestion = findQuestion && auxiliaryId !== null && auxiliaryId !== undefined
+        ? findQuestion(auxiliaryId)
+        : null;
+    const dateReference = auxiliaryQuestion?.respuesta || referenceDate;
+    const age = calculateCompleteAge(question.respuesta, dateReference);
+    if (age === null || !Number.isFinite(expected) || matchesComparator(age, rule.comparator, expected)) return null;
+    return {
+        question,
+        message: rule.message || `${question.pregunta}: la edad calculada (${age}) debe cumplir ${rule.comparator} ${expected}.`
+    };
+}

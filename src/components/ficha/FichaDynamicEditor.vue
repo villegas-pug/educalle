@@ -92,7 +92,7 @@
                                             <div
                                                 v-for="pregunta in seccion.preguntas"
                                                 :key="pregunta.idPregunta"
-                                                v-if="mostrarPregunta(pregunta)"
+                                                v-if="esPreguntaVisibleSinEfectos(pregunta)"
                                                 class="ficha-pregunta"
                                                 :class="{
                                                     'ficha-pregunta--summary': esVistaSummaryRow(pregunta),
@@ -436,6 +436,7 @@
                                                                     @keydown="event => manejarKeydownRespuestaTextoPregunta(pregunta, event)"
                                                                     @paste="event => manejarPasteRespuestaTextoPregunta(pregunta, event)"
                                                                     @input="val => actualizarRespuestaTextoPregunta(pregunta, val)"
+                                                                    @blur="onPreguntaDateBlur(pregunta)"
                                                                 >
                                                                     <template v-if="debeMostrarContadorPregunta(pregunta) && !usaAutogrowPregunta(pregunta)" v-slot:append>
                                                                         <span class="ficha-input-counter">{{ getContadorTextoPregunta(pregunta) }}</span>
@@ -476,7 +477,7 @@
                                                     </div>
                                                 </template>
 
-                                                <template v-if="mostrarPregunta2(pregunta)">
+                                                <template v-if="esPregunta2VisibleSinEfectos(pregunta)">
                                                     <div class="ficha-campo ficha-pregunta2">
                                                         <div class="ficha-label">
                                                             {{ pregunta.pregunta2 }}
@@ -575,7 +576,7 @@
                                 @mousedown.prevent="iniciarArrastreFooterFicha"
                                 @touchstart.prevent="iniciarArrastreFooterFicha"
                             />
-                            <q-btn v-if="!esVisualizacion" label="Guardar" icon="save" type="submit" @click="guardarTodo" class="ficha-btn-guardar" title="Guardar" />
+                            <q-btn v-if="!esVisualizacion" label="Guardar" icon="save" type="submit" @click="guardarTodo" :disable="guardarDeshabilitadoPorRegla" :title="guardarDeshabilitadoPorRegla ? 'Corrija las validaciones para guardar' : 'Guardar'" class="ficha-btn-guardar" />
                             <q-btn
                                 v-if="modoEdicion"
                                 label="Cerrar ficha"
@@ -3583,6 +3584,11 @@ export default {
             fechaInscripcion: null,
             fichaPeriodo: null,
             fichaTipo: null,
+            alertaReglasTimer: null,
+            alertaReglasActiva: false,
+            alertaReglasDialog: null,
+            alertasReglasCanceladas: false,
+            indiceAlertaReglas: 0,
             columnasAudios: [
                 { name: "nro", label: "N°", field: "nro", align: "center", sortable: false, style: "width: 50px;" },
                 { name: "nombreArchivo", label: "NOMBRE DE ARCHIVO", field: "nombreArchivo", align: "left", sortable: true },
@@ -4021,6 +4027,8 @@ export default {
             const centroUbigeo = [this.form.departamento, this.form.provincia, this.form.distrito]
                 .filter(Boolean)
                 .join(' / ');
+            const hoy = new Date();
+            const getDate = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
 
             const refs = {
                 PERIODO: periodo,
@@ -4037,7 +4045,8 @@ export default {
                 SERVNOMBRE: this.form.nombreServicio || '',
                 SERVICIONOMBRE: this.form.nombreServicio || '',
                 RESPID: responsableId,
-                RESPNOMBRE: responsableNombre
+                RESPNOMBRE: responsableNombre,
+                GETDATE: getDate
             };
 
             return refs[ref] !== undefined ? refs[ref] : '';
@@ -4336,7 +4345,10 @@ export default {
         },
         async prepararPreguntaDinamica(pregunta) {
             if (this.esPreguntaRedirected(pregunta)) {
-                pregunta.respuesta = this.getRefValue(pregunta._redirectRef);
+                const esGetDate = this.normalizarTextoComparacion(pregunta._redirectRef) === 'GETDATE';
+                if (!esGetDate || (this.modo === 'nuevo' && this.esValorVacioCierre(pregunta.respuesta))) {
+                    pregunta.respuesta = this.getRefValue(pregunta._redirectRef);
+                }
             }
 
             if (this.esPreguntaSelectHttpSimple(pregunta)) {
@@ -4751,6 +4763,12 @@ export default {
             return true;
         },
         async persistirFicha() {
+            const reglaInvalida = this.obtenerReglasBloqueantesInvalidas()[0];
+            if (reglaInvalida) {
+                this.alertasReglasCanceladas = false;
+                this.mostrarAlertaReglaBloqueante();
+                return false;
+            }
             this.limpiarRespuestasOcultas();
             this.sincronizarResponsableSesion();
 
@@ -4815,6 +4833,76 @@ export default {
             }
 
             return true;
+        },
+        obtenerReglasBloqueantesInvalidas() {
+            return this.secciones.flatMap(seccion => seccion.preguntas)
+                .filter(pregunta => this.esPreguntaVisibleSinEfectos(pregunta))
+                .map(pregunta => questionEngine.evaluateBlockSubmitInvalidRule(pregunta, {
+                    findQuestion: id => this.buscarPregunta(id),
+                    referenceDate: this.form.fechaRegistro
+                }))
+                .filter(Boolean);
+        },
+        cancelarAlertasReglasBloqueantes() {
+            if (this.alertaReglasTimer) {
+                clearTimeout(this.alertaReglasTimer);
+                this.alertaReglasTimer = null;
+            }
+            if (this.alertaReglasDialog) {
+                this.alertaReglasDialog.hide();
+                this.alertaReglasDialog = null;
+            }
+            this.alertasReglasCanceladas = true;
+            this.alertaReglasActiva = false;
+            this.indiceAlertaReglas = 0;
+        },
+        cancelarAlertasReglasSiCorregidas() {
+            if (this.obtenerReglasBloqueantesInvalidas().length === 0) {
+                this.cancelarAlertasReglasBloqueantes();
+            }
+        },
+        programarSiguienteAlertaRegla() {
+            if (this.alertasReglasCanceladas || this.alertaReglasTimer || this.alertaReglasActiva || !this.dialog) return;
+            if (this.obtenerReglasBloqueantesInvalidas().length === 0) {
+                this.cancelarAlertasReglasBloqueantes();
+                return;
+            }
+            this.alertaReglasTimer = setTimeout(() => {
+                this.alertaReglasTimer = null;
+                this.mostrarAlertaReglaBloqueante();
+            }, 5000);
+        },
+        mostrarAlertaReglaBloqueante() {
+            const reglasInvalidas = this.obtenerReglasBloqueantesInvalidas();
+            if (!reglasInvalidas.length || this.alertaReglasActiva || !this.dialog) {
+                this.cancelarAlertasReglasSiCorregidas();
+                return;
+            }
+            const regla = reglasInvalidas[this.indiceAlertaReglas % reglasInvalidas.length];
+            this.indiceAlertaReglas = (this.indiceAlertaReglas + 1) % reglasInvalidas.length;
+            this.alertasReglasCanceladas = false;
+            this.alertaReglasActiva = true;
+            this.alertaReglasDialog = this.$q.dialog({
+                title: 'VALIDACIÓN DE FICHA',
+                message: regla.message,
+                ok: { label: 'Corregir', color: 'primary' },
+                class: 'ficha-regla-bloqueante-dialog',
+                persistent: false
+            }).onDismiss(() => {
+                this.alertaReglasDialog = null;
+                this.alertaReglasActiva = false;
+                this.programarSiguienteAlertaRegla();
+            });
+        },
+        onPreguntaDateBlur(pregunta) {
+            if (String(pregunta?.tipoControl || '').toLowerCase() !== 'date') return;
+            this.alertasReglasCanceladas = false;
+            const reglaInvalida = questionEngine.evaluateBlockSubmitInvalidRule(pregunta, {
+                findQuestion: id => this.buscarPregunta(id),
+                referenceDate: this.form.fechaRegistro
+            });
+            if (reglaInvalida) this.mostrarAlertaReglaBloqueante();
+            else this.cancelarAlertasReglasSiCorregidas();
         },
         estaPreguntaRespondida(pregunta) {
             if (this.esPreguntaBranchedInputSearch(pregunta)) {
@@ -5008,7 +5096,7 @@ export default {
             return String(pregunta?.tipoControl || '').toLowerCase() === 'textarea';
         },
         obtenerValorTextoPregunta(pregunta) {
-            if (this.esPreguntaRedirected(pregunta)) {
+            if (this.esPreguntaRedirected(pregunta) && this.normalizarTextoComparacion(pregunta._redirectRef) !== 'GETDATE') {
                 return this.getRefValue(pregunta._redirectRef);
             }
             return pregunta?.respuesta === null || pregunta?.respuesta === undefined ? '' : pregunta.respuesta;
@@ -5020,6 +5108,7 @@ export default {
             const valorTexto = this.sanitizarValorTextoPregunta(pregunta, value);
             const valorNormalizado = valorTexto === '' ? (this.usaTipoNumero(pregunta) ? null : '') : valorTexto;
             this.$set(pregunta, 'respuesta', valorNormalizado);
+            this.cancelarAlertasReglasSiCorregidas();
         },
         actualizarDateInputsPart(pregunta, part, value) {
             const limpio = String(value === null || value === undefined ? '' : value).replace(/\D/g, '');
@@ -5417,6 +5506,7 @@ export default {
 
         resetModo() {
             this.resetFooterFichaFlotante();
+            this.cancelarAlertasReglasBloqueantes();
             this.resetCierreFicha();
             this.modo = null;
             this.seccionAbierta = null;
@@ -5996,12 +6086,15 @@ export default {
         },
 
         mostrarPregunta2(pregunta) {
-            const visible = questionEngine.isQuestion2Visible(pregunta, id => this.buscarPregunta(id))
+            const visible = this.esPregunta2VisibleSinEfectos(pregunta)
             if (!visible && pregunta.pregunta2 && this.modo === 'nuevo') this.$set(pregunta, 'respuesta2', null)
             return visible
         },
+        esPregunta2VisibleSinEfectos(pregunta) {
+            return questionEngine.isQuestion2Visible(pregunta, id => this.buscarPregunta(id))
+        },
         mostrarPregunta(pregunta) {
-            const visible = questionEngine.isQuestionVisible(pregunta, id => this.buscarPregunta(id))
+            const visible = this.esPreguntaVisibleSinEfectos(pregunta)
             if (!visible && this.modo === 'nuevo') {
                 switch (pregunta.tipoControl) {
                     case 'text':    this.$set(pregunta, 'respuesta', ''); break
@@ -6012,6 +6105,9 @@ export default {
                 }
             }
             return visible
+        },
+        esPreguntaVisibleSinEfectos(pregunta) {
+            return questionEngine.isQuestionVisible(pregunta, id => this.buscarPregunta(id))
         },
         buscarPregunta(id) {
             for (const seccion of this.secciones) {
@@ -6265,6 +6361,7 @@ export default {
     },
     beforeDestroy() {
         this.removerEventosArrastreFooterFicha();
+        this.cancelarAlertasReglasBloqueantes();
     },
     watch: {
         async unidadSeleccionada() {
@@ -6429,6 +6526,9 @@ export default {
         },
         modoEdicion() {
             return this.modo === "editar";
+        },
+        guardarDeshabilitadoPorRegla() {
+            return this.obtenerReglasBloqueantesInvalidas().length > 0;
         },
 
         dataTableFiltrada() {

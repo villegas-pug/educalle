@@ -99,6 +99,24 @@ export function normalizeEditableBranches(editableBranches) {
         : { mode: 'readonly-all' };
 }
 
+// Regla enviada por backend para impedir persistir cuando el valor no cumple.
+export function normalizeBlockSubmitInvalidRule(rule) {
+    if (rule === null || rule === undefined || rule === '' || rule === 0 || rule === '0' || rule === false || rule === 'false') return null;
+    const parsed = parseJsonFlexible(rule);
+    if (parsed === null) return null;
+    if (typeof parsed !== 'object') return null;
+
+    const type = normalizeComparisonText(getCaseInsensitiveProperty(parsed, 'tipo') || getCaseInsensitiveProperty(parsed, 'type'));
+    if (!type) return null;
+    return {
+        type,
+        comparator: String(getCaseInsensitiveProperty(parsed, 'comparador') || getCaseInsensitiveProperty(parsed, 'operador') || '<').trim(),
+        value: getCaseInsensitiveProperty(parsed, 'valor') ?? getCaseInsensitiveProperty(parsed, 'value') ?? getCaseInsensitiveProperty(parsed, 'edad'),
+        auxiliaryId: getCaseInsensitiveProperty(parsed, 'idAux'),
+        message: String(getCaseInsensitiveProperty(parsed, 'mensaje') || '').trim()
+    };
+}
+
 export function getHttpLabelField(options) {
     const parsed = parseJsonFlexible(options);
     return !parsed || Array.isArray(parsed) || typeof parsed !== 'object'
