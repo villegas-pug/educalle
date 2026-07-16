@@ -3381,11 +3381,14 @@ export default {
             ],
             anioSeleccionado: null,
             anios: [
-                { id: '20261', anio: '2026 - 1' },
-                { id: '20262', anio: '2026 - 2' },
-                { id: '20271', anio: '2027 - 1' },
+                ...Array.from(
+                    { length: Math.max(new Date().getFullYear() - 2026 + 1, 0) },
+                    (_, indice) => {
+                        const anio = String(2026 + indice);
+                        return { id: anio, anio };
+                    }
+                ),
                 { id: 'TODOS', anio: 'TODOS' }
-                // { id: '2028', anio: '2028' },
             ],
             modoSupervision: null,
             modalidades: [
