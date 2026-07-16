@@ -14,7 +14,7 @@ export function buildQuestion(rawQuestion) {
         _redirectRef: rules.getRedirectRef(rawQuestion.opciones), _bloqSubmitSiInvalidoRule: normalizer.normalizeBlockSubmitInvalidRule(rawQuestion.bloqSubmitSiInvalido), _ramificaciones: [], _ramificacionesReadonlyHttp: false, _branchedSelects: [],
         _loadingHttp: false, _httpLoaded: false, _labelHttpField: normalizer.getHttpLabelField(rawQuestion.opciones), opciones: [],
         opciones2: normalizer.parseOptions(rawQuestion.opciones2), respuesta: null, respuesta2: null, otroTexto: null,
-        _textMDraft: '', _timeRangeStartDraft: '', _timeRangeEndDraft: '', _timeRangeAttemptedAdd: false,
+        _textMDraft: '', _numberMDraft: '', _timeRangeStartDraft: '', _timeRangeEndDraft: '', _timeRangeAttemptedAdd: false,
         _dateInputsYearDraft: '', _dateInputsMonthDraft: '', _dateInputsDayDraft: ''
     };
     if (rules.isBranchedInputSearch(question)) question._ramificaciones = normalizer.normalizeInputSearchBranches(rawQuestion.opciones);

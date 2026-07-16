@@ -1,12 +1,28 @@
 import { isBranchedInputSearch, isBranchedSelects } from './question-rules';
 import { normalizeComparisonText } from './question-normalizer';
 
+function normalizeNumberMItems(rawAnswer) {
+    const values = Array.isArray(rawAnswer) ? rawAnswer : !rawAnswer ? [] : String(rawAnswer).split('|');
+    const seen = new Set();
+    return values.reduce((items, value) => {
+        const item = String(value === null || value === undefined ? '' : value).trim();
+        if (!/^\d+$/.test(item)) return items;
+        const canonical = item.replace(/^0+(?=\d)/, '');
+        if (seen.has(canonical)) return items;
+        seen.add(canonical);
+        items.push(canonical);
+        return items;
+    }, []);
+}
+
 export function normalizeAnswer(question, rawAnswer) {
     if (isBranchedInputSearch(question) || isBranchedSelects(question)) return rawAnswer || null;
     switch (question.tipoControl) {
         case 'label': return rawAnswer || '';
         case 'text': case 'date': case 'dateInputs': case 'number': case 'textarea': case 'inputSearch': return rawAnswer || '';
-        case 'textM': case 'timeRangeM': return Array.isArray(rawAnswer) ? rawAnswer : !rawAnswer ? [] : String(rawAnswer).split('|').map(item => item.trim()).filter(Boolean);
+        case 'textM': return Array.isArray(rawAnswer) ? rawAnswer : !rawAnswer ? [] : String(rawAnswer).split('|').map(item => item.trim()).filter(Boolean);
+        case 'numberM': return normalizeNumberMItems(rawAnswer);
+        case 'timeRangeM': return Array.isArray(rawAnswer) ? rawAnswer : !rawAnswer ? [] : String(rawAnswer).split('|').map(item => item.trim()).filter(Boolean);
         case 'radio': case 'select':
             if (rawAnswer === null || rawAnswer === undefined || rawAnswer === '') return null;
             return !Array.isArray(question.opciones) || question.opciones.length === 0 ? rawAnswer
@@ -43,7 +59,7 @@ export function serializeAnswer(question) {
         return parts.length ? parts.join('|') : null;
     }
     const type = String(question?.tipoControl || '').toLowerCase();
-    if (['textm', 'timerangem'].includes(type)) return Array.isArray(question.respuesta) && question.respuesta.length ? question.respuesta.join('|') : null;
+    if (['textm', 'numberm', 'timerangem'].includes(type)) return Array.isArray(question.respuesta) && question.respuesta.length ? question.respuesta.join('|') : null;
     if (type === 'dateinputs') {
         const day = String(question._dateInputsDayDraft || '').trim();
         const month = String(question._dateInputsMonthDraft || '').trim();

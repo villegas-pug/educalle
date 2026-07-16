@@ -320,6 +320,54 @@
                                                                 </div>
                                                             </template>
 
+                                                            <template v-else-if="pregunta.tipoControl === 'numberM'">
+                                                                <template v-if="esVisualizacion">
+                                                                    <div v-if="pregunta.respuesta && pregunta.respuesta.length" class="ficha-tags">
+                                                                        <span v-for="item in pregunta.respuesta" :key="item" class="ficha-tag">{{ item }}</span>
+                                                                    </div>
+                                                                    <span v-else class="ficha-valor">—</span>
+                                                                </template>
+                                                                <div v-else class="ficha-textm" :style="getPreguntaControlStyle(pregunta)">
+                                                                    <div class="ficha-textm__input-row">
+                                                                        <q-input
+                                                                            outlined
+                                                                            dense
+                                                                            type="number"
+                                                                            class="ficha-textm__input"
+                                                                            :value="pregunta._numberMDraft"
+                                                                            min="0"
+                                                                            step="1"
+                                                                            :style="getPreguntaControlStyle(pregunta)"
+                                                                            :readonly="esCampoSoloLectura(pregunta)"
+                                                                            :rules="validarPreguntaNumberM(pregunta)"
+                                                                            @input="val => actualizarDraftNumberM(pregunta, val)"
+                                                                            @keyup.enter.prevent="agregarItemNumberM(pregunta)"
+                                                                        />
+                                                                        <q-btn
+                                                                            dense
+                                                                            round
+                                                                            unelevated
+                                                                            color="primary"
+                                                                            icon="add"
+                                                                            :disable="esCampoSoloLectura(pregunta)"
+                                                                            @click="agregarItemNumberM(pregunta)"
+                                                                        />
+                                                                    </div>
+                                                                    <div v-if="pregunta.respuesta && pregunta.respuesta.length" class="ficha-tags q-mt-sm">
+                                                                        <q-chip
+                                                                            v-for="(item, itemIndex) in pregunta.respuesta"
+                                                                            :key="`${pregunta.idPregunta}-numberm-${itemIndex}-${item}`"
+                                                                            :removable="!esCampoSoloLectura(pregunta)"
+                                                                            color="blue-1"
+                                                                            text-color="primary"
+                                                                            @remove="eliminarItemNumberM(pregunta, itemIndex)"
+                                                                        >
+                                                                            {{ item }}
+                                                                        </q-chip>
+                                                                    </div>
+                                                                </div>
+                                                            </template>
+
                                                             <template v-else-if="pregunta.tipoControl === 'timeRangeM'">
                                                                 <template v-if="esVisualizacion">
                                                                     <div v-if="pregunta.respuesta && pregunta.respuesta.length" class="ficha-tags">
@@ -388,31 +436,46 @@
                                                                     <q-input
                                                                         outlined
                                                                         dense
-                                                                        type="number"
+                                                                        type="text"
+                                                                        inputmode="numeric"
+                                                                        maxlength="4"
                                                                         class="ficha-date-inputs__field"
                                                                         label="Año(s)"
                                                                         :value="pregunta._dateInputsYearDraft"
                                                                         :style="getPreguntaControlStyle(pregunta)"
+                                                                        @keydown="manejarKeydownDateInputs"
+                                                                        @paste="manejarPasteDateInputs"
+                                                                        @drop.prevent
                                                                         @input="val => actualizarDateInputsPart(pregunta, 'year', val)"
                                                                     />
                                                                     <q-input
                                                                         outlined
                                                                         dense
-                                                                        type="number"
+                                                                        type="text"
+                                                                        inputmode="numeric"
+                                                                        maxlength="2"
                                                                         class="ficha-date-inputs__field"
                                                                         label="Mes(es)"
                                                                         :value="pregunta._dateInputsMonthDraft"
                                                                         :style="getPreguntaControlStyle(pregunta)"
+                                                                        @keydown="manejarKeydownDateInputs"
+                                                                        @paste="manejarPasteDateInputs"
+                                                                        @drop.prevent
                                                                         @input="val => actualizarDateInputsPart(pregunta, 'month', val)"
                                                                     />
                                                                     <q-input
                                                                         outlined
                                                                         dense
-                                                                        type="number"
+                                                                        type="text"
+                                                                        inputmode="numeric"
+                                                                        maxlength="2"
                                                                         class="ficha-date-inputs__field"
                                                                         label="Día(as)"
                                                                         :value="pregunta._dateInputsDayDraft"
                                                                         :style="getPreguntaControlStyle(pregunta)"
+                                                                        @keydown="manejarKeydownDateInputs"
+                                                                        @paste="manejarPasteDateInputs"
+                                                                        @drop.prevent
                                                                         @input="val => actualizarDateInputsPart(pregunta, 'day', val)"
                                                                     />
                                                                 </div>
@@ -1617,21 +1680,82 @@
 
 .ficha-http-dialog {
     width: 520px;
-    max-width: 94vw;
+    max-width: calc(100vw - 32px);
+    max-height: 90vh;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.22);
 }
 
 .ficha-http-dialog__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
+    min-height: 64px;
+    padding: 14px 18px;
+}
+
+.ficha-http-dialog__title {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 10px;
+    color: #1f2d3d;
+}
+
+.ficha-http-dialog__title > div {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .ficha-http-dialog__body {
-    padding: 16px;
+    max-height: 60vh;
+    overflow-y: auto;
+    background: #fff;
+}
+
+.ficha-http-dialog__field .q-field__label {
+    text-transform: uppercase;
 }
 
 .ficha-http-dialog__actions {
-    padding: 0 16px 16px;
+    padding: 12px 18px 18px;
+    border-top: 1px solid #edf1f5;
+    background: #fff;
+}
+
+.ficha-http-dialog__cancel,
+.ficha-http-dialog__search {
+    min-height: 40px;
+}
+
+@media (max-width: 599px) {
+    .ficha-http-dialog {
+        max-width: calc(100vw - 20px);
+    }
+
+    .ficha-http-dialog__header {
+        min-height: 58px;
+        padding: 12px 14px;
+    }
+
+    .ficha-http-dialog__body {
+        max-height: 62vh;
+        padding: 14px;
+    }
+
+    .ficha-http-dialog__actions {
+        align-items: stretch;
+        padding: 10px 14px 14px;
+    }
+
+    .ficha-http-dialog__cancel,
+    .ficha-http-dialog__search {
+        width: 100%;
+        margin: 0;
+    }
 }
 
 .datos-generales-tabla tbody tr:nth-child(odd) {
@@ -5225,7 +5349,7 @@ export default {
             this.cancelarAlertasReglasSiCorregidas();
         },
         actualizarDateInputsPart(pregunta, part, value) {
-            const limpio = String(value === null || value === undefined ? '' : value).replace(/\D/g, '');
+            const valorEntrante = String(value === null || value === undefined ? '' : value);
             let clave = '_dateInputsDayDraft';
             let limite = 2;
 
@@ -5236,8 +5360,28 @@ export default {
                 clave = '_dateInputsMonthDraft';
             }
 
-            this.$set(pregunta, clave, limpio.slice(0, limite));
+            if (!/^\d*$/.test(valorEntrante) || valorEntrante.length > limite) return;
+
+            this.$set(pregunta, clave, valorEntrante);
             pregunta.respuesta = this.serializarRespuestaPregunta(pregunta);
+        },
+        manejarKeydownDateInputs(event) {
+            if (event.ctrlKey || event.metaKey) return;
+
+            const teclasPermitidas = [
+                'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+                'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'
+            ];
+            if (teclasPermitidas.includes(event.key) || /^\d$/.test(event.key)) return;
+
+            event.preventDefault();
+        },
+        manejarPasteDateInputs(event) {
+            const clipboard = event.clipboardData || window.clipboardData;
+            if (!clipboard) return;
+
+            const pegado = clipboard.getData('text') || '';
+            if (!/^\d*$/.test(pegado)) event.preventDefault();
         },
         actualizarDraftTextM(pregunta, value) {
             this.$set(pregunta, '_textMDraft', value);
@@ -5247,11 +5391,42 @@ export default {
             const valor = String(pregunta._textMDraft || '').trim();
             if (!valor) return;
             const items = Array.isArray(pregunta.respuesta) ? [...pregunta.respuesta] : [];
+            const clave = this.normalizarTextoComparacion(valor);
+            if (items.some(item => this.normalizarTextoComparacion(item) === clave)) {
+                this.$q.notify({ type: 'warning', message: 'El valor ya fue agregado' });
+                return;
+            }
             items.push(valor);
             this.$set(pregunta, 'respuesta', items);
             this.$set(pregunta, '_textMDraft', '');
         },
         eliminarItemTextM(pregunta, index) {
+            if (this.esCampoSoloLectura(pregunta)) return;
+            const items = Array.isArray(pregunta.respuesta) ? [...pregunta.respuesta] : [];
+            items.splice(index, 1);
+            this.$set(pregunta, 'respuesta', items);
+        },
+        actualizarDraftNumberM(pregunta, value) {
+            this.$set(pregunta, '_numberMDraft', value);
+        },
+        agregarItemNumberM(pregunta) {
+            if (this.esCampoSoloLectura(pregunta)) return;
+            const valor = String(pregunta._numberMDraft === null || pregunta._numberMDraft === undefined ? '' : pregunta._numberMDraft).trim();
+            if (!/^\d+$/.test(valor)) {
+                this.$q.notify({ type: 'warning', message: 'Ingrese un número entero no negativo' });
+                return;
+            }
+            const canonical = valor.replace(/^0+(?=\d)/, '');
+            const items = Array.isArray(pregunta.respuesta) ? [...pregunta.respuesta] : [];
+            if (items.some(item => String(item) === canonical)) {
+                this.$q.notify({ type: 'warning', message: 'El valor ya fue agregado' });
+                return;
+            }
+            items.push(canonical);
+            this.$set(pregunta, 'respuesta', items);
+            this.$set(pregunta, '_numberMDraft', '');
+        },
+        eliminarItemNumberM(pregunta, index) {
             if (this.esCampoSoloLectura(pregunta)) return;
             const items = Array.isArray(pregunta.respuesta) ? [...pregunta.respuesta] : [];
             items.splice(index, 1);
@@ -6124,6 +6299,16 @@ export default {
 
             return reglas
         },
+        validarPreguntaNumberM(pregunta) {
+            const reglas = []
+            if (pregunta.obligatoria === 1) {
+                reglas.push(() => {
+                    const items = Array.isArray(pregunta?.respuesta) ? pregunta.respuesta : []
+                    return items.length > 0 || 'Este campo es obligatorio'
+                })
+            }
+            return reglas
+        },
         validarPreguntaTimeRangeM(pregunta) {
             const reglas = []
 
@@ -6170,6 +6355,7 @@ export default {
                             case 'text':    p.respuesta = ''; break
                             case 'dateInputs': p.respuesta = ''; p._dateInputsYearDraft = ''; p._dateInputsMonthDraft = ''; p._dateInputsDayDraft = ''; break
                             case 'textM':   p.respuesta = []; p._textMDraft = ''; break
+                            case 'numberM': p.respuesta = []; p._numberMDraft = ''; break
                             case 'timeRangeM': p.respuesta = []; p._timeRangeStartDraft = ''; p._timeRangeEndDraft = ''; p._timeRangeAttemptedAdd = false; break
                             case 'selectM': p.respuesta = []; break
                             case 'label':   p.respuesta = 2; break
@@ -6213,6 +6399,8 @@ export default {
                 switch (pregunta.tipoControl) {
                     case 'text':    this.$set(pregunta, 'respuesta', ''); break
                     case 'dateInputs': this.$set(pregunta, 'respuesta', ''); this.$set(pregunta, '_dateInputsYearDraft', ''); this.$set(pregunta, '_dateInputsMonthDraft', ''); this.$set(pregunta, '_dateInputsDayDraft', ''); break
+                    case 'textM': this.$set(pregunta, 'respuesta', []); this.$set(pregunta, '_textMDraft', ''); break
+                    case 'numberM': this.$set(pregunta, 'respuesta', []); this.$set(pregunta, '_numberMDraft', ''); break
                     case 'selectM': this.$set(pregunta, 'respuesta', []); break
                     case 'label':   this.$set(pregunta, 'respuesta', 2); break
                     default:        this.$set(pregunta, 'respuesta', null); break
