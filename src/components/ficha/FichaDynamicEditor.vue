@@ -1877,13 +1877,14 @@
 
     .ficha-footer {
         position: absolute;
-        left: 0;
-        right: 0;
+        left: auto;
+        right: 12px;
         bottom: 0;
         z-index: 10;
         display: flex;
-        width: 100%;
-        max-width: 100%;
+        width: max-content;
+        max-width: calc(100% - 24px);
+        min-width: 0;
         padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
         border: 0 !important;
         border-top: 0 !important;
@@ -3201,13 +3202,14 @@ audio {
 
     .ficha-footer {
         position: absolute;
-        left: 0;
-        right: 0;
+        left: auto;
+        right: 12px;
         bottom: 0;
         z-index: 10;
         display: flex;
-        width: 100%;
-        max-width: 100%;
+        width: max-content;
+        max-width: calc(100% - 24px);
+        min-width: 0;
         padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
         border: 0 !important;
         border-top: 0 !important;
@@ -3220,6 +3222,76 @@ audio {
         flex-wrap: wrap;
         justify-content: flex-end;
         pointer-events: auto;
+    }
+}
+
+@media (min-width: 600px) and (max-width: 1023px) {
+    .ficha-body {
+        padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .ficha-footer .q-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 56px;
+        width: 56px;
+        min-width: 56px !important;
+        max-width: 56px;
+        height: 56px;
+        min-height: 56px;
+        border-radius: 50%;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+        pointer-events: auto;
+    }
+
+    .ficha-footer .q-btn :deep(.q-btn__wrapper) {
+        width: 100%;
+        height: 100%;
+        min-height: 56px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ficha-footer .q-btn :deep(.q-btn__content) {
+        width: 100%;
+        height: 100%;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+    }
+
+    .ficha-footer .q-btn :deep(.q-icon) {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1;
+    }
+
+    .ficha-footer .q-btn :deep(.q-btn__content span:not(.q-icon)) {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .ficha-footer .ficha-footer-drag {
+        display: inline-flex;
+        color: #455a64;
+        background-color: #ffffff;
+        cursor: grab;
+        touch-action: none;
+    }
+
+    .ficha-footer .ficha-footer-drag:active {
+        cursor: grabbing;
     }
 }
 
@@ -3779,7 +3851,7 @@ export default {
             };
         },
         iniciarArrastreFooterFicha(event) {
-            if (!this.$q.screen.lt.sm) return;
+            if (!this.$q.screen.lt.md) return;
 
             const wrapper = this.$refs.fichaScrollWrapper;
             const footer = this.$refs.fichaFooter && this.$refs.fichaFooter.$el
@@ -6662,7 +6734,7 @@ export default {
 
         fichaFooterFloatingStyle() {
             if (
-                !this.$q.screen.lt.sm ||
+                !this.$q.screen.lt.md ||
                 this.fichaFooterPosicion.x === null ||
                 this.fichaFooterPosicion.y === null
             ) {
