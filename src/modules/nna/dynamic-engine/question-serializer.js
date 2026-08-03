@@ -7,10 +7,9 @@ function normalizeNumberMItems(rawAnswer) {
     return values.reduce((items, value) => {
         const item = String(value === null || value === undefined ? '' : value).trim();
         if (!/^\d+$/.test(item)) return items;
-        const canonical = item.replace(/^0+(?=\d)/, '');
-        if (seen.has(canonical)) return items;
-        seen.add(canonical);
-        items.push(canonical);
+        if (seen.has(item)) return items;
+        seen.add(item);
+        items.push(item);
         return items;
     }, []);
 }

@@ -332,11 +332,10 @@
                                                                         <q-input
                                                                             outlined
                                                                             dense
-                                                                            type="number"
+                                                                            type="text"
+                                                                            inputmode="numeric"
                                                                             class="ficha-textm__input"
                                                                             :value="pregunta._numberMDraft"
-                                                                            min="0"
-                                                                            step="1"
                                                                             :style="getPreguntaControlStyle(pregunta)"
                                                                             :readonly="esCampoSoloLectura(pregunta)"
                                                                             :rules="validarPreguntaNumberM(pregunta)"
@@ -5420,13 +5419,12 @@ export default {
                 this.$q.notify({ type: 'warning', message: 'Ingrese un número entero no negativo' });
                 return;
             }
-            const canonical = valor.replace(/^0+(?=\d)/, '');
             const items = Array.isArray(pregunta.respuesta) ? [...pregunta.respuesta] : [];
-            if (items.some(item => String(item) === canonical)) {
+            if (items.some(item => String(item) === valor)) {
                 this.$q.notify({ type: 'warning', message: 'El valor ya fue agregado' });
                 return;
             }
-            items.push(canonical);
+            items.push(valor);
             this.$set(pregunta, 'respuesta', items);
             this.$set(pregunta, '_numberMDraft', '');
         },
