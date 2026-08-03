@@ -53,12 +53,12 @@ export default {
                 classes: 'ellipsis-cell'
             },
             {
-                name: 'fechaAbordajeFormateada',
-                label: 'FECHA DE ABORDAJE',
-                field: 'fechaAbordajeFormateada',
+                name: 'fechaIngresoFormateada',
+                label: 'FECHA INGRESO',
+                field: 'fechaIngresoFormateada',
                 align: 'center',
                 sortable: true,
-                sort: (a, b, rowA, rowB) => String(rowA.fechaAbordaje || '').localeCompare(String(rowB.fechaAbordaje || '')),
+                sort: (a, b, rowA, rowB) => String(rowA.fechaIngreso || '').localeCompare(String(rowB.fechaIngreso || '')),
                 style: 'width: 150px; min-width: 150px; max-width: 150px;',
                 classes: 'ellipsis-cell'
             },
