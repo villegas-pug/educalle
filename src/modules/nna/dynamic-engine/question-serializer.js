@@ -15,6 +15,11 @@ function normalizeNumberMItems(rawAnswer) {
     }, []);
 }
 
+export function normalizeBranchedDerivedValue(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).toUpperCase();
+}
+
 export function normalizeAnswer(question, rawAnswer) {
     if (isBranchedInputSearch(question) || isBranchedSelects(question)) return rawAnswer || null;
     switch (question.tipoControl) {
@@ -45,13 +50,19 @@ export function hydrateDateInputs(question) {
 
 export function hydrateBranchedInputSearch(question) {
     const values = String(question?.respuesta || '').split('|').map(item => item.trim());
-    const branches = (question._ramificaciones || []).map((branch, index) => ({ ...branch, value: values[index + 1] || '' }));
+    const branches = (question._ramificaciones || []).map((branch, index) => ({
+        ...branch,
+        value: normalizeBranchedDerivedValue(values[index + 1] || '')
+    }));
     return { _branchedTriggerValue: values[0] || '', _ramificaciones: branches, _ramificacionesReadonlyHttp: branches.some(branch => !!String(branch.value || '').trim()) };
 }
 
 export function serializeAnswer(question) {
     if (isBranchedInputSearch(question)) {
-        const parts = [question._branchedTriggerValue || '', ...(question._ramificaciones || []).map(branch => branch.value || '')].filter(Boolean);
+        const parts = [
+            question._branchedTriggerValue || '',
+            ...(question._ramificaciones || []).map(branch => normalizeBranchedDerivedValue(branch.value || ''))
+        ].filter(Boolean);
         return parts.length ? parts.join('|') : null;
     }
     if (isBranchedSelects(question)) {

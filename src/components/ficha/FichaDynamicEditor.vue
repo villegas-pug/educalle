@@ -5301,7 +5301,11 @@ export default {
         },
         actualizarRamificacionTexto(pregunta, index, value) {
             if (!pregunta._ramificaciones[index]) return;
-            this.$set(pregunta._ramificaciones[index], 'value', value);
+            this.$set(
+                pregunta._ramificaciones[index],
+                'value',
+                questionEngine.normalizeBranchedDerivedValue(value)
+            );
             pregunta.respuesta = this.serializarRespuestaPregunta(pregunta);
         },
         actualizarValorDisparadorBranched(pregunta, value) {
@@ -5518,7 +5522,9 @@ export default {
 
                 this.preguntaHttpActiva._ramificaciones = (this.preguntaHttpActiva._ramificaciones || []).map(rama => ({
                     ...rama,
-                    value: this.resolverPropiedadCaseInsensitive(item, rama.prop) || ''
+                    value: questionEngine.normalizeBranchedDerivedValue(
+                        this.resolverPropiedadCaseInsensitive(item, rama.prop) || ''
+                    )
                 }));
 
                 this.preguntaHttpActiva._ramificacionesReadonlyHttp = (this.preguntaHttpActiva._ramificaciones || [])
