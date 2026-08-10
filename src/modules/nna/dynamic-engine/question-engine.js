@@ -10,6 +10,7 @@ export function buildQuestion(rawQuestion) {
         reqObligatoria1Cierre: Number(rawQuestion.reqObligatoria1Cierre ?? 0), reqObligatoria2Cierre: Number(rawQuestion.reqObligatoria2Cierre ?? 0),
         condicion: rules.parseCondition(rawQuestion.condicion), _editableRule: normalizer.normalizeEditableRule(rawQuestion.editable),
         _editableBifurcacionesRule: normalizer.normalizeEditableBranches(rawQuestion.editableBifurcaciones),
+        _defaultBranchRules: normalizer.normalizeDefaultBranchRules(rawQuestion.defaultValueBifurcaciones),
         _httpMethod: String(rawQuestion.httpMetodo || 'GET').toUpperCase(), _httpParamsParsed: normalizer.normalizeHttpParams(rawQuestion.httpParams),
         _redirectRef: rules.getRedirectRef(rawQuestion.opciones), _ageSourceIds: normalizer.normalizeAgeSourceIds(rawQuestion.opciones), _bloqSubmitSiInvalidoRule: normalizer.normalizeBlockSubmitInvalidRule(rawQuestion.bloqSubmitSiInvalido), _ramificaciones: [], _ramificacionesReadonlyHttp: false, _branchedSelects: [],
         _loadingHttp: false, _httpLoaded: false, _labelHttpField: normalizer.getHttpLabelField(rawQuestion.opciones), opciones: [],

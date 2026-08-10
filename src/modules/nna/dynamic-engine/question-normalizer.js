@@ -99,6 +99,21 @@ export function normalizeEditableBranches(editableBranches) {
         : { mode: 'readonly-all' };
 }
 
+export function normalizeDefaultBranchRules(defaultValueBifurcaciones) {
+    const parsed = parseJsonFlexible(defaultValueBifurcaciones);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.map(item => {
+        if (!item || typeof item !== 'object') return null;
+        const type = normalizeComparisonText(getCaseInsensitiveProperty(item, 'tipo') || getCaseInsensitiveProperty(item, 'type'));
+        const id = Number(getCaseInsensitiveProperty(item, 'id'));
+        const branchLabel = String(getCaseInsensitiveProperty(item, 't') || getCaseInsensitiveProperty(item, 'label') || '').trim();
+        return type === 'REF' && Number.isFinite(id) && branchLabel
+            ? { type: 'ref', id, branchLabel }
+            : null;
+    }).filter(Boolean);
+}
+
 export function normalizeAgeSourceIds(options) {
     const parsed = parseJsonFlexible(options);
     if (!Array.isArray(parsed) || parsed.length < 2) return null;

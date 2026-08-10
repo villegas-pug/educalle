@@ -3607,6 +3607,8 @@ export default {
             anexos: [],
             resultados: [],
             secciones: [],
+            sincronizandoValoresDefaultBifurcaciones: false,
+            sincronizacionDefaultBifurcacionesPendiente: false,
 
             loadingTabla: false,
             filtroTabla: "",
@@ -5384,6 +5386,76 @@ export default {
                 ? 'Fecha de nacimiento futura.'
                 : '';
         },
+        obtenerTextoVisiblePregunta(pregunta) {
+            if (!pregunta || pregunta.respuesta === null || pregunta.respuesta === undefined) return '';
+
+            const valores = Array.isArray(pregunta.respuesta)
+                ? pregunta.respuesta
+                : String(pregunta.respuesta).split('|');
+            const opciones = Array.isArray(pregunta.opciones) ? pregunta.opciones : [];
+
+            return valores.map(valor => {
+                const opcion = opciones.find(item => this.normalizarTextoComparacion(item.value) === this.normalizarTextoComparacion(valor));
+                return opcion?.label ?? valor;
+            }).map(valor => String(valor).trim()).filter(Boolean).join('|');
+        },
+        coincidenValoresDefaultBifurcaciones(origen, opcion) {
+            const valorOrigen = this.normalizarTextoComparacion(origen);
+            const valorOpcion = this.normalizarTextoComparacion(opcion);
+            return !!valorOrigen && !!valorOpcion
+                && (valorOrigen.includes(valorOpcion) || valorOpcion.includes(valorOrigen));
+        },
+        async aplicarValoresDefaultBifurcaciones() {
+            for (const seccion of this.secciones) {
+                for (const pregunta of seccion.preguntas) {
+                    if (!this.esPreguntaBranchedSelects(pregunta) || !Array.isArray(pregunta._defaultBranchRules)) continue;
+
+                    for (const regla of pregunta._defaultBranchRules) {
+                        const index = pregunta._branchedSelects.findIndex(rama =>
+                            this.normalizarTextoComparacion(rama.label) === this.normalizarTextoComparacion(regla.branchLabel)
+                        );
+                        if (index < 0) continue;
+
+                        const preguntaOrigen = this.buscarPregunta(regla.id);
+                        const valorOrigen = this.obtenerTextoVisiblePregunta(preguntaOrigen);
+                        const rama = pregunta._branchedSelects[index];
+                        const opcion = valorOrigen
+                            ? rama.options.find(item => this.coincidenValoresDefaultBifurcaciones(valorOrigen, item.label))
+                            : null;
+
+                        await this.onBranchedSelectChange(pregunta, index, opcion?.value ?? '');
+                    }
+                }
+            }
+        },
+        async sincronizarValoresDefaultBifurcaciones() {
+            if (this.sincronizandoValoresDefaultBifurcaciones) {
+                this.sincronizacionDefaultBifurcacionesPendiente = true;
+                return;
+            }
+
+            this.sincronizandoValoresDefaultBifurcaciones = true;
+            try {
+                do {
+                    this.sincronizacionDefaultBifurcacionesPendiente = false;
+                    await this.aplicarValoresDefaultBifurcaciones();
+                } while (this.sincronizacionDefaultBifurcacionesPendiente);
+            } finally {
+                this.sincronizandoValoresDefaultBifurcaciones = false;
+            }
+        },
+        firmaValoresDefaultBifurcaciones() {
+            return this.secciones.reduce((firmas, seccion) => {
+                seccion.preguntas.forEach(pregunta => {
+                    if (!this.esPreguntaBranchedSelects(pregunta)) return;
+                    (pregunta._defaultBranchRules || []).forEach(regla => {
+                        const origen = this.buscarPregunta(regla.id);
+                        firmas.push(`${pregunta.idPregunta}:${regla.id}:${regla.branchLabel}:${this.obtenerTextoVisiblePregunta(origen)}`);
+                    });
+                });
+                return firmas;
+            }, []).join('||');
+        },
         actualizarRespuestaPregunta(pregunta, value) {
             this.$set(pregunta, 'respuesta', value);
         },
@@ -6722,10 +6794,17 @@ export default {
             if (val !== '1') {
                 this.fechaAcreditacion = null
             }
+        },
+        firmaValoresDefaultBifurcacionesActual() {
+            this.sincronizarValoresDefaultBifurcaciones();
         }
 
     },
     computed: {
+
+        firmaValoresDefaultBifurcacionesActual() {
+            return this.firmaValoresDefaultBifurcaciones();
+        },
 
         accionesPrincipalesConfiguradas() {
             return this.pageConfig.accionesPrincipales || {};
