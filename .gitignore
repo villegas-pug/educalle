@@ -34,3 +34,6 @@ yarn-error.log*
 
 # Opencode
 AGENTS.md
+
+# Índice estructural local de Graphify
+graphify-out/
