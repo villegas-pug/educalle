@@ -99,6 +99,17 @@ export function normalizeEditableBranches(editableBranches) {
         : { mode: 'readonly-all' };
 }
 
+export function normalizeAgeSourceIds(options) {
+    const parsed = parseJsonFlexible(options);
+    if (!Array.isArray(parsed) || parsed.length < 2) return null;
+
+    const referenceId = Number(getCaseInsensitiveProperty(parsed[0], 'id'));
+    const birthId = Number(getCaseInsensitiveProperty(parsed[1], 'id'));
+    return Number.isFinite(referenceId) && Number.isFinite(birthId)
+        ? { referenceId, birthId }
+        : null;
+}
+
 // Regla enviada por backend para impedir persistir cuando el valor no cumple.
 export function normalizeBlockSubmitInvalidRule(rule) {
     if (rule === null || rule === undefined || rule === '' || rule === 0 || rule === '0' || rule === false || rule === 'false') return null;

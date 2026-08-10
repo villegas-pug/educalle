@@ -24,6 +24,10 @@ export function normalizeAnswer(question, rawAnswer) {
     switch (question.tipoControl) {
         case 'label': return rawAnswer || '';
         case 'text': case 'date': case 'dateInputs': case 'number': case 'textarea': case 'inputSearch': return rawAnswer || '';
+        case 'age': {
+            const age = Number(rawAnswer);
+            return Number.isFinite(age) ? age : null;
+        }
         case 'textM': return Array.isArray(rawAnswer) ? rawAnswer : !rawAnswer ? [] : String(rawAnswer).split('|').map(item => item.trim()).filter(Boolean);
         case 'numberM': return normalizeNumberMItems(rawAnswer);
         case 'timeRangeM': return Array.isArray(rawAnswer) ? rawAnswer : !rawAnswer ? [] : String(rawAnswer).split('|').map(item => item.trim()).filter(Boolean);

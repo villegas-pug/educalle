@@ -480,6 +480,25 @@
                                                                 </div>
                                                             </template>
 
+                                                            <template v-else-if="esPreguntaAge(pregunta)">
+                                                                <template v-if="esVisualizacion">
+                                                                    <span class="ficha-valor">{{ obtenerTextoEdadPregunta(pregunta) || '—' }}</span>
+                                                                </template>
+                                                                <q-input
+                                                                    v-else
+                                                                    outlined
+                                                                    dense
+                                                                    readonly
+                                                                    :value="obtenerTextoEdadPregunta(pregunta)"
+                                                                    :style="getPreguntaControlStyle(pregunta)"
+                                                                    :error="!!obtenerMensajeErrorEdadPregunta(pregunta)"
+                                                                    :error-message="obtenerMensajeErrorEdadPregunta(pregunta)"
+                                                                />
+                                                                <div v-if="esVisualizacion && obtenerMensajeErrorEdadPregunta(pregunta)" class="text-negative text-caption q-mt-xs">
+                                                                    {{ obtenerMensajeErrorEdadPregunta(pregunta) }}
+                                                                </div>
+                                                            </template>
+
                                                             <template v-else>
                                                                 <template v-if="esVisualizacion">
                                                                     <span class="ficha-valor">{{ obtenerValorTextoPregunta(pregunta) || '—' }}</span>
@@ -4374,6 +4393,9 @@ export default {
         esPreguntaRedirected(pregunta) {
             return questionEngine.isRedirected(pregunta);
         },
+        esPreguntaAge(pregunta) {
+            return questionEngine.isAgeQuestion(pregunta);
+        },
         esPreguntaTextualPrincipal(pregunta) {
             const tipo = String(pregunta?.tipoControl || '').toLowerCase();
             return !this.esVistaBranched(pregunta) && (tipo === 'text' || tipo === 'textarea');
@@ -4946,6 +4968,7 @@ export default {
         ======================================== */
 
         serializarRespuestaPregunta(pregunta) {
+            if (this.esPreguntaAge(pregunta)) return this.obtenerEdadPregunta(pregunta);
             return questionEngine.serializeAnswer(pregunta);
         },
         validarPreguntasObligatoriasGenerales() {
@@ -5134,6 +5157,10 @@ export default {
             else this.cancelarAlertasReglasSiCorregidas();
         },
         estaPreguntaRespondida(pregunta) {
+            if (this.esPreguntaAge(pregunta)) {
+                return Number.isFinite(this.obtenerEdadPregunta(pregunta));
+            }
+
             if (this.esPreguntaBranchedInputSearch(pregunta)) {
                 return !!this.obtenerValorDisparadorBranched(pregunta)
                     && pregunta._ramificaciones.every(rama => !!rama.value);
@@ -5190,6 +5217,10 @@ export default {
             return false;
         },
         estaPreguntaRespondidaParaCierre(pregunta) {
+            if (this.esPreguntaAge(pregunta)) {
+                return Number.isFinite(this.obtenerEdadPregunta(pregunta));
+            }
+
             if (this.esPreguntaBranchedInputSearch(pregunta)) {
                 return !this.esValorVacioCierre(this.obtenerValorDisparadorBranched(pregunta))
                     && (pregunta._ramificaciones || []).every(rama => !this.esValorVacioCierre(rama.value));
@@ -5329,10 +5360,29 @@ export default {
             return String(pregunta?.tipoControl || '').toLowerCase() === 'textarea';
         },
         obtenerValorTextoPregunta(pregunta) {
+            if (this.esPreguntaAge(pregunta)) return this.obtenerTextoEdadPregunta(pregunta);
             if (this.esPreguntaRedirected(pregunta) && this.normalizarTextoComparacion(pregunta._redirectRef) !== 'GETDATE') {
                 return this.getRefValue(pregunta._redirectRef);
             }
             return pregunta?.respuesta === null || pregunta?.respuesta === undefined ? '' : pregunta.respuesta;
+        },
+        obtenerEdadPregunta(pregunta) {
+            return this.evaluarEdadPregunta(pregunta).age;
+        },
+        evaluarEdadPregunta(pregunta) {
+            return questionEngine.evaluateAgeQuestion(pregunta, {
+                findQuestion: id => this.buscarPregunta(id),
+                referenceDate: this.form.fechaRegistro
+            });
+        },
+        obtenerTextoEdadPregunta(pregunta) {
+            const edad = this.obtenerEdadPregunta(pregunta);
+            return Number.isFinite(edad) ? `${edad} años` : '';
+        },
+        obtenerMensajeErrorEdadPregunta(pregunta) {
+            return this.evaluarEdadPregunta(pregunta).reason === 'birth-after-reference'
+                ? 'Fecha de nacimiento futura.'
+                : '';
         },
         actualizarRespuestaPregunta(pregunta, value) {
             this.$set(pregunta, 'respuesta', value);

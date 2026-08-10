@@ -17,6 +17,7 @@ export function isSimpleHttpSelect(question) {
         && isHttpParamsWildcard(question?.httpParams) && String(question?._httpMethod || question?.httpMetodo || 'GET').toUpperCase() === 'GET';
 }
 export function isRedirected(question) { return String(question?.modoControl || '').toLowerCase() === 'redirected'; }
+export function isAgeQuestion(question) { return String(question?.tipoControl || '').toLowerCase() === 'age'; }
 
 export function parseCondition(condition) {
     if (!condition) return null;
@@ -87,7 +88,7 @@ export function matchesEditableRule(rule, findQuestion) {
 }
 
 export function isReadOnly(question, { isView, findQuestion }) {
-    if (isView || ['readonly', 'redirected'].includes(String(question?.modoControl || '').toLowerCase())) return true;
+    if (isView || isAgeQuestion(question) || ['readonly', 'redirected'].includes(String(question?.modoControl || '').toLowerCase())) return true;
     return question?._editableRule ? !matchesEditableRule(question._editableRule, findQuestion) : false;
 }
 
@@ -108,25 +109,53 @@ export function getRedirectRef(options) {
     return getCaseInsensitiveProperty(parsed, 'ref') || getCaseInsensitiveProperty(parsed, 'REF') || null;
 }
 
-function parseIsoDate(value) {
-    const match = String(value || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+export function parseQuestionDate(value) {
+    const text = String(value || '').trim();
+    const match = text.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T)/)
+        || text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
     if (!match) return null;
-    const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+
+    const isIso = match[1].length === 4;
+    const year = Number(isIso ? match[1] : match[3]);
+    const month = Number(match[2]);
+    const day = Number(isIso ? match[3] : match[1]);
+    const date = new Date(year, month - 1, day);
     return Number.isNaN(date.getTime())
-        || date.getFullYear() !== Number(match[1])
-        || date.getMonth() !== Number(match[2]) - 1
-        || date.getDate() !== Number(match[3])
+        || date.getFullYear() !== year
+        || date.getMonth() !== month - 1
+        || date.getDate() !== day
         ? null
         : date;
 }
 
 export function calculateCompleteAge(birthDate, referenceDate) {
-    const birth = parseIsoDate(birthDate);
-    const reference = parseIsoDate(referenceDate);
+    const birth = parseQuestionDate(birthDate);
+    const reference = parseQuestionDate(referenceDate);
     if (!birth || !reference || birth > reference) return null;
     let age = reference.getFullYear() - birth.getFullYear();
     if (reference.getMonth() < birth.getMonth() || (reference.getMonth() === birth.getMonth() && reference.getDate() < birth.getDate())) age -= 1;
     return age;
+}
+
+export function calculateAgeQuestionAnswer(question, { findQuestion, referenceDate }) {
+    return evaluateAgeQuestion(question, { findQuestion, referenceDate }).age;
+}
+
+export function evaluateAgeQuestion(question, { findQuestion, referenceDate }) {
+    if (!isAgeQuestion(question)) return { age: null, reason: null };
+
+    const sourceIds = question?._ageSourceIds;
+    if (!sourceIds || !findQuestion) return { age: null, reason: null };
+
+    const configuredReference = findQuestion(sourceIds.referenceId)?.respuesta;
+    const birthDate = findQuestion(sourceIds.birthId)?.respuesta;
+    const dateReference = parseQuestionDate(configuredReference) ? configuredReference : referenceDate;
+    const birth = parseQuestionDate(birthDate);
+    const reference = parseQuestionDate(dateReference);
+    if (!birth || !reference) return { age: null, reason: null };
+    if (birth > reference) return { age: null, reason: 'birth-after-reference' };
+
+    return { age: calculateCompleteAge(birthDate, dateReference), reason: null };
 }
 
 export function matchesComparator(actual, comparator, expected) {
@@ -142,6 +171,7 @@ export function matchesComparator(actual, comparator, expected) {
 }
 
 export function evaluateBlockSubmitInvalidRule(question, { findQuestion, referenceDate }) {
+    if (isAgeQuestion(question)) return null;
     const rule = question?._bloqSubmitSiInvalidoRule;
     if (!rule) return null;
     if (rule.type !== 'MENOR') return null;
