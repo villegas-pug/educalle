@@ -7,6 +7,7 @@
 - `age` usa `opciones: [{"id": idFechaReferencia}, {"id": idFechaNacimiento}]`; usa la fecha de registro si la primera no es valida y nunca activa reglas bloqueantes.
 - Los selects HTTP dependientes aceptan `defaultValueBifurcaciones: [{"tipo":"ref","id":4276,"t":"Departamento domicilio"}]`. Una regla `ref` busca la respuesta visible de la pregunta origen por contenido en ambos sentidos y precarga la rama indicada.
 - Las preguntas no ramificadas aceptan `defaultValue: [{"tipo":"ref","id":4259,"valor":"SI","defecto":"DNI"}]`. En fichas nuevas, la primera regla valida cuya respuesta visible de referencia contenga `valor` completa solo una respuesta destino vacia; una coincidencia activa deja el destino en solo lectura, incluso en edicion y por encima de `editable`. No modifica visibilidad, obligatoriedad ni reglas bloqueantes.
+- `editable` aplica solo a la pregunta principal. Las ramificaciones se controlan exclusivamente con `editableBifurcaciones` o, en su ausencia, con su atributo individual `editable`.
 - No accede a Vue, Quasar, HTTP ni al DOM. Cada pagina usa un adaptador Vue 2 solo para aplicar mutaciones reactivas y presentar la UI.
 - Las paginas no deben reimplementar reglas por ruta. Un cambio de regla se realiza en este modulo y afecta a todos los consumidores.
 

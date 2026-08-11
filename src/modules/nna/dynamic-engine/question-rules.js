@@ -141,7 +141,6 @@ export function isBranchEditable(question, branch, { isView, findQuestion }) {
         if (rule.mode === 'editable-all') return true;
         return matchesEditableRule(rule, findQuestion);
     }
-    if (question?._editableRule) return matchesEditableRule(question._editableRule, findQuestion);
     return branch?.editable !== undefined && branch?.editable !== null && ['true', '1'].includes(String(branch.editable).toLowerCase());
 }
 
