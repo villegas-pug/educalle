@@ -80,6 +80,7 @@
                                     <q-expansion-item
                                         v-for="(seccion, index) in secciones"
                                         :key="index"
+                                        ref="seccionesExpansion"
                                         group="ficha-secciones"
                                         :label="seccion.titulo"
                                         expand-separator
@@ -98,6 +99,7 @@
                                                 v-for="pregunta in seccion.preguntas"
                                                 :key="pregunta.idPregunta"
                                                 v-if="esPreguntaVisibleSinEfectos(pregunta)"
+                                                :id="getPreguntaContainerId(pregunta)"
                                                 class="ficha-pregunta"
                                                 :class="{
                                                     'ficha-pregunta--summary': esVistaSummaryRow(pregunta),
@@ -708,7 +710,7 @@
                                 @mousedown.prevent="iniciarArrastreFooterFicha"
                                 @touchstart.prevent="iniciarArrastreFooterFicha"
                             />
-                            <q-btn v-if="!esVisualizacion" label="Guardar" icon="save" type="submit" @click="guardarTodo" :disable="guardarDeshabilitadoPorRegla" :title="guardarDeshabilitadoPorRegla ? 'Corrija las validaciones para guardar' : 'Guardar'" class="ficha-btn-guardar" />
+                            <q-btn v-if="!esVisualizacion" label="Guardar" icon="save" type="submit" @click="guardarTodo" title="Guardar" class="ficha-btn-guardar" />
                             <q-btn
                                 v-if="modoEdicion"
                                 label="Cerrar ficha"
@@ -721,6 +723,38 @@
                             <q-btn label="Cancelar" icon="close" v-close-popup class="ficha-btn-cancelar" style="min-width: 70px;" title="Cancelar" />
                         </q-card-actions>
                     </div>
+                </q-card>
+            </q-dialog>
+            <q-dialog v-model="dialogErroresInline" persistent>
+                <q-card class="cierre-dialog">
+                    <q-card-section class="cierre-dialog__header bg-header-dialog">
+                        <div class="cierre-dialog__title-block">
+                            <div class="cierre-dialog__title text-body2 text-bold">VALIDACIONES PENDIENTES</div>
+                            <div class="cierre-dialog__subtitle text-caption">
+                                Corrige los campos inválidos antes de guardar la ficha.
+                            </div>
+                        </div>
+                    </q-card-section>
+
+                    <q-card-section class="cierre-dialog__body">
+                        <q-list separator>
+                            <q-item v-for="(error, index) in erroresInline" :key="`${error.seccionIndex}-${error.idPregunta}-${error.campo}-${index}`">
+                                <q-item-section avatar>
+                                    <q-icon name="warning" color="warning" />
+                                </q-item-section>
+                                <q-item-section>
+                                    <q-item-label class="text-weight-bold">{{ error.seccion }}</q-item-label>
+                                    <q-item-label>{{ error.pregunta }}</q-item-label>
+                                    <q-item-label caption>{{ error.mensaje }}</q-item-label>
+                                </q-item-section>
+                            </q-item>
+                        </q-list>
+                    </q-card-section>
+
+                    <q-card-actions align="right" class="cierre-dialog__actions">
+                        <q-btn label="Cerrar" flat @click="dialogErroresInline = false" />
+                        <q-btn label="Corregir" icon="edit" class="btn-inabif cierre-dialog__btn" @click="corregirPrimerErrorInline" />
+                    </q-card-actions>
                 </q-card>
             </q-dialog>
             <q-dialog v-model="dialogPendientesCierre" persistent>
@@ -3771,6 +3805,8 @@ export default {
             dialogValidarFicha: false,
             fichaAValidar: null,
             personalValidacion: [],
+            dialogErroresInline: false,
+            erroresInline: [],
             dialogPendientesCierre: false,
             dialogConfirmarCierreFicha: false,
             cerrandoFicha: false,
@@ -4975,24 +5011,117 @@ export default {
             if (this.esPreguntaAge(pregunta)) return this.obtenerEdadPregunta(pregunta);
             return questionEngine.serializeAnswer(pregunta);
         },
-        validarPreguntasObligatoriasGenerales() {
+        obtenerMensajeReglaInline(reglas, valor) {
+            for (const regla of reglas || []) {
+                const resultado = regla(valor);
+                if (resultado !== true) return typeof resultado === 'string' ? resultado : 'El valor ingresado no es válido';
+            }
+            return null;
+        },
+        agregarErrorInline(errores, seccion, seccionIndex, pregunta, campo, mensaje, etiqueta = null) {
+            if (!mensaje) return;
+            errores.push({
+                seccion: seccion.titulo || 'GENERAL',
+                seccionIndex,
+                idPregunta: pregunta.idPregunta,
+                pregunta: etiqueta || pregunta.pregunta,
+                campo,
+                mensaje
+            });
+        },
+        obtenerErroresInlineFicha() {
+            const errores = [];
+
+            this.secciones.forEach((seccion, seccionIndex) => {
+                seccion.preguntas.forEach(pregunta => {
+                    if (!this.esPreguntaVisibleSinEfectos(pregunta)) return;
+
+                    const tipo = String(pregunta.tipoControl || '').toLowerCase();
+                    if (this.esPreguntaBranchedSelects(pregunta)) {
+                        (pregunta._branchedSelects || []).forEach((rama, ramaIndex) => {
+                            if (pregunta.obligatoria === 1 && !rama.value) {
+                                this.agregarErrorInline(errores, seccion, seccionIndex, pregunta, `rama-${ramaIndex}`, 'Debe seleccionar una opción', rama.label || pregunta.pregunta);
+                            }
+                        });
+                    } else if (this.esPreguntaBranchedInputSearch(pregunta)) {
+                        this.agregarErrorInline(
+                            errores,
+                            seccion,
+                            seccionIndex,
+                            pregunta,
+                            'principal',
+                            this.obtenerMensajeReglaInline(this.validarPregunta(pregunta), this.obtenerValorDisparadorBranched(pregunta))
+                        );
+                    } else if (tipo === 'textm') {
+                        this.agregarErrorInline(errores, seccion, seccionIndex, pregunta, 'principal', this.obtenerMensajeReglaInline(this.validarPreguntaTextM(pregunta), pregunta._textMDraft));
+                    } else if (tipo === 'numberm') {
+                        this.agregarErrorInline(errores, seccion, seccionIndex, pregunta, 'principal', this.obtenerMensajeReglaInline(this.validarPreguntaNumberM(pregunta), pregunta._numberMDraft));
+                    } else if (tipo === 'timerangem') {
+                        this.agregarErrorInline(errores, seccion, seccionIndex, pregunta, 'principal', this.obtenerMensajeReglaInline(this.validarPreguntaTimeRangeM(pregunta), pregunta._timeRangeStartDraft));
+                    } else if (!['label', 'selectm', 'dateinputs'].includes(tipo)) {
+                        this.agregarErrorInline(errores, seccion, seccionIndex, pregunta, 'principal', this.obtenerMensajeReglaInline(this.validarPregunta(pregunta), pregunta.respuesta));
+                    }
+
+                    this.agregarErrorInline(errores, seccion, seccionIndex, pregunta, 'longitud', this.getMensajeErrorLongitudPregunta(pregunta));
+
+                    if (this.esPregunta2VisibleSinEfectos(pregunta) && String(pregunta.tipoControl2 || '').toLowerCase() === 'text') {
+                        this.agregarErrorInline(
+                            errores,
+                            seccion,
+                            seccionIndex,
+                            pregunta,
+                            'secundaria',
+                            this.obtenerMensajeReglaInline(this.validarPregunta2(pregunta), pregunta.respuesta2),
+                            pregunta.pregunta2 || pregunta.pregunta
+                        );
+                    }
+                });
+            });
+
+            return errores;
+        },
+        getPreguntaContainerId(pregunta) {
+            return `ficha-pregunta-${pregunta.idPregunta}`;
+        },
+        corregirPrimerErrorInline() {
+            const primerError = this.erroresInline[0];
+            this.dialogErroresInline = false;
+            if (!primerError) return;
+
+            const referencias = this.$refs.seccionesExpansion;
+            const seccion = Array.isArray(referencias) ? referencias[primerError.seccionIndex] : referencias;
+            if (seccion && typeof seccion.show === 'function') seccion.show();
+
+            this.$nextTick(() => {
+                const container = document.getElementById(`ficha-pregunta-${primerError.idPregunta}`);
+                if (!container) return;
+                container.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                const control = container.querySelector('input:not([readonly]):not([disabled]), textarea:not([readonly]):not([disabled]), [role="radio"]:not([aria-disabled="true"])');
+                if (control) control.focus();
+            });
+        },
+        validarPreguntasObligatoriasGenerales({ notificar = true } = {}) {
             for (const seccion of this.secciones) {
                 for (const pregunta of seccion.preguntas) {
                     if (!this.mostrarPregunta(pregunta)) continue;
 
                     if (pregunta.obligatoria === 1 && !this.estaPreguntaRespondida(pregunta)) {
-                        this.$q.notify({
-                            type: 'warning',
-                            message: `Debe responder: ${pregunta.pregunta}`
-                        });
+                        if (notificar) {
+                            this.$q.notify({
+                                type: 'warning',
+                                message: `Debe responder: ${pregunta.pregunta}`
+                            });
+                        }
                         return false;
                     }
 
                     if (this.mostrarPregunta2(pregunta) && pregunta.obligatoria2 === 1 && !pregunta.respuesta2) {
-                        this.$q.notify({
-                            type: 'warning',
-                            message: `Debe responder: ${pregunta.pregunta2}`
-                        });
+                        if (notificar) {
+                            this.$q.notify({
+                                type: 'warning',
+                                message: `Debe responder: ${pregunta.pregunta2}`
+                            });
+                        }
                         return false;
                     }
                 }
@@ -5007,12 +5136,20 @@ export default {
                 this.mostrarAlertaReglaBloqueante();
                 return false;
             }
-            this.limpiarRespuestasOcultas();
-            this.sincronizarResponsableSesion();
 
-            if (!this.validarPreguntasObligatoriasGenerales()) {
+            const erroresInline = this.obtenerErroresInlineFicha();
+            const obligatoriasValidas = this.validarPreguntasObligatoriasGenerales({ notificar: erroresInline.length === 0 });
+            if (erroresInline.length > 0) {
+                this.erroresInline = erroresInline;
+                this.dialogErroresInline = true;
                 return false;
             }
+            if (!obligatoriasValidas) {
+                return false;
+            }
+
+            this.limpiarRespuestasOcultas();
+            this.sincronizarResponsableSesion();
 
             const respuestas = this.secciones.flatMap(seccion =>
                 seccion.preguntas
@@ -5975,6 +6112,8 @@ export default {
             this.resetFooterFichaFlotante();
             this.cancelarAlertasReglasBloqueantes();
             this.resetCierreFicha();
+            this.dialogErroresInline = false;
+            this.erroresInline = [];
             this.modo = null;
             this.seccionAbierta = null;
             this.modoSupervision = null;
@@ -6442,6 +6581,11 @@ export default {
                 reglas.push(v => !!v || 'Este campo es obligatorio')
             }
 
+            return [...reglas, ...this.validarContenidoPregunta(pregunta)]
+        },
+        validarContenidoPregunta(pregunta) {
+            const reglas = []
+
             if (this.usaTipoNumero(pregunta)) {
                 reglas.push(v => !v || !isNaN(v) || 'Debe ingresar un número')
                 reglas.push(v => v === null || v === '' || Number(v) >= 0 || 'No se permiten valores negativos')
@@ -6503,6 +6647,11 @@ export default {
             if (pregunta.obligatoria2 === 1 && this.mostrarPregunta2(pregunta)) {
                 reglas.push(v => !!v || 'Este campo es obligatorio')
             }
+
+            return [...reglas, ...this.validarContenidoPregunta2(pregunta)]
+        },
+        validarContenidoPregunta2(pregunta) {
+            const reglas = []
 
             if (pregunta.tipoDato2 === 'NUMBER') {
                 reglas.push(v => !v || !isNaN(v) || 'Debe ingresar un número')
@@ -7034,10 +7183,6 @@ export default {
         modoEdicion() {
             return this.modo === "editar";
         },
-        guardarDeshabilitadoPorRegla() {
-            return this.obtenerReglasBloqueantesInvalidas().length > 0;
-        },
-
         dataTableFiltrada() {
             const estadosVisibles = Array.isArray(this.pageConfig.visibleEstados)
                 ? this.pageConfig.visibleEstados.map(estado => Number(estado))
