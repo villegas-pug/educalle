@@ -168,6 +168,11 @@ export function parseQuestionDate(value) {
         : date;
 }
 
+export function isValidIsoQuestionDate(value) {
+    const text = String(value || '').trim();
+    return /^\d{4}-\d{2}-\d{2}$/.test(text) && !!parseQuestionDate(text);
+}
+
 export function calculateCompleteAge(birthDate, referenceDate) {
     const birth = parseQuestionDate(birthDate);
     const reference = parseQuestionDate(referenceDate);

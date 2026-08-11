@@ -6447,6 +6447,10 @@ export default {
                 reglas.push(v => v === null || v === '' || Number(v) >= 0 || 'No se permiten valores negativos')
             }
 
+            if (this.esPreguntaFecha(pregunta)) {
+                reglas.push(v => !v || questionEngine.isValidIsoQuestionDate(v) || 'Debe ingresar una fecha válida')
+            }
+
             return reglas
         },
         validarPreguntaTextM(pregunta) {
