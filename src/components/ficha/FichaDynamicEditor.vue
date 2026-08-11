@@ -3609,6 +3609,8 @@ export default {
             secciones: [],
             sincronizandoValoresDefaultBifurcaciones: false,
             sincronizacionDefaultBifurcacionesPendiente: false,
+            sincronizandoValoresDefault: false,
+            sincronizacionDefaultPendiente: false,
 
             loadingTabla: false,
             filtroTabla: "",
@@ -5456,6 +5458,64 @@ export default {
                 return firmas;
             }, []).join('||');
         },
+        aplicarValoresDefault() {
+            if (this.modo !== 'nuevo') return;
+
+            for (const seccion of this.secciones) {
+                for (const pregunta of seccion.preguntas) {
+                    if (!this.esPreguntaVisibleSinEfectos(pregunta)
+                        || !questionEngine.isDefaultValueEligible(pregunta)
+                        || !Array.isArray(pregunta._defaultValueRules)
+                        || !pregunta._defaultValueRules.length
+                        || !this.esValorVacioCierre(pregunta.respuesta)) continue;
+
+                    const defaultValue = questionEngine.resolveDefaultValue(pregunta, id => this.buscarPregunta(id));
+                    if (defaultValue === null || defaultValue === undefined) continue;
+
+                    this.$set(pregunta, 'respuesta', this.normalizarRespuestaPregunta(pregunta, defaultValue));
+                    if (String(pregunta.tipoControl || '').toLowerCase() === 'dateinputs') {
+                        const drafts = questionEngine.hydrateDateInputs(pregunta);
+                        Object.keys(drafts).forEach(key => this.$set(pregunta, key, drafts[key]));
+                    }
+                }
+            }
+        },
+        sincronizarValoresDefault() {
+            if (this.sincronizandoValoresDefault) {
+                this.sincronizacionDefaultPendiente = true;
+                return;
+            }
+
+            this.sincronizandoValoresDefault = true;
+            try {
+                do {
+                    this.sincronizacionDefaultPendiente = false;
+                    this.aplicarValoresDefault();
+                } while (this.sincronizacionDefaultPendiente);
+            } finally {
+                this.sincronizandoValoresDefault = false;
+            }
+        },
+        firmaValoresDefault() {
+            return this.secciones.reduce((firmas, seccion) => {
+                seccion.preguntas.forEach(pregunta => {
+                    if (!questionEngine.isDefaultValueEligible(pregunta) || !Array.isArray(pregunta._defaultValueRules)) return;
+                    pregunta._defaultValueRules.forEach(regla => {
+                        const origen = this.buscarPregunta(regla.id);
+                        firmas.push([
+                            pregunta.idPregunta,
+                            regla.id,
+                            regla.value,
+                            regla.defaultValue,
+                            this.esPreguntaVisibleSinEfectos(pregunta),
+                            this.obtenerTextoVisiblePregunta(origen),
+                            this.esValorVacioCierre(pregunta.respuesta)
+                        ].join(':'));
+                    });
+                });
+                return firmas;
+            }, []).join('||');
+        },
         actualizarRespuestaPregunta(pregunta, value) {
             this.$set(pregunta, 'respuesta', value);
         },
@@ -6797,6 +6857,9 @@ export default {
         },
         firmaValoresDefaultBifurcacionesActual() {
             this.sincronizarValoresDefaultBifurcaciones();
+        },
+        firmaValoresDefaultActual() {
+            this.sincronizarValoresDefault();
         }
 
     },
@@ -6804,6 +6867,9 @@ export default {
 
         firmaValoresDefaultBifurcacionesActual() {
             return this.firmaValoresDefaultBifurcaciones();
+        },
+        firmaValoresDefaultActual() {
+            return this.firmaValoresDefault();
         },
 
         accionesPrincipalesConfiguradas() {

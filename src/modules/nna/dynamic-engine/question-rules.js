@@ -19,6 +19,12 @@ export function isSimpleHttpSelect(question) {
 export function isRedirected(question) { return String(question?.modoControl || '').toLowerCase() === 'redirected'; }
 export function isAgeQuestion(question) { return String(question?.tipoControl || '').toLowerCase() === 'age'; }
 
+export function isDefaultValueEligible(question) {
+    const type = String(question?.tipoControl || '').toLowerCase();
+    return !isBranchedInputSearch(question) && !isBranchedSelects(question)
+        && !isAgeQuestion(question) && !isRedirected(question) && type !== 'label';
+}
+
 export function parseCondition(condition) {
     if (!condition) return null;
     if (Array.isArray(condition) || typeof condition === 'object') return condition;
@@ -36,6 +42,40 @@ export function matchesCondition(baseValue, conditionValue) {
     const baseValues = expand(baseValue).map(normalizeComparisonText).filter(Boolean);
     const conditionValues = expand(conditionValue).map(normalizeComparisonText).filter(Boolean);
     return baseValues.length > 0 && conditionValues.length > 0 && baseValues.some(value => conditionValues.includes(value));
+}
+
+export function getQuestionVisibleAnswer(question) {
+    if (!question || question.respuesta === null || question.respuesta === undefined) return '';
+    const values = Array.isArray(question.respuesta)
+        ? question.respuesta
+        : String(question.respuesta).split('|');
+    const options = Array.isArray(question.opciones) ? question.opciones : [];
+
+    return values.map(value => {
+        const option = options.find(item => normalizeComparisonText(item.value) === normalizeComparisonText(value));
+        return option?.label ?? value;
+    }).map(value => String(value).trim()).filter(Boolean).join('|');
+}
+
+export function getMatchingDefaultValueRule(question, findQuestion) {
+    if (!isDefaultValueEligible(question) || !Array.isArray(question?._defaultValueRules) || typeof findQuestion !== 'function') return null;
+
+    for (const rule of question._defaultValueRules) {
+        const referenceValue = getQuestionVisibleAnswer(findQuestion(rule.id));
+        const expectedValue = normalizeComparisonText(rule.value);
+        if (referenceValue && expectedValue && normalizeComparisonText(referenceValue).includes(expectedValue)) {
+            return rule;
+        }
+    }
+    return null;
+}
+
+export function hasActiveDefaultValue(question, findQuestion) {
+    return !!getMatchingDefaultValueRule(question, findQuestion);
+}
+
+export function resolveDefaultValue(question, findQuestion) {
+    return getMatchingDefaultValueRule(question, findQuestion)?.defaultValue ?? null;
 }
 
 function isEmptyValue(value) {
@@ -89,6 +129,7 @@ export function matchesEditableRule(rule, findQuestion) {
 
 export function isReadOnly(question, { isView, findQuestion }) {
     if (isView || isAgeQuestion(question) || ['readonly', 'redirected'].includes(String(question?.modoControl || '').toLowerCase())) return true;
+    if (hasActiveDefaultValue(question, findQuestion)) return true;
     return question?._editableRule ? !matchesEditableRule(question._editableRule, findQuestion) : false;
 }
 

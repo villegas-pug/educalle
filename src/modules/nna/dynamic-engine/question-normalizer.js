@@ -114,6 +114,23 @@ export function normalizeDefaultBranchRules(defaultValueBifurcaciones) {
     }).filter(Boolean);
 }
 
+export function normalizeDefaultValueRules(defaultValue) {
+    const parsed = parseJsonFlexible(defaultValue);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.map(item => {
+        if (!item || typeof item !== 'object') return null;
+        const type = normalizeComparisonText(getCaseInsensitiveProperty(item, 'tipo') || getCaseInsensitiveProperty(item, 'type'));
+        const id = Number(getCaseInsensitiveProperty(item, 'id'));
+        const value = getCaseInsensitiveProperty(item, 'valor') ?? getCaseInsensitiveProperty(item, 'value');
+        const defaultValue = getCaseInsensitiveProperty(item, 'defecto') ?? getCaseInsensitiveProperty(item, 'default');
+        return type === 'REF' && Number.isFinite(id) && value !== undefined && value !== null
+            && String(value).trim() && defaultValue !== undefined && defaultValue !== null
+            ? { type: 'ref', id, value, defaultValue }
+            : null;
+    }).filter(Boolean);
+}
+
 export function normalizeAgeSourceIds(options) {
     const parsed = parseJsonFlexible(options);
     if (!Array.isArray(parsed) || parsed.length < 2) return null;
