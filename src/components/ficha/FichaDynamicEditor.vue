@@ -47,6 +47,18 @@
                         <div class="ficha-titulo">
                             {{ tituloAnexo }}
                         </div>
+                        <q-chip
+                            v-if="(modoEdicion || esVisualizacion) && codigoNNAFicha"
+                            dense
+                            square
+                            icon="tag"
+                            color="primary"
+                            text-color="white"
+                            :title="`Código NNA: ${codigoNNAFicha}`"
+                            class="ficha-codigo-nna"
+                        >
+                            {{ codigoNNAFicha }}
+                        </q-chip>
                         <q-btn class="ficha-cerrar" icon="close" flat dense round v-close-popup />
                     </q-card-section>
 
@@ -1382,6 +1394,30 @@
     font-weight: 600;
     color: #1a1a1a;
     padding-right: 8px;
+}
+
+.ficha-codigo-nna {
+    align-self: center;
+    flex: 0 1 auto;
+    max-width: min(260px, 38vw);
+    min-height: 28px;
+    margin: 0;
+    border: 1px solid rgba(25, 118, 210, 0.24);
+    box-shadow: 0 2px 6px rgba(25, 118, 210, 0.22);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.ficha-codigo-nna :deep(.q-chip__content) {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ficha-codigo-nna :deep(.q-chip__icon) {
+    font-size: 16px;
 }
 
 .ficha-cerrar {
@@ -3619,6 +3655,7 @@ export default {
             loadingResultados: false,
             //  modoVisualizacion: false,
             modo: null, // 'nuevo' | 'editar' | 'ver'
+            codigoNNAFicha: '',
             responsables: [],
             responsableSeleccionado: null,
             trabajadoresCentro: [],
@@ -4204,6 +4241,7 @@ export default {
         async editarRegistro(row) {
             if (!this.puedeEditar(row)) return;
             this.modo = "editar";
+            this.codigoNNAFicha = row.codigoNNA ? String(row.codigoNNA).toUpperCase() : '';
             try {
                 this.validacionReseteadaEnEdicion = false;
                 this.sincronizarAcreditacionDesdeFuente(row);
@@ -4253,6 +4291,7 @@ export default {
 
         async verRegistro(row) {
             this.modo = "ver";
+            this.codigoNNAFicha = row.codigoNNA ? String(row.codigoNNA).toUpperCase() : '';
             try {
                 this.sincronizarAcreditacionDesdeFuente(row);
 
@@ -6278,6 +6317,7 @@ export default {
             this.guardandoConPendientes = false;
             this.pendientesGuardado = [];
             this.modo = null;
+            this.codigoNNAFicha = '';
             this.seccionAbierta = null;
             this.modoSupervision = null;
             this.acreVigente = null;
