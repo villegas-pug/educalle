@@ -7,13 +7,13 @@ export default {
         mostrarAvisoPendientesGuardado: true,
         tableColumns: [
             {
-                name: 'correlativoFormateado',
-                label: 'N°',
-                field: 'correlativoFormateado',
+                name: 'codigoNNA',
+                label: 'CÓDIGO',
+                field: 'codigoNNA',
                 align: 'center',
                 sortable: true,
-                sort: (a, b, rowA, rowB) => Number(rowA.correlativo || 0) - Number(rowB.correlativo || 0),
-                style: 'width: 80px; min-width: 80px; max-width: 80px;',
+                sort: (a, b) => String(a || '').localeCompare(String(b || '')),
+                style: 'width: 160px; min-width: 160px; max-width: 160px;',
                 classes: 'ellipsis-cell'
             },
             {

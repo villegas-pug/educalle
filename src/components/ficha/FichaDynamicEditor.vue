@@ -7368,6 +7368,7 @@ export default {
                     .map(row => ({
                         ...row,
                         correlativoFormateado: String(row.correlativo || 0).padStart(5, '0'),
+                        codigoNNA: row.codigoNNA ? String(row.codigoNNA).toUpperCase() : '-',
                         nombreCompleto: row.nombreCompleto || '-',
                         edad: Number(row.edad || 0),
                         genero: row.genero || '-',
@@ -7396,6 +7397,7 @@ export default {
                 .map(row => ({
                     ...row,
                     correlativoFormateado: String(row.correlativo || 0).padStart(5, '0'),
+                    codigoNNA: row.codigoNNA ? String(row.codigoNNA).toUpperCase() : '-',
                     nombreCompleto: row.nombreCompleto || '-',
                     edad: Number(row.edad || 0),
                     genero: row.genero || '-',
