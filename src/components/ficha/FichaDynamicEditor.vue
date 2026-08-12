@@ -515,7 +515,7 @@
 
                                                             <template v-else>
                                                                 <template v-if="esVisualizacion">
-                                                                    <span class="ficha-valor">{{ obtenerValorTextoPregunta(pregunta) || '—' }}</span>
+                                                                    <span class="ficha-valor">{{ esPreguntaFecha(pregunta) ? formatearFechaIso(pregunta.respuesta) || '—' : obtenerValorTextoPregunta(pregunta) || '—' }}</span>
                                                                 </template>
                                                                 <q-input
                                                                     v-else
@@ -4146,7 +4146,7 @@ export default {
             if (!match) return '-';
             return `${match[3]}-${match[2]}-${match[1]}`;
         },
-        formatearFechaContexto(valor) {
+        formatearFechaIso(valor) {
             if (!valor) return '';
             const texto = String(valor).trim();
             const match = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -7313,7 +7313,7 @@ export default {
             return [
                 { label: 'PERIODO', value: this.fichaPeriodo || this.anioSeleccionado || '' },
                 { label: 'EDUCADOR DE CALLE', value: responsableNormalizado },
-                { label: 'FECHA REGISTRO', value: this.formatearFechaContexto(this.form.fechaRegistro) }
+                { label: 'FECHA REGISTRO', value: this.formatearFechaIso(this.form.fechaRegistro) }
             ];
         },
         tituloModalHttpPregunta() {
