@@ -4146,6 +4146,12 @@ export default {
             if (!match) return '-';
             return `${match[3]}-${match[2]}-${match[1]}`;
         },
+        formatearFechaContexto(valor) {
+            if (!valor) return '';
+            const texto = String(valor).trim();
+            const match = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            return match ? `${match[3]}/${match[2]}/${match[1]}` : '';
+        },
         normalizarNombreValidacion(nombre) {
             if (nombre === null || nombre === undefined) return "";
             return String(nombre)
@@ -7307,7 +7313,7 @@ export default {
             return [
                 { label: 'PERIODO', value: this.fichaPeriodo || this.anioSeleccionado || '' },
                 { label: 'EDUCADOR DE CALLE', value: responsableNormalizado },
-                { label: 'FECHA REGISTRO', value: this.form.fechaRegistro || '' }
+                { label: 'FECHA REGISTRO', value: this.formatearFechaContexto(this.form.fechaRegistro) }
             ];
         },
         tituloModalHttpPregunta() {
