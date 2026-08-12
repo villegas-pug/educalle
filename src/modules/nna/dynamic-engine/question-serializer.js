@@ -65,8 +65,8 @@ export function serializeAnswer(question) {
         const parts = [
             question._branchedTriggerValue || '',
             ...(question._ramificaciones || []).map(branch => normalizeBranchedDerivedValue(branch.value || ''))
-        ].filter(Boolean);
-        return parts.length ? parts.join('|') : null;
+        ];
+        return parts.some(Boolean) ? parts.join('|') : null;
     }
     if (isBranchedSelects(question)) {
         const parts = (question._branchedSelects || []).map(branch => branch.value).filter(value => value !== null && value !== undefined && value !== '');
