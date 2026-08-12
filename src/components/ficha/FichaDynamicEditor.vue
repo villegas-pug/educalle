@@ -4745,11 +4745,8 @@ export default {
             }
         },
         async prepararPreguntaDinamica(pregunta) {
-            if (this.esPreguntaRedirected(pregunta)) {
-                const esGetDate = this.normalizarTextoComparacion(pregunta._redirectRef) === 'GETDATE';
-                if (!esGetDate || (this.modo === 'nuevo' && this.esValorVacioCierre(pregunta.respuesta))) {
-                    pregunta.respuesta = this.getRefValue(pregunta._redirectRef);
-                }
+            if (this.esPreguntaRedirected(pregunta) && this.modo === 'nuevo') {
+                pregunta.respuesta = this.getRefValue(pregunta._redirectRef);
             }
 
             if (this.esPreguntaSelectHttpSimple(pregunta)) {
@@ -5701,9 +5698,6 @@ export default {
         },
         obtenerValorTextoPregunta(pregunta) {
             if (this.esPreguntaAge(pregunta)) return this.obtenerTextoEdadPregunta(pregunta);
-            if (this.esPreguntaRedirected(pregunta) && this.normalizarTextoComparacion(pregunta._redirectRef) !== 'GETDATE') {
-                return this.getRefValue(pregunta._redirectRef);
-            }
             return pregunta?.respuesta === null || pregunta?.respuesta === undefined ? '' : pregunta.respuesta;
         },
         obtenerEdadPregunta(pregunta) {
