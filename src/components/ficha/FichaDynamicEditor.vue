@@ -5795,7 +5795,7 @@ export default {
             }, []).join('||');
         },
         aplicarValoresDefault() {
-            if (this.modo !== 'nuevo') return;
+            if (!['nuevo', 'editar'].includes(this.modo)) return;
 
             for (const seccion of this.secciones) {
                 for (const pregunta of seccion.preguntas) {
