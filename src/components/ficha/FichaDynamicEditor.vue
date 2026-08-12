@@ -757,6 +757,71 @@
                     </q-card-actions>
                 </q-card>
             </q-dialog>
+            <q-dialog v-model="dialogPendientesGuardado" persistent @hide="limpiarPendientesGuardado">
+                <q-card class="cierre-dialog">
+                    <q-card-section class="cierre-dialog__header bg-header-dialog">
+                        <div class="cierre-dialog__title-block">
+                            <div class="cierre-dialog__title text-body2 text-bold">PREGUNTAS PENDIENTES</div>
+                            <div class="cierre-dialog__subtitle text-caption">
+                                Aún existen preguntas sin completar. Puede volver al formulario o guardar la información para continuar después.
+                            </div>
+                        </div>
+                        <q-btn
+                            icon="close"
+                            class="cierre-dialog__close"
+                            flat
+                            round
+                            dense
+                            size="sm"
+                            @click="dialogPendientesGuardado = false"
+                        />
+                    </q-card-section>
+
+                    <q-card-section class="cierre-dialog__body">
+                        <div
+                            v-for="(grupo, index) in pendientesGuardadoAgrupados"
+                            :key="`${grupo.seccion}-${index}`"
+                            class="cierre-pendiente-seccion"
+                        >
+                            <div class="cierre-pendiente-seccion__titulo">{{ grupo.seccion }}</div>
+                            <div
+                                v-for="(item, itemIndex) in grupo.items"
+                                :key="`${grupo.seccion}-${itemIndex}-${item.pregunta}`"
+                                class="cierre-pendiente-item"
+                                :class="{ 'cierre-pendiente-item--subpregunta': item.tipo === 'subpregunta' }"
+                            >
+                                <q-icon
+                                    :name="item.tipo === 'subpregunta' ? 'subdirectory_arrow_right' : 'help_outline'"
+                                    class="cierre-pendiente-item__icon"
+                                />
+                                <div class="cierre-pendiente-item__content">
+                                    <div v-if="item.tipo === 'subpregunta'" class="cierre-pendiente-item__parent">
+                                        Subpregunta de: {{ item.preguntaPadre }}
+                                    </div>
+                                    <div class="cierre-pendiente-item__label">{{ item.pregunta }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </q-card-section>
+
+                    <q-card-actions align="right" class="cierre-dialog__actions cierre-dialog__actions--guardado">
+                        <q-btn
+                            label="Volver a completar"
+                            icon="edit"
+                            class="ficha-btn-cancelar cierre-dialog__btn"
+                            @click="dialogPendientesGuardado = false"
+                        />
+                        <q-btn
+                            label="Guardar de todos modos"
+                            icon="save"
+                            class="btn-inabif cierre-dialog__btn"
+                            :loading="guardandoConPendientes"
+                            :disable="guardandoConPendientes"
+                            @click="confirmarGuardadoConPendientes"
+                        />
+                    </q-card-actions>
+                </q-card>
+            </q-dialog>
             <q-dialog v-model="dialogPendientesCierre" persistent>
                 <q-card class="cierre-dialog">
                     <q-card-section class="cierre-dialog__header bg-header-dialog">
@@ -3397,6 +3462,11 @@ audio {
         column-gap: 8px;
     }
 
+    .cierre-dialog__actions--guardado {
+        flex-wrap: wrap;
+        row-gap: 8px;
+    }
+
     .cierre-pendiente-item--subpregunta {
         margin-left: 8px;
     }
@@ -3807,6 +3877,9 @@ export default {
             personalValidacion: [],
             dialogErroresInline: false,
             erroresInline: [],
+            dialogPendientesGuardado: false,
+            guardandoConPendientes: false,
+            pendientesGuardado: [],
             dialogPendientesCierre: false,
             dialogConfirmarCierreFicha: false,
             cerrandoFicha: false,
@@ -3864,6 +3937,22 @@ export default {
         }
     },
     methods: {
+
+        agruparPendientesPorSeccion(pendientes = []) {
+            return pendientes.reduce((grupos, item) => {
+                let grupo = grupos.find(entry => entry.seccion === item.seccion);
+                if (!grupo) {
+                    grupo = {
+                        seccion: item.seccion,
+                        items: []
+                    };
+                    grupos.push(grupo);
+                }
+
+                grupo.items.push(item);
+                return grupos;
+            }, []);
+        },
 
         mostrarAccionPrincipal(accion) {
             return this.accionesPrincipalesConfiguradas[accion] !== false;
@@ -5319,6 +5408,37 @@ export default {
             return !!pregunta.respuesta;
         },
         async guardarTodo() {
+            if (!this.mostrarAvisoPendientesGuardado) {
+                await this.ejecutarGuardadoActual();
+                return;
+            }
+
+            const pendientes = this.obtenerPendientesGuardadoFicha();
+            this.pendientesGuardado = pendientes;
+
+            if (pendientes.length > 0) {
+                this.dialogPendientesGuardado = true;
+                return;
+            }
+
+            await this.ejecutarGuardadoActual();
+        },
+        async confirmarGuardadoConPendientes() {
+            if (this.guardandoConPendientes) return;
+
+            this.guardandoConPendientes = true;
+            this.dialogPendientesGuardado = false;
+
+            try {
+                await this.ejecutarGuardadoActual();
+            } finally {
+                this.guardandoConPendientes = false;
+            }
+        },
+        limpiarPendientesGuardado() {
+            this.pendientesGuardado = [];
+        },
+        async ejecutarGuardadoActual() {
             try {
                 const guardadoExitoso = await this.persistirFicha();
                 if (!guardadoExitoso) {
@@ -5341,6 +5461,46 @@ export default {
                     message: 'Error al guardar'
                 });
             }
+        },
+        obtenerPendientesGuardadoFicha() {
+            const pendientes = [];
+
+            for (const seccion of this.secciones) {
+                for (const pregunta of seccion.preguntas) {
+                    if (!this.esPreguntaVisibleSinEfectos(pregunta)) continue;
+
+                    const tipoControl = String(pregunta.tipoControl || '').toLowerCase();
+                    const esPreguntaContestable = !['cabecera', 'label'].includes(tipoControl)
+                        && !this.esCampoSoloLectura(pregunta);
+
+                    if (esPreguntaContestable && !this.estaPreguntaRespondidaParaCierre(pregunta)) {
+                        pendientes.push({
+                            seccion: seccion.titulo || 'GENERAL',
+                            pregunta: pregunta.pregunta,
+                            tipo: 'principal'
+                        });
+                    }
+
+                    const tipoControl2 = String(pregunta.tipoControl2 || '').toLowerCase();
+                    const esSubpreguntaContestable = pregunta.pregunta2
+                        && ['text', 'select'].includes(tipoControl2);
+
+                    if (
+                        esSubpreguntaContestable
+                        && this.esPregunta2VisibleSinEfectos(pregunta)
+                        && this.esValorVacioCierre(pregunta.respuesta2)
+                    ) {
+                        pendientes.push({
+                            seccion: seccion.titulo || 'GENERAL',
+                            pregunta: pregunta.pregunta2,
+                            preguntaPadre: pregunta.pregunta,
+                            tipo: 'subpregunta'
+                        });
+                    }
+                }
+            }
+
+            return pendientes;
         },
         esValorVacioCierre(valor) {
             if (Array.isArray(valor)) {
@@ -6114,6 +6274,9 @@ export default {
             this.resetCierreFicha();
             this.dialogErroresInline = false;
             this.erroresInline = [];
+            this.dialogPendientesGuardado = false;
+            this.guardandoConPendientes = false;
+            this.pendientesGuardado = [];
             this.modo = null;
             this.seccionAbierta = null;
             this.modoSupervision = null;
@@ -7033,6 +7196,10 @@ export default {
             return this.pageConfig.accionesTabla || {};
         },
 
+        mostrarAvisoPendientesGuardado() {
+            return this.pageConfig.mostrarAvisoPendientesGuardado === true;
+        },
+
         columnasTablaConfiguradas() {
             return this.pageConfig.tableColumns || this.columnasTableAnexos;
         },
@@ -7298,20 +7465,11 @@ export default {
             return this.personalValidacion.length > 0 
                 && this.personalValidacion.every(p => p.validado === true);
         },
+        pendientesGuardadoAgrupados() {
+            return this.agruparPendientesPorSeccion(this.pendientesGuardado);
+        },
         pendientesCierreAgrupados() {
-            return this.pendientesCierre.reduce((grupos, item) => {
-                let grupo = grupos.find(entry => entry.seccion === item.seccion);
-                if (!grupo) {
-                    grupo = {
-                        seccion: item.seccion,
-                        items: []
-                    };
-                    grupos.push(grupo);
-                }
-
-                grupo.items.push(item);
-                return grupos;
-            }, []);
+            return this.agruparPendientesPorSeccion(this.pendientesCierre);
         }
 
     }

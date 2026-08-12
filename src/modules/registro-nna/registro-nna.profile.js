@@ -4,6 +4,7 @@ export default {
     pageTitle: 'REGISTRO DE NNA',
     pageConfig: {
         ...createNnaPageConfig(),
+        mostrarAvisoPendientesGuardado: true,
         tableColumns: [
             {
                 name: 'correlativoFormateado',
