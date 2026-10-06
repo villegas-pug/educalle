@@ -176,11 +176,15 @@
                                                                     dense
                                                                     :value="obtenerValorDisparadorBranched(pregunta)"
                                                                     :style="getPreguntaControlStyle(pregunta)"
+                                                                    :maxlength="getPreguntaMaxLength(pregunta)"
                                                                     :readonly="esCampoSoloLectura(pregunta)"
                                                                     :rules="validarPregunta(pregunta)"
+                                                                    :error="tieneErrorLongitudPregunta(pregunta)"
+                                                                    :error-message="getMensajeErrorLongitudPregunta(pregunta)"
                                                                     @input="val => actualizarValorDisparadorBranched(pregunta, val)"
                                                                 >
                                                                     <template v-slot:append>
+                                                                        <span v-if="debeMostrarContadorPregunta(pregunta)" class="ficha-input-counter">{{ getContadorTextoPregunta(pregunta) }}</span>
                                                                         <q-btn
                                                                             flat
                                                                             round
@@ -4587,32 +4591,21 @@ export default {
         esPreguntaConRangoLongitudPrincipal(pregunta) {
             const tipo = String(pregunta?.tipoControl || '').toLowerCase();
             return tipo === 'textm' || tipo === 'numberm'
+                || this.esPreguntaBranchedInputSearch(pregunta)
                 || (!this.esVistaBranched(pregunta) && (tipo === 'text' || tipo === 'textarea' || tipo === 'number'));
         },
         getRangoLongitudPregunta(pregunta) {
-            if (!this.esPreguntaConRangoLongitudPrincipal(pregunta) || pregunta?.rangoLongitud === null || pregunta?.rangoLongitud === undefined) {
+            if (!this.esPreguntaConRangoLongitudPrincipal(pregunta)) {
                 return null;
             }
-
-            const parseado = this.parseJsonFlexible(pregunta.rangoLongitud);
-            if (!parseado || typeof parseado !== 'object') return null;
-
-            const minRaw = this.resolverPropiedadCaseInsensitive(parseado, 'min');
-            const maxRaw = this.resolverPropiedadCaseInsensitive(parseado, 'max');
-            const min = Number(minRaw);
-            const max = Number(maxRaw);
-
-            return {
-                min: Number.isFinite(min) && min >= 0 ? min : null,
-                max: Number.isFinite(max) && max >= 0 ? max : null
-            };
+            return questionEngine.resolveLengthRange(pregunta, id => this.buscarPregunta(id));
         },
         usaReqAlfNum(pregunta) {
             return this.esPreguntaTextualPrincipal(pregunta) && Number(pregunta?.reqAlfNum) === 1;
         },
         debeMostrarContadorPregunta(pregunta) {
             const tipo = String(pregunta?.tipoControl || '').toLowerCase();
-            return (this.esPreguntaTextualPrincipal(pregunta) || tipo === 'textm' || tipo === 'numberm')
+            return (this.esPreguntaTextualPrincipal(pregunta) || this.esPreguntaBranchedInputSearch(pregunta) || tipo === 'textm' || tipo === 'numberm')
                 && Number(pregunta?.reqContador) === 1;
         },
         getLongitudTextoPregunta(pregunta) {
@@ -5750,7 +5743,7 @@ export default {
         },
         actualizarValorDisparadorBranched(pregunta, value) {
             pregunta._ramificacionesReadonlyHttp = false;
-            pregunta._branchedTriggerValue = value;
+            pregunta._branchedTriggerValue = this.sanitizarValorTextoPregunta(pregunta, value);
             pregunta.respuesta = this.serializarRespuestaPregunta(pregunta);
         },
         cumpleReglaEditable(regla) {
@@ -5779,6 +5772,7 @@ export default {
         },
         obtenerValorTextoPregunta(pregunta) {
             if (this.esPreguntaAge(pregunta)) return this.obtenerTextoEdadPregunta(pregunta);
+            if (this.esPreguntaBranchedInputSearch(pregunta)) return this.obtenerValorDisparadorBranched(pregunta);
             return pregunta?.respuesta === null || pregunta?.respuesta === undefined ? '' : pregunta.respuesta;
         },
         obtenerEdadPregunta(pregunta) {

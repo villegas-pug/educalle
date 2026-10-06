@@ -44,6 +44,41 @@ export function matchesCondition(baseValue, conditionValue) {
     return baseValues.length > 0 && conditionValues.length > 0 && baseValues.some(value => conditionValues.includes(value));
 }
 
+function normalizeLengthRange(value) {
+    const range = parseJsonFlexible(value);
+    if (!range || typeof range !== 'object') return null;
+
+    const min = Number(getCaseInsensitiveProperty(range, 'min'));
+    const max = Number(getCaseInsensitiveProperty(range, 'max'));
+    return {
+        min: Number.isFinite(min) && min >= 0 ? min : null,
+        max: Number.isFinite(max) && max >= 0 ? max : null
+    };
+}
+
+export function resolveLengthRange(question, findQuestion) {
+    const type = String(question?.tipoControl || '').toLowerCase();
+    const conditions = ['text', 'textarea', 'textm', 'numberm'].includes(type)
+        ? parseJsonFlexible(question?.condRangoLongitud) : null;
+
+    if (Array.isArray(conditions) && conditions.length > 0) {
+        if (typeof findQuestion !== 'function') return null;
+        for (const rule of conditions) {
+            if (!rule || typeof rule !== 'object') continue;
+            const id = Number(getCaseInsensitiveProperty(rule, 'id'));
+            if (!Number.isFinite(id) || id <= 0) continue;
+            const reference = findQuestion(id);
+            if (reference && matchesCondition(reference.respuesta, getCaseInsensitiveProperty(rule, 'valor'))) {
+                return normalizeLengthRange(rule);
+            }
+        }
+        // Una configuración condicional activa sustituye al rango fijo incluso sin coincidencias.
+        return null;
+    }
+
+    return normalizeLengthRange(question?.rangoLongitud);
+}
+
 export function getQuestionVisibleAnswer(question) {
     if (!question || question.respuesta === null || question.respuesta === undefined) return '';
     const values = Array.isArray(question.respuesta)
