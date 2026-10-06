@@ -184,6 +184,27 @@ export function getRedirectRef(options) {
     return getCaseInsensitiveProperty(parsed, 'ref') || getCaseInsensitiveProperty(parsed, 'REF') || null;
 }
 
+export function formatQuestionDateInput(value) {
+    const text = String(value || '').trim();
+    const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return match ? `${match[3]}/${match[2]}/${match[1]}` : text;
+}
+
+export function isValidQuestionTime(value) {
+    return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(value || '').trim());
+}
+
+export function isValidQuestionTimeRange(value) {
+    const parts = String(value || '').trim().split(' - ');
+    return parts.length === 2 && parts.every(isValidQuestionTime);
+}
+
+export function parseQuestionDateInput(value) {
+    const text = String(value || '').trim();
+    const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    return match ? `${match[3]}-${match[2]}-${match[1]}` : text;
+}
+
 export function parseQuestionDate(value) {
     const text = String(value || '').trim();
     const match = text.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T)/)

@@ -404,31 +404,25 @@
                                                                 </template>
                                                                 <div v-else class="ficha-textm">
                                                                     <div class="ficha-textm__input-row">
-                                                                        <q-input
-                                                                            outlined
-                                                                            dense
-                                                                            lazy-rules
+                                                                        <ficha-time-input
                                                                             class="ficha-textm__input"
-                                                                            type="time"
+                                                                            label="Hora de inicio"
                                                                             :value="pregunta._timeRangeStartDraft"
                                                                             :style="getPreguntaControlStyle(pregunta)"
                                                                             :readonly="esCampoSoloLectura(pregunta)"
                                                                             :rules="validarPreguntaTimeRangeM(pregunta)"
                                                                             @input="val => actualizarTimeRangeDraft(pregunta, 'start', val)"
-                                                                            @keyup.enter.prevent="agregarItemTimeRangeM(pregunta)"
+                                                                            @enter="agregarItemTimeRangeM(pregunta)"
                                                                         />
-                                                                        <q-input
-                                                                            outlined
-                                                                            dense
-                                                                            lazy-rules
+                                                                        <ficha-time-input
                                                                             class="ficha-textm__input"
-                                                                            type="time"
+                                                                            label="Hora de fin"
                                                                             :value="pregunta._timeRangeEndDraft"
                                                                             :style="getPreguntaControlStyle(pregunta)"
                                                                             :readonly="esCampoSoloLectura(pregunta)"
                                                                             :rules="validarPreguntaTimeRangeM(pregunta)"
                                                                             @input="val => actualizarTimeRangeDraft(pregunta, 'end', val)"
-                                                                            @keyup.enter.prevent="agregarItemTimeRangeM(pregunta)"
+                                                                            @enter="agregarItemTimeRangeM(pregunta)"
                                                                         />
                                                                         <q-btn
                                                                             dense
@@ -445,8 +439,9 @@
                                                                             v-for="(item, itemIndex) in pregunta.respuesta"
                                                                             :key="`${pregunta.idPregunta}-timerangem-${itemIndex}-${item}`"
                                                                             :removable="!esCampoSoloLectura(pregunta)"
-                                                                            color="blue-1"
-                                                                            text-color="primary"
+                                                                            :color="esIntervaloHoraValido(item) ? 'blue-1' : 'red-1'"
+                                                                            :text-color="esIntervaloHoraValido(item) ? 'primary' : 'negative'"
+                                                                            :title="esIntervaloHoraValido(item) ? '' : 'Intervalo con horas inválidas'"
                                                                             @remove="eliminarItemTimeRangeM(pregunta, itemIndex)"
                                                                         >
                                                                             {{ item }}
@@ -525,6 +520,20 @@
                                                                 <div v-if="esVisualizacion && obtenerMensajeErrorEdadPregunta(pregunta)" class="text-negative text-caption q-mt-xs">
                                                                     {{ obtenerMensajeErrorEdadPregunta(pregunta) }}
                                                                 </div>
+                                                            </template>
+
+                                                            <template v-else-if="esPreguntaFecha(pregunta)">
+                                                                <span v-if="esVisualizacion" class="ficha-valor">{{ formatearFechaIso(pregunta.respuesta) || '—' }}</span>
+                                                                <ficha-date-input
+                                                                    v-else
+                                                                    :value="pregunta.respuesta"
+                                                                    :input-id="getPreguntaInputId(pregunta)"
+                                                                    :style="getPreguntaControlStyle(pregunta)"
+                                                                    :readonly="esCampoSoloLectura(pregunta)"
+                                                                    :rules="validarPregunta(pregunta)"
+                                                                    @input="val => actualizarRespuestaTextoPregunta(pregunta, val)"
+                                                                    @blur="onPreguntaDateBlur(pregunta)"
+                                                                />
                                                             </template>
 
                                                             <template v-else>
@@ -3626,6 +3635,8 @@ import FichaPrimaryActions from "src/components/ficha/FichaPrimaryActions.vue";
 import FichaTable from "src/components/ficha/FichaTable.vue";
 import FichaCenterSelectorDialog from "src/components/ficha/FichaCenterSelectorDialog.vue";
 import FichaHttpSearchDialog from "src/components/ficha/FichaHttpSearchDialog.vue";
+import FichaDateInput from "src/components/ficha/FichaDateInput.vue";
+import FichaTimeInput from "src/components/ficha/FichaTimeInput.vue";
 
 export default {
 
@@ -3636,7 +3647,9 @@ export default {
         FichaPrimaryActions,
         FichaTable,
         FichaCenterSelectorDialog,
-        FichaHttpSearchDialog
+        FichaHttpSearchDialog,
+        FichaDateInput,
+        FichaTimeInput
     },
 
     props: {
@@ -6031,6 +6044,9 @@ export default {
             }
             this.$set(pregunta, '_timeRangeEndDraft', value);
         },
+        esIntervaloHoraValido(value) {
+            return questionEngine.isValidQuestionTimeRange(value);
+        },
         agregarItemTimeRangeM(pregunta) {
             if (this.esCampoSoloLectura(pregunta)) return;
 
@@ -6045,6 +6061,11 @@ export default {
                     type: 'warning',
                     message: 'Debe completar el rango de horas'
                 });
+                return;
+            }
+
+            if (!questionEngine.isValidQuestionTime(inicio) || !questionEngine.isValidQuestionTime(fin)) {
+                this.$q.notify({ type: 'warning', message: 'Ingrese horas válidas en formato HH:mm (00:00 a 23:59)' });
                 return;
             }
 
@@ -6915,9 +6936,15 @@ export default {
                     return true
                 }
 
-                if (!pregunta?._timeRangeAttemptedAdd) return true
+                if (!inicio || !fin) return 'Debe completar el rango de horas'
+                return questionEngine.isValidQuestionTime(inicio) && questionEngine.isValidQuestionTime(fin)
+                    || 'Ingrese horas válidas en formato HH:mm (00:00 a 23:59)'
+            })
 
-                return !!inicio && !!fin || 'Debe completar el rango de horas'
+            reglas.push(() => {
+                const items = Array.isArray(pregunta?.respuesta) ? pregunta.respuesta : []
+                const index = items.findIndex(item => !questionEngine.isValidQuestionTimeRange(item))
+                return index < 0 || `Intervalo ${index + 1}: debe contener horas válidas en formato HH:mm`
             })
 
             return reglas
