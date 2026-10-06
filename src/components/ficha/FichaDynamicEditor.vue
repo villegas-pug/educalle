@@ -306,6 +306,8 @@
                                                                             :style="getPreguntaControlStyle(pregunta)"
                                                                             :readonly="esCampoSoloLectura(pregunta)"
                                                                             :rules="validarPreguntaTextM(pregunta)"
+                                                                            :error="!!getMensajeErrorLongitudTextM(pregunta, pregunta._textMDraft)"
+                                                                            :error-message="getMensajeErrorLongitudTextM(pregunta, pregunta._textMDraft)"
                                                                             @input="val => actualizarDraftTextM(pregunta, val)"
                                                                             @keyup.enter.prevent="agregarItemTextM(pregunta)"
                                                                         />
@@ -319,13 +321,16 @@
                                                                             @click="agregarItemTextM(pregunta)"
                                                                         />
                                                                     </div>
+                                                                    <div v-if="debeMostrarContadorPregunta(pregunta)" class="text-caption text-grey-7 text-right">
+                                                                        {{ getContadorTextoPregunta(pregunta) }} caracteres
+                                                                    </div>
                                                                     <div v-if="pregunta.respuesta && pregunta.respuesta.length" class="ficha-tags q-mt-sm">
                                                                         <q-chip
                                                                             v-for="(item, itemIndex) in pregunta.respuesta"
                                                                             :key="`${pregunta.idPregunta}-textm-${itemIndex}-${item}`"
                                                                             :removable="!esCampoSoloLectura(pregunta)"
-                                                                            color="blue-1"
-                                                                            text-color="primary"
+                                                                            :color="getMensajeErrorLongitudTextM(pregunta, item) ? 'red-1' : 'blue-1'"
+                                                                            :text-color="getMensajeErrorLongitudTextM(pregunta, item) ? 'negative' : 'primary'"
                                                                             @remove="eliminarItemTextM(pregunta, itemIndex)"
                                                                         >
                                                                             {{ item }}
@@ -353,6 +358,8 @@
                                                                             :style="getPreguntaControlStyle(pregunta)"
                                                                             :readonly="esCampoSoloLectura(pregunta)"
                                                                             :rules="validarPreguntaNumberM(pregunta)"
+                                                                            :error="!!getMensajeErrorLongitudNumberM(pregunta, pregunta._numberMDraft)"
+                                                                            :error-message="getMensajeErrorLongitudNumberM(pregunta, pregunta._numberMDraft)"
                                                                             @input="val => actualizarDraftNumberM(pregunta, val)"
                                                                             @keyup.enter.prevent="agregarItemNumberM(pregunta)"
                                                                         />
@@ -366,13 +373,16 @@
                                                                             @click="agregarItemNumberM(pregunta)"
                                                                         />
                                                                     </div>
+                                                                    <div v-if="debeMostrarContadorPregunta(pregunta)" class="text-caption text-grey-7 text-right">
+                                                                        {{ getContadorTextoPregunta(pregunta) }} dígitos
+                                                                    </div>
                                                                     <div v-if="pregunta.respuesta && pregunta.respuesta.length" class="ficha-tags q-mt-sm">
                                                                         <q-chip
                                                                             v-for="(item, itemIndex) in pregunta.respuesta"
                                                                             :key="`${pregunta.idPregunta}-numberm-${itemIndex}-${item}`"
                                                                             :removable="!esCampoSoloLectura(pregunta)"
-                                                                            color="blue-1"
-                                                                            text-color="primary"
+                                                                            :color="getMensajeErrorLongitudNumberM(pregunta, item) ? 'red-1' : 'blue-1'"
+                                                                            :text-color="getMensajeErrorLongitudNumberM(pregunta, item) ? 'negative' : 'primary'"
                                                                             @remove="eliminarItemNumberM(pregunta, itemIndex)"
                                                                         >
                                                                             {{ item }}
@@ -4576,7 +4586,8 @@ export default {
         },
         esPreguntaConRangoLongitudPrincipal(pregunta) {
             const tipo = String(pregunta?.tipoControl || '').toLowerCase();
-            return !this.esVistaBranched(pregunta) && (tipo === 'text' || tipo === 'textarea' || tipo === 'number');
+            return tipo === 'textm' || tipo === 'numberm'
+                || (!this.esVistaBranched(pregunta) && (tipo === 'text' || tipo === 'textarea' || tipo === 'number'));
         },
         getRangoLongitudPregunta(pregunta) {
             if (!this.esPreguntaConRangoLongitudPrincipal(pregunta) || pregunta?.rangoLongitud === null || pregunta?.rangoLongitud === undefined) {
@@ -4600,11 +4611,46 @@ export default {
             return this.esPreguntaTextualPrincipal(pregunta) && Number(pregunta?.reqAlfNum) === 1;
         },
         debeMostrarContadorPregunta(pregunta) {
-            return this.esPreguntaTextualPrincipal(pregunta) && Number(pregunta?.reqContador) === 1;
+            const tipo = String(pregunta?.tipoControl || '').toLowerCase();
+            return (this.esPreguntaTextualPrincipal(pregunta) || tipo === 'textm' || tipo === 'numberm')
+                && Number(pregunta?.reqContador) === 1;
         },
         getLongitudTextoPregunta(pregunta) {
-            const valor = this.obtenerValorTextoPregunta(pregunta);
+            const tipo = String(pregunta?.tipoControl || '').toLowerCase();
+            const valor = tipo === 'textm' ? pregunta?._textMDraft
+                : tipo === 'numberm' ? pregunta?._numberMDraft
+                    : this.obtenerValorTextoPregunta(pregunta);
             return valor === null || valor === undefined ? 0 : String(valor).length;
+        },
+        getLongitudTextM(value) {
+            return value === null || value === undefined ? 0 : String(value).trim().length;
+        },
+        getMensajeErrorLongitudTextM(pregunta, value) {
+            const rango = this.getRangoLongitudPregunta(pregunta);
+            const longitud = this.getLongitudTextM(value);
+            if (!rango || longitud === 0) return '';
+            if (rango.min !== null && longitud < rango.min) {
+                return `Cada respuesta debe tener al menos ${rango.min} caracteres.`;
+            }
+            if (rango.max !== null && longitud > rango.max) {
+                return `Cada respuesta debe tener como máximo ${rango.max} caracteres.`;
+            }
+            return '';
+        },
+        getLongitudNumberM(value) {
+            return value === null || value === undefined ? 0 : String(value).trim().length;
+        },
+        getMensajeErrorLongitudNumberM(pregunta, value) {
+            const rango = this.getRangoLongitudPregunta(pregunta);
+            const longitud = this.getLongitudNumberM(value);
+            if (!rango || longitud === 0) return '';
+            if (rango.min !== null && longitud < rango.min) {
+                return `Cada valor debe tener al menos ${rango.min} dígitos.`;
+            }
+            if (rango.max !== null && longitud > rango.max) {
+                return `Cada valor debe tener como máximo ${rango.max} dígitos.`;
+            }
+            return '';
         },
         getContadorTextoPregunta(pregunta) {
             const rango = this.getRangoLongitudPregunta(pregunta);
@@ -4619,6 +4665,8 @@ export default {
             return !!this.getMensajeErrorLongitudPregunta(pregunta);
         },
         getMensajeErrorLongitudPregunta(pregunta) {
+            const tipo = String(pregunta?.tipoControl || '').toLowerCase();
+            if (tipo === 'textm' || tipo === 'numberm') return '';
             if (!this.esPreguntaConRangoLongitudPrincipal(pregunta)) return '';
 
             const rango = this.getRangoLongitudPregunta(pregunta);
@@ -5185,8 +5233,35 @@ export default {
                         );
                     } else if (tipo === 'textm') {
                         this.agregarErrorInline(errores, seccion, seccionIndex, pregunta, 'principal', this.obtenerMensajeReglaInline(this.validarPreguntaTextM(pregunta), pregunta._textMDraft));
+                        (Array.isArray(pregunta.respuesta) ? pregunta.respuesta : []).forEach((item, itemIndex) => {
+                            const mensaje = this.getMensajeErrorLongitudTextM(pregunta, item);
+                            if (mensaje) {
+                                this.agregarErrorInline(
+                                    errores,
+                                    seccion,
+                                    seccionIndex,
+                                    pregunta,
+                                    `textm-${itemIndex}`,
+                                    `Respuesta ${itemIndex + 1}: ${mensaje}`,
+                                    pregunta.pregunta
+                                );
+                            }
+                        });
                     } else if (tipo === 'numberm') {
                         this.agregarErrorInline(errores, seccion, seccionIndex, pregunta, 'principal', this.obtenerMensajeReglaInline(this.validarPreguntaNumberM(pregunta), pregunta._numberMDraft));
+                        (Array.isArray(pregunta.respuesta) ? pregunta.respuesta : []).forEach((item, itemIndex) => {
+                            const mensaje = this.getMensajeErrorLongitudNumberM(pregunta, item);
+                            if (mensaje) {
+                                this.agregarErrorInline(
+                                    errores,
+                                    seccion,
+                                    seccionIndex,
+                                    pregunta,
+                                    `numberm-${itemIndex}`,
+                                    `Elemento ${itemIndex + 1}: ${mensaje}`
+                                );
+                            }
+                        });
                     } else if (tipo === 'timerangem') {
                         this.agregarErrorInline(errores, seccion, seccionIndex, pregunta, 'principal', this.obtenerMensajeReglaInline(this.validarPreguntaTimeRangeM(pregunta), pregunta._timeRangeStartDraft));
                     } else if (!['label', 'selectm', 'dateinputs'].includes(tipo)) {
@@ -5903,6 +5978,11 @@ export default {
             if (this.esCampoSoloLectura(pregunta)) return;
             const valor = String(pregunta._textMDraft || '').trim();
             if (!valor) return;
+            const errorLongitud = this.getMensajeErrorLongitudTextM(pregunta, valor);
+            if (errorLongitud) {
+                this.$q.notify({ type: 'warning', message: `${pregunta.pregunta}: ${errorLongitud}` });
+                return;
+            }
             const items = Array.isArray(pregunta.respuesta) ? [...pregunta.respuesta] : [];
             const clave = this.normalizarTextoComparacion(valor);
             if (items.some(item => this.normalizarTextoComparacion(item) === clave)) {
@@ -5927,6 +6007,11 @@ export default {
             const valor = String(pregunta._numberMDraft === null || pregunta._numberMDraft === undefined ? '' : pregunta._numberMDraft).trim();
             if (!/^\d+$/.test(valor)) {
                 this.$q.notify({ type: 'warning', message: 'Ingrese un número entero no negativo' });
+                return;
+            }
+            const errorLongitud = this.getMensajeErrorLongitudNumberM(pregunta, valor);
+            if (errorLongitud) {
+                this.$q.notify({ type: 'warning', message: `${pregunta.pregunta}: ${errorLongitud}` });
                 return;
             }
             const items = Array.isArray(pregunta.respuesta) ? [...pregunta.respuesta] : [];
