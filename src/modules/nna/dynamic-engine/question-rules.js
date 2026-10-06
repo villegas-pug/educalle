@@ -194,9 +194,20 @@ export function isValidQuestionTime(value) {
     return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(value || '').trim());
 }
 
-export function isValidQuestionTimeRange(value) {
+export function getQuestionTimeRangeError(value) {
     const parts = String(value || '').trim().split(' - ');
-    return parts.length === 2 && parts.every(isValidQuestionTime);
+    if (parts.length !== 2 || !parts.every(isValidQuestionTime)) {
+        return 'Ingrese horas válidas en formato HH:mm (00:00 a 23:59)';
+    }
+    const minutes = parts.map(time => {
+        const [hour, minute] = time.split(':').map(Number);
+        return hour * 60 + minute;
+    });
+    return minutes[1] < minutes[0] ? 'La hora final no puede ser menor que la hora inicial' : '';
+}
+
+export function isValidQuestionTimeRange(value) {
+    return getQuestionTimeRangeError(value) === '';
 }
 
 export function parseQuestionDateInput(value) {

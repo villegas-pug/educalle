@@ -441,7 +441,7 @@
                                                                             :removable="!esCampoSoloLectura(pregunta)"
                                                                             :color="esIntervaloHoraValido(item) ? 'blue-1' : 'red-1'"
                                                                             :text-color="esIntervaloHoraValido(item) ? 'primary' : 'negative'"
-                                                                            :title="esIntervaloHoraValido(item) ? '' : 'Intervalo con horas inválidas'"
+                                                                            :title="getMensajeErrorIntervaloHora(item)"
                                                                             @remove="eliminarItemTimeRangeM(pregunta, itemIndex)"
                                                                         >
                                                                             {{ item }}
@@ -6047,6 +6047,9 @@ export default {
         esIntervaloHoraValido(value) {
             return questionEngine.isValidQuestionTimeRange(value);
         },
+        getMensajeErrorIntervaloHora(value) {
+            return questionEngine.getQuestionTimeRangeError(value);
+        },
         agregarItemTimeRangeM(pregunta) {
             if (this.esCampoSoloLectura(pregunta)) return;
 
@@ -6064,8 +6067,9 @@ export default {
                 return;
             }
 
-            if (!questionEngine.isValidQuestionTime(inicio) || !questionEngine.isValidQuestionTime(fin)) {
-                this.$q.notify({ type: 'warning', message: 'Ingrese horas válidas en formato HH:mm (00:00 a 23:59)' });
+            const errorIntervalo = this.getMensajeErrorIntervaloHora(`${inicio} - ${fin}`);
+            if (errorIntervalo) {
+                this.$q.notify({ type: 'warning', message: errorIntervalo });
                 return;
             }
 
@@ -6937,14 +6941,13 @@ export default {
                 }
 
                 if (!inicio || !fin) return 'Debe completar el rango de horas'
-                return questionEngine.isValidQuestionTime(inicio) && questionEngine.isValidQuestionTime(fin)
-                    || 'Ingrese horas válidas en formato HH:mm (00:00 a 23:59)'
+                return this.getMensajeErrorIntervaloHora(`${inicio} - ${fin}`) || true
             })
 
             reglas.push(() => {
                 const items = Array.isArray(pregunta?.respuesta) ? pregunta.respuesta : []
                 const index = items.findIndex(item => !questionEngine.isValidQuestionTimeRange(item))
-                return index < 0 || `Intervalo ${index + 1}: debe contener horas válidas en formato HH:mm`
+                return index < 0 || `Intervalo ${index + 1}: ${this.getMensajeErrorIntervaloHora(items[index])}`
             })
 
             return reglas
