@@ -1,4 +1,5 @@
 import { createNnaPageConfig } from 'src/modules/nna/nna-page-config';
+import { compararEstadosFicha } from 'src/modules/nna/ficha-status';
 
 export default {
     pageTitle: 'REGISTRO DE NNA',
@@ -69,10 +70,7 @@ export default {
                 field: 'estado',
                 align: 'center',
                 sortable: true,
-                sort: (a, b) => {
-                    const map = { 1: 'REGISTRADO', 2: 'SUSCRITO', 0: 'ANULADO' };
-                    return (map[a] || '').localeCompare(map[b] || '');
-                },
+                sort: compararEstadosFicha,
                 style: 'width: 130px; min-width: 130px; max-width: 130px;'
             },
             {

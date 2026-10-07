@@ -59,7 +59,7 @@
                         >
                             {{ codigoNNAFicha }}
                         </q-chip>
-                        <q-btn class="ficha-cerrar" icon="close" flat dense round v-close-popup />
+                        <q-btn class="ficha-cerrar" icon="close" flat dense round :disable="cerrandoFicha" v-close-popup />
                     </q-card-section>
 
                     <!-- BODY -->
@@ -745,9 +745,9 @@
                                 @mousedown.prevent="iniciarArrastreFooterFicha"
                                 @touchstart.prevent="iniciarArrastreFooterFicha"
                             />
-                            <q-btn v-if="!esVisualizacion" label="Guardar" icon="save" type="submit" @click="guardarTodo" title="Guardar" class="ficha-btn-guardar" />
+                            <q-btn v-if="!esVisualizacion" label="Guardar" icon="save" type="submit" @click="guardarTodo" :disable="cerrandoFicha" title="Guardar" class="ficha-btn-guardar" />
                             <q-btn
-                                v-if="modoEdicion"
+                                v-if="modoEdicion && puedeEditar(form)"
                                 label="Cerrar ficha"
                                 icon="fact_check"
                                 @click="iniciarCierreFicha"
@@ -755,7 +755,7 @@
                                 class="ficha-btn-cerrar"
                                 title="Cerrar ficha"
                             />
-                            <q-btn label="Cancelar" icon="close" v-close-popup class="ficha-btn-cancelar" style="min-width: 70px;" title="Cancelar" />
+                            <q-btn label="Cancelar" icon="close" v-close-popup :disable="cerrandoFicha" class="ficha-btn-cancelar" style="min-width: 70px;" title="Cancelar" />
                         </q-card-actions>
                     </div>
                 </q-card>
@@ -907,7 +907,7 @@
                         <div class="cierre-dialog__title-block">
                             <div class="cierre-dialog__title text-body2 text-bold">CONFIRMAR CIERRE DE FICHA</div>
                             <div class="cierre-dialog__subtitle text-caption">
-                                Se guardarán los cambios actuales y luego la ficha quedará suscrita.
+                                Se guardarán los cambios actuales y la ficha quedará REGISTRADA, pendiente de conformidad documental.
                             </div>
                         </div>
                         <q-btn icon="close" class="cierre-dialog__close" v-close-popup flat round dense size="sm"></q-btn>
@@ -1034,7 +1034,7 @@
 
                             <template v-slot:body-cell-validar="props">
                                 <q-td :props="props">
-                                    <div v-if="esFichaSuscrita(fichaAValidar)" class="row justify-center items-center">
+                                    <div v-if="tieneRegistroFinalizado(fichaAValidar)" class="row justify-center items-center">
                                         <q-icon name="verified" color="info" class="validar-status-icon">
                                             <q-tooltip>Ficha validada</q-tooltip>
                                         </q-icon>
@@ -1046,7 +1046,7 @@
                                         </q-icon>
                                     </div>
                                     <!-- Mostrar input -->
-                                    <div v-else-if="!esFichaSuscrita(fichaAValidar) && mostrarInputValidar[props.row.idPersonal]" class="validar-input-row row q-gutter-xs items-center justify-center">
+                                    <div v-else-if="!tieneRegistroFinalizado(fichaAValidar) && mostrarInputValidar[props.row.idPersonal]" class="validar-input-row row q-gutter-xs items-center justify-center">
                                         <q-input 
                                             v-model="props.row.contrasena" 
                                             :type="mostrarContrasenaValidar[props.row.idPersonal] ? 'text' : 'password'"
@@ -1117,7 +1117,7 @@
                             size="sm"
                             class="btn-inabif validar-btn"
                             :loading="validandoConformidad"
-                            :disable="!todosValidados || esFichaSuscrita(fichaAValidar)"
+                            :disable="!todosValidados || tieneRegistroFinalizado(fichaAValidar)"
                             @click="darConformidad" />
                     </q-card-actions>
                 </q-card>
@@ -1136,6 +1136,7 @@
                         <q-btn
                             icon="close"
                             class="audio-dialog__close"
+                            :disable="conformidadOcupada"
                             v-close-popup
                             flat
                             round
@@ -1157,7 +1158,7 @@
                                     dense
                                     clearable
                                     accept=".pdf,application/pdf"
-                                    :disable="loadingAudios || tieneConformidadRegistrada"
+                                    :disable="!puedeModificarConformidad || tieneConformidadRegistrada"
                                 >
                                     <template v-slot:prepend>
                                         <q-icon name="attach_file" class="audio-field-icon" />
@@ -1172,24 +1173,41 @@
                                     type="date"
                                     label="Fecha de ingreso"
                                     class="audio-file-field"
-                                    :disable="loadingAudios || tieneConformidadRegistrada"
+                                    :disable="!puedeModificarConformidad"
                                 />
                             </div>
                             <div class="col-12 col-sm-auto">
                                 <q-btn
-                                    label="Subir"
+                                    :label="tieneConformidadRegistrada ? 'Completar conformidad' : 'Subir'"
                                     icon="upload"
                                     class="audio-btn btn-inabif"
                                     size="sm"
-                                    :loading="loadingAudios"
+                                    :loading="procesandoConformidad"
                                     :disable="!puedeSubirConformidad"
                                     @click="subirAudio"
                                 />
                             </div>
                         </div>
 
-                        <div v-if="tieneConformidadRegistrada" class="audio-replacing-banner text-caption q-mb-sm">
-                            Ya existe una conformidad registrada. Elimine el documento actual para cargar otro.
+                        <div v-if="esFichaCerrada(audioRow)" class="audio-replacing-banner text-caption q-mb-sm">
+                            Ficha CERRADA. La conformidad y la fecha de ingreso no se pueden modificar.
+                        </div>
+                        <div v-else-if="esFichaRegistrada(audioRow) && tieneConformidadRegistrada" class="audio-replacing-banner text-caption q-mb-sm">
+                            El documento ya está guardado. Complete la conformidad para confirmar la fecha de ingreso y cerrar la ficha.
+                        </div>
+                        <div v-else-if="!esFichaRegistrada(audioRow)" class="audio-replacing-banner text-caption q-mb-sm">
+                            Primero cierre la ficha para dejarla REGISTRADA.
+                        </div>
+                        <div v-if="conformidadConsultaPendiente" class="audio-replacing-banner text-caption q-mb-sm">
+                            Consulte los datos actuales antes de modificar la conformidad.
+                            <q-btn
+                                label="Actualizar datos"
+                                icon="refresh"
+                                flat
+                                size="sm"
+                                :disable="conformidadOcupada"
+                                @click="consultarConformidad"
+                            />
                         </div>
 
                         <!-- Tabla de conformidades -->
@@ -1222,6 +1240,7 @@
                                             <div class="audio-actions-row">
                                                 <q-btn
                                                     icon="download"
+                                                    :disable="conformidadOcupada"
                                                     color="primary"
                                                     class="audio-action-btn audio-action-btn--play"
                                                     flat
@@ -1233,6 +1252,7 @@
                                                 </q-btn>
                                                 <q-btn
                                                     icon="picture_as_pdf"
+                                                    :disable="conformidadOcupada"
                                                     color="info"
                                                     class="audio-action-btn audio-action-btn--edit"
                                                     flat
@@ -1244,15 +1264,17 @@
                                                 </q-btn>
                                                 <q-btn
                                                     icon="delete"
-                                            color="negative"
-                                            class="audio-action-btn audio-action-btn--delete"
-                                            flat
-                                            round
-                                            size="sm"
-                                            @click="eliminarAudio(props.row)"
-                                        >
-                                            <q-tooltip>Eliminar</q-tooltip>
-                                        </q-btn>
+                                                    v-if="esFichaRegistrada(audioRow)"
+                                                    :disable="!puedeModificarConformidad"
+                                                    color="negative"
+                                                    class="audio-action-btn audio-action-btn--delete"
+                                                    flat
+                                                    round
+                                                    size="sm"
+                                                    @click="eliminarAudio(props.row)"
+                                                >
+                                                    <q-tooltip>Eliminar</q-tooltip>
+                                                </q-btn>
                                     </div>
                                 </q-td>
                             </template>
@@ -1273,10 +1295,10 @@
                             color="primary"
                             class="audio-btn"
                             :loading="generandoCompromiso"
-                            :disable="!esFichaSuscrita(audioRow) || loadingAudios || generandoCompromiso"
+                            :disable="!tieneRegistroFinalizado(audioRow) || conformidadOcupada || generandoCompromiso"
                             @click="generarCompromisoAudio"
                         />
-                        <q-btn label="Cerrar" icon="close" size="sm" class="ficha-btn-cancelar audio-btn" v-close-popup />
+                        <q-btn label="Cerrar" icon="close" size="sm" class="ficha-btn-cancelar audio-btn" :disable="conformidadOcupada" v-close-popup />
                     </q-card-actions>
                 </q-card>
             </q-dialog>
@@ -2872,14 +2894,6 @@ audio {
     font-size: 16px;
 }
 
-.chip-estado--1 {
-    background: linear-gradient(135deg, #1faa59 0%, #2ecc71 100%);
-}
-
-.chip-estado--2 {
-    background: linear-gradient(135deg, #1565c0 0%, #1e88e5 100%);
-}
-
 .chip-estado--0 {
     background: linear-gradient(135deg, #c62828 0%, #ef5350 100%);
 }
@@ -3637,6 +3651,7 @@ import FichaCenterSelectorDialog from "src/components/ficha/FichaCenterSelectorD
 import FichaHttpSearchDialog from "src/components/ficha/FichaHttpSearchDialog.vue";
 import FichaDateInput from "src/components/ficha/FichaDateInput.vue";
 import FichaTimeInput from "src/components/ficha/FichaTimeInput.vue";
+import { FICHA_ESTADOS, FICHA_ESTADOS_MAP, compararEstadosFicha } from "src/modules/nna/ficha-status";
 
 export default {
 
@@ -3719,14 +3734,11 @@ export default {
                 { id: 'PROGRAMADA', nombreTipo: 'PROGRAMADA' },
                 { id: 'INOPINADA', nombreTipo: 'INOPINADA' }
             ],
-            estadosMap: {
-                1: { label: 'EN REGISTRO', color: 'positive', textColor: 'white', icon: 'check_circle' },
-                2: { label: 'SUSCRITO', color: 'info', textColor: 'white', icon: 'verified' },
-                0: { label: 'ANULADO',    color: 'negative', textColor: 'white', icon: 'cancel' }
-            },
+            estadosMap: FICHA_ESTADOS_MAP,
             esSumable: true,
             form: {
 
+                estado: FICHA_ESTADOS.EN_REGISTRO,
                 idUnidad: null,
                 nombreUnidad: '',
 
@@ -3860,10 +3872,7 @@ export default {
                     field: "estado",
                     align: "center",
                     sortable: true,
-                    sort: (a, b) => {
-                        const map = { 1: 'EN REGISTRO', 2: 'SUSCRITO', 0: 'ANULADO' };
-                        return (map[a] || '').localeCompare(map[b] || '');
-                    },
+                    sort: compararEstadosFicha,
                     style: "width: 130px; min-width: 130px; max-width: 130px;"
                 },
                 {
@@ -3982,6 +3991,8 @@ export default {
             audioRow: null,
             audiosList: [],
             loadingAudios: false,
+            procesandoConformidad: false,
+            conformidadConsultaPendiente: false,
             generandoCompromiso: false,
             audioFile: null,
             fechaInscripcion: null,
@@ -4116,7 +4127,7 @@ export default {
             document.removeEventListener("touchcancel", this.finalizarArrastreFooterFicha);
         },
         puedeEditar(row) {
-            return row && row.estado !== 2;
+            return !!row && Number(row.estado) === FICHA_ESTADOS.EN_REGISTRO;
         },
         puedeMostrarSupervisados(reqSupervisados) {
             return Number(reqSupervisados) === 1;
@@ -4153,8 +4164,14 @@ export default {
                 idDirector: this.normalizarIdResponsable(centro.idPersonal)
             };
         },
-        esFichaSuscrita(row) {
-            return !!row && Number(row.estado) === 2;
+        esFichaRegistrada(row) {
+            return !!row && Number(row.estado) === FICHA_ESTADOS.REGISTRADO;
+        },
+        esFichaCerrada(row) {
+            return !!row && Number(row.estado) === FICHA_ESTADOS.CERRADO;
+        },
+        tieneRegistroFinalizado(row) {
+            return this.esFichaRegistrada(row) || this.esFichaCerrada(row);
         },
         formatearFechaHoraValidacion(fecha = new Date()) {
             const pad = n => String(n).padStart(2, "0");
@@ -4279,6 +4296,7 @@ export default {
                 this.validacionReseteadaEnEdicion = false;
                 this.sincronizarAcreditacionDesdeFuente(row);
                 // Llenamos el form con los datos de la fila seleccionada
+                this.form.estado = Number(row.estado);
                 this.form.idAnexoCabecera = row.idAnexoCabecera;
                 this.form.idAnexo = row.idAnexo;
                 this.form.idUnidad = row.idUnidad;
@@ -4324,6 +4342,7 @@ export default {
 
         async verRegistro(row) {
             this.modo = "ver";
+            this.form.estado = Number(row.estado);
             this.codigoNNAFicha = row.codigoNNA ? String(row.codigoNNA).toUpperCase() : '';
             try {
                 this.sincronizarAcreditacionDesdeFuente(row);
@@ -4834,6 +4853,10 @@ export default {
                 const data = res.data?.data;
                 if (!data) return;
 
+                if (data.estado !== undefined && data.estado !== null) {
+                    this.form.estado = Number(data.estado);
+                    if (this.modoEdicion && !this.puedeEditar(this.form)) this.modo = 'ver';
+                }
                 this.form.nombreCentro = data.centro || data.nombreCentro || this.form.nombreCentro;
                 this.form.correlativo = data.correlativo;
                 this.form.nombreAnexo = data.nombreAnexo;
@@ -4925,6 +4948,7 @@ export default {
         ======================================== */
         abrirDialog() {
             this.modo = "nuevo";
+            this.form.estado = FICHA_ESTADOS.EN_REGISTRO;
             this.seccionAbierta = null;
 
             this.fichaPeriodo = this.anioSeleccionado;
@@ -5088,6 +5112,7 @@ export default {
         resetFormulario() {
 
             this.form = {
+                estado: FICHA_ESTADOS.EN_REGISTRO,
                 nombreServicio: "",
                 codigoServicio: "",
                 direccion: "",
@@ -5342,6 +5367,19 @@ export default {
             return true;
         },
         async persistirFicha() {
+            if (this.esVisualizacion || (this.modoEdicion && !this.puedeEditar(this.form))) {
+                this.$q.notify({ type: 'warning', message: 'Solo se pueden editar fichas EN REGISTRO' });
+                return false;
+            }
+            if (this.modoEdicion) {
+                const cabecera = await this.obtenerCabeceraActual(this.form.idAnexoCabecera);
+                this.form.estado = Number(cabecera.estado);
+                if (!this.puedeEditar(cabecera)) {
+                    this.modo = 'ver';
+                    this.$q.notify({ type: 'warning', message: 'La ficha ya no está EN REGISTRO; sus respuestas no se pueden modificar' });
+                    return false;
+                }
+            }
             const reglaInvalida = this.obtenerReglasBloqueantesInvalidas()[0];
             if (reglaInvalida) {
                 this.alertasReglasCanceladas = false;
@@ -5531,6 +5569,7 @@ export default {
             return !!pregunta.respuesta;
         },
         async guardarTodo() {
+            if (this.cerrandoFicha) return;
             if (!this.mostrarAvisoPendientesGuardado) {
                 await this.ejecutarGuardadoActual();
                 return;
@@ -5690,7 +5729,7 @@ export default {
             return pendientes;
         },
         iniciarCierreFicha() {
-            if (!this.modoEdicion) return;
+            if (!this.modoEdicion || !this.puedeEditar(this.form) || this.cerrandoFicha) return;
 
             const pendientes = this.obtenerPendientesCierreFicha();
             this.pendientesCierre = pendientes;
@@ -5703,6 +5742,7 @@ export default {
             this.dialogConfirmarCierreFicha = true;
         },
         async confirmarCierreFicha() {
+            if (!this.modoEdicion || !this.puedeEditar(this.form) || this.cerrandoFicha) return;
             this.dialogConfirmarCierreFicha = false;
             this.cerrandoFicha = true;
             let guardadoExitoso = false;
@@ -5713,11 +5753,12 @@ export default {
                     return;
                 }
 
-                await guardarConformidadFicha(this.$axios, this.form.idAnexoCabecera);
+                await guardarConformidadFicha(this.$axios, this.form.idAnexoCabecera, FICHA_ESTADOS.REGISTRADO);
+                this.form.estado = FICHA_ESTADOS.REGISTRADO;
 
                 this.$q.notify({
                     type: 'positive',
-                    message: 'Ficha cerrada correctamente'
+                    message: 'Ficha REGISTRADA correctamente; pendiente de conformidad documental'
                 });
 
                 this.dialogPendientesCierre = false;
@@ -5729,8 +5770,8 @@ export default {
                 this.$q.notify({
                     type: 'negative',
                     message: guardadoExitoso
-                        ? 'Se guardaron los cambios, pero no se pudo cerrar la ficha'
-                        : 'Error al guardar la ficha antes del cierre'
+                        ? 'Se guardaron los cambios, pero no se pudo confirmar el estado REGISTRADO'
+                        : 'No se pudo consultar o guardar la ficha antes de registrarla'
                 });
             } finally {
                 this.cerrandoFicha = false;
@@ -6490,12 +6531,76 @@ export default {
         },
 
         abrirDialogAudios(row) {
-            this.audioRow = row;
+            if (this.conformidadOcupada) return;
+            this.audioRow = { ...row };
+            this.audiosList = [];
+            this.audioFile = null;
+            this.fechaInscripcion = this.obtenerFechaIngresoISO(row);
+            this.conformidadConsultaPendiente = true;
             this.dialogAudios = true;
-            this.cargarAudios();
+            this.consultarConformidad();
+        },
+
+        obtenerFechaIngresoISO(row) {
+            const fecha = String(row?.fechaIngreso || '').match(/^(\d{4}-\d{2}-\d{2})/);
+            return fecha ? fecha[1] : null;
+        },
+
+        async obtenerCabeceraActual(idAnexoCabecera) {
+            const res = await listarAnexosCabecera(this.$axios);
+            const cabeceras = res.data?.data || res.data;
+            if (!Array.isArray(cabeceras)) throw new Error('No se pudo consultar el estado de la ficha');
+            const cabecera = cabeceras.find(row => String(row.idAnexoCabecera) === String(idAnexoCabecera));
+            if (!cabecera) throw new Error('No se encontró la ficha en el listado actualizado');
+            this.anexosRaw = cabeceras;
+            return cabecera;
+        },
+
+        obtenerDocumentosConformidad(res) {
+            const payload = res.data;
+            if (payload?.code !== undefined && Number(payload.code) !== 200) {
+                throw new Error('No se pudo consultar la conformidad');
+            }
+            const documentos = Array.isArray(payload) ? payload : payload?.data;
+            if (documentos === null) return [];
+            if (!Array.isArray(documentos)) throw new Error('No se pudo consultar la conformidad');
+            return documentos.map(item => ({
+                idAudio: item.ACA_ID_AUDIO,
+                nombreArchivo: item.ACA_NOMBRE_ARCHIVO,
+                estado: item.ACA_ESTADO
+            }));
+        },
+
+        async actualizarConformidadDesdeBackend() {
+            this.conformidadConsultaPendiente = true;
+            const idAnexoCabecera = this.audioRow.idAnexoCabecera;
+            const [cabecera, documentos] = await Promise.all([
+                this.obtenerCabeceraActual(idAnexoCabecera),
+                listarAudios(this.$axios, idAnexoCabecera)
+            ]);
+            const audios = this.obtenerDocumentosConformidad(documentos);
+            this.audioRow = { ...cabecera };
+            this.audiosList = audios;
+            if (!this.fechaInscripcion || this.esFichaCerrada(cabecera)) {
+                this.fechaInscripcion = this.obtenerFechaIngresoISO(cabecera);
+            }
+            this.conformidadConsultaPendiente = false;
+        },
+
+        async consultarConformidad() {
+            if (!this.audioRow || this.conformidadOcupada) return;
+            this.procesandoConformidad = true;
+            try {
+                await this.actualizarConformidadDesdeBackend();
+            } catch (error) {
+                this.$q.notify({ type: 'negative', message: 'No se pudieron consultar los datos actuales. Pulse Actualizar datos para reintentar.' });
+            } finally {
+                this.procesandoConformidad = false;
+            }
         },
 
         async generarCompromisoAudio() {
+            if (!this.tieneRegistroFinalizado(this.audioRow) || this.conformidadOcupada || this.generandoCompromiso) return;
             if (!this.audioRow || !this.audioRow.idAnexoCabecera || !this.audioRow.correlativo) {
                 this.$q.notify({ type: "warning", message: "No se encontró la ficha para generar el compromiso" });
                 return;
@@ -6533,12 +6638,7 @@ export default {
             this.loadingAudios = true;
             try {
                 const res = await listarAudios(this.$axios, this.audioRow.idAnexoCabecera);
-                const data = res.data?.data || [];
-                this.audiosList = data.map(item => ({
-                    idAudio: item.ACA_ID_AUDIO,
-                    nombreArchivo: item.ACA_NOMBRE_ARCHIVO,
-                    estado: item.ACA_ESTADO
-                }));
+                this.audiosList = this.obtenerDocumentosConformidad(res);
             } catch (error) {
                 this.$q.notify({ type: "negative", message: "Error al cargar la conformidad" });
             } finally {
@@ -6554,51 +6654,101 @@ export default {
         },
 
         async subirAudio() {
-            if (!this.audioFile) {
-                this.$q.notify({ type: "warning", message: "Seleccione un archivo PDF" });
-                return;
-            }
-
-            if (!this.fechaInscripcion) {
-                this.$q.notify({ type: "warning", message: "Ingrese la fecha de inscripción" });
-                return;
-            }
-
-            if (this.tieneConformidadRegistrada) {
-                this.$q.notify({ type: "warning", message: "Solo se permite una conformidad registrada" });
-                return;
-            }
-
-            if (!this.esArchivoPdf(this.audioFile)) {
-                this.$q.notify({ type: "negative", message: "Solo se permiten archivos PDF" });
-                return;
-            }
-
-            this.loadingAudios = true;
+            if (!this.puedeSubirConformidad) return;
+            this.procesandoConformidad = true;
+            let etapa = 'consulta';
             try {
-                const formData = new FormData();
-                formData.append("audio", this.audioFile);
-                formData.append("idAnexoCabecera", this.audioRow.idAnexoCabecera);
-
-                await subirAudio(this.$axios, formData);
-
-                await guardarConformidadNna(this.$axios, this.audioRow.idAnexoCabecera, this.fechaInscripcion);
-
-                this.$q.notify({ type: "positive", message: "Conformidad registrada correctamente" });
-
+                await this.actualizarConformidadDesdeBackend();
+                if (!this.esFichaRegistrada(this.audioRow)) {
+                    this.$q.notify({ type: 'warning', message: this.esFichaCerrada(this.audioRow)
+                        ? 'La ficha ya está CERRADA'
+                        : 'Solo se puede completar la conformidad de una ficha REGISTRADA' });
+                    return;
+                }
+                if (!this.fechaInscripcion) {
+                    this.$q.notify({ type: 'warning', message: 'Ingrese la fecha de ingreso' });
+                    return;
+                }
+                const idAnexoCabecera = this.audioRow.idAnexoCabecera;
+                if (!this.tieneConformidadRegistrada) {
+                    if (!this.audioFile || !this.esArchivoPdf(this.audioFile)) {
+                        this.$q.notify({ type: 'warning', message: 'Seleccione un archivo PDF' });
+                        return;
+                    }
+                    etapa = 'documento';
+                    const formData = new FormData();
+                    formData.append('audio', this.audioFile);
+                    formData.append('idAnexoCabecera', idAnexoCabecera);
+                    await subirAudio(this.$axios, formData);
+                    // Confirmar la carga antes de continuar o permitir un reintento.
+                    await this.actualizarConformidadDesdeBackend();
+                    if (!this.tieneConformidadRegistrada) throw new Error('No se confirmó el documento');
+                }
+                if (!this.esFichaRegistrada(this.audioRow)) {
+                    this.$q.notify({ type: 'info', message: 'El estado de la ficha cambió; se actualizaron sus datos' });
+                    return;
+                }
+                etapa = 'fecha';
+                if (this.obtenerFechaIngresoISO(this.audioRow) !== this.fechaInscripcion) {
+                    await guardarConformidadNna(this.$axios, idAnexoCabecera, this.fechaInscripcion);
+                    await this.actualizarConformidadDesdeBackend();
+                    if (this.obtenerFechaIngresoISO(this.audioRow) !== this.fechaInscripcion) {
+                        throw new Error('No se confirmó la fecha de ingreso');
+                    }
+                }
+                if (!this.esFichaRegistrada(this.audioRow)) {
+                    this.$q.notify({ type: 'info', message: 'El estado de la ficha cambió; se actualizaron sus datos' });
+                    return;
+                }
+                if (!this.tieneConformidadRegistrada) {
+                    etapa = 'documento';
+                    throw new Error('La ficha ya no tiene un documento de conformidad');
+                }
+                etapa = 'estado';
+                await guardarConformidadFicha(this.$axios, idAnexoCabecera, FICHA_ESTADOS.CERRADO);
+                etapa = 'actualizacion';
+                await this.actualizarConformidadDesdeBackend();
+                if (!this.esFichaCerrada(this.audioRow)) throw new Error('No se confirmó el estado CERRADO');
                 this.audioFile = null;
-                this.fechaInscripcion = null;
-                await this.cargarAudios();
-                await this.cargarTablaAnexos();
+                this.$q.notify({ type: 'positive', message: 'Conformidad completada correctamente. Ficha CERRADA.' });
             } catch (error) {
-                await this.cargarAudios();
-                this.$q.notify({ type: "negative", message: "Error al guardar la conformidad" });
+                let recuperado = false;
+                try {
+                    await this.actualizarConformidadDesdeBackend();
+                    recuperado = true;
+                } catch (consultaError) {
+                    this.conformidadConsultaPendiente = true;
+                }
+                const pendientes = {
+                    consulta: 'No se pudieron consultar los datos actuales de la ficha.',
+                    documento: this.tieneConformidadRegistrada
+                        ? 'El documento está guardado; falta completar la fecha de ingreso y el cierre.'
+                        : 'No se pudo confirmar la carga del documento.',
+                    fecha: recuperado && this.obtenerFechaIngresoISO(this.audioRow) === this.fechaInscripcion
+                        ? 'El documento y la fecha están guardados; falta confirmar el estado CERRADO.'
+                        : 'El documento se conserva; no se pudo confirmar la fecha de ingreso.',
+                    estado: 'El documento y la fecha se conservan; no se pudo confirmar el estado CERRADO.',
+                    actualizacion: 'No se pudo confirmar el resultado del cierre.'
+                };
+                const mensaje = recuperado && this.esFichaCerrada(this.audioRow)
+                    ? 'La consulta confirma que la ficha está CERRADA.'
+                    : pendientes[etapa];
+                this.$q.notify({
+                    type: recuperado && this.esFichaCerrada(this.audioRow) ? 'info' : 'negative',
+                    message: `${mensaje}${recuperado ? '' : ' Pulse Actualizar datos antes de reintentar.'}`
+                });
             } finally {
-                this.loadingAudios = false;
+                this.procesandoConformidad = false;
             }
         },
 
         async eliminarAudio(row) {
+            if (!this.puedeModificarConformidad) {
+                if (this.esFichaCerrada(this.audioRow)) {
+                    this.$q.notify({ type: 'warning', message: 'No se puede eliminar la conformidad de una ficha CERRADA' });
+                }
+                return;
+            }
             this.$q.dialog({
                 title: "ELIMINAR CONFORMIDAD",
                 message: `¿Eliminar la conformidad <strong>${row.nombreArchivo}</strong>?`,
@@ -6620,16 +6770,22 @@ export default {
                     unelevated: true
                 }
             }).onOk(async () => {
-                this.loadingAudios = true;
+                if (!this.puedeModificarConformidad) return;
+                this.procesandoConformidad = true;
                 try {
+                    await this.actualizarConformidadDesdeBackend();
+                    if (!this.esFichaRegistrada(this.audioRow)) {
+                        this.$q.notify({ type: 'warning', message: 'Solo se puede eliminar la conformidad de una ficha REGISTRADA' });
+                        return;
+                    }
                     await eliminarAudio(this.$axios, row.idAudio);
-
+                    await this.actualizarConformidadDesdeBackend();
                     this.$q.notify({ type: "positive", message: "Conformidad eliminada correctamente" });
-                    await this.cargarAudios();
                 } catch (error) {
-                    this.$q.notify({ type: "negative", message: "Error al eliminar la conformidad" });
+                    this.conformidadConsultaPendiente = true;
+                    this.$q.notify({ type: "negative", message: "No se pudo confirmar la eliminación. Pulse Actualizar datos antes de reintentar." });
                 } finally {
-                    this.loadingAudios = false;
+                    this.procesandoConformidad = false;
                 }
             });
         },
@@ -6676,6 +6832,7 @@ export default {
             this.audiosList = [];
             this.audioFile = null;
             this.fechaInscripcion = null;
+            this.conformidadConsultaPendiente = false;
         },
 
         async cargarResponsables() {
@@ -7171,7 +7328,7 @@ export default {
         },
 
         async validarPersonal(item) {
-            if (this.esFichaSuscrita(this.fichaAValidar)) return;
+            if (this.tieneRegistroFinalizado(this.fichaAValidar)) return;
             if (!item.contrasena) {
                 this.$q.notify({ type: "warning", message: "Ingrese la contraseña" });
                 return;
@@ -7211,7 +7368,7 @@ export default {
         },
 
         async darConformidad() {
-            if (this.esFichaSuscrita(this.fichaAValidar)) return;
+            if (!this.puedeEditar(this.fichaAValidar) || this.validandoConformidad) return;
             if (!this.todosValidados) {
                 this.$q.notify({ type: "warning", message: "Faltan personal por validar" });
                 return;
@@ -7220,9 +7377,12 @@ export default {
             this.validandoConformidad = true;
 
             try {
-                await guardarConformidadFicha(this.$axios, this.fichaAValidar.idAnexoCabecera);
+                const cabecera = await this.obtenerCabeceraActual(this.fichaAValidar.idAnexoCabecera);
+                this.fichaAValidar = cabecera;
+                if (!this.puedeEditar(cabecera)) return;
+                await guardarConformidadFicha(this.$axios, cabecera.idAnexoCabecera, FICHA_ESTADOS.REGISTRADO);
 
-                this.$q.notify({ type: "positive", message: "Ficha validada con conformidad" });
+                this.$q.notify({ type: "positive", message: "Ficha REGISTRADA correctamente" });
                 this.dialogValidarFicha = false;
                 this.cargarTablaAnexos();
 
@@ -7389,11 +7549,20 @@ export default {
             return Array.isArray(this.audiosList) && this.audiosList.length > 0;
         },
 
+        conformidadOcupada() {
+            return this.loadingAudios || this.procesandoConformidad || this.generandoCompromiso;
+        },
+
+        puedeModificarConformidad() {
+            return this.esFichaRegistrada(this.audioRow)
+                && !this.conformidadOcupada
+                && !this.conformidadConsultaPendiente;
+        },
+
         puedeSubirConformidad() {
-            return !!this.audioFile
+            return this.puedeModificarConformidad
                 && !!this.fechaInscripcion
-                && !this.loadingAudios
-                && !this.tieneConformidadRegistrada;
+                && (this.tieneConformidadRegistrada || !!this.audioFile);
         },
 
         fichaFooterFloatingStyle() {

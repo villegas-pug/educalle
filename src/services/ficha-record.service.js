@@ -23,8 +23,8 @@ export function crearFicha(http, payload) {
     return http.post(`${process.env.API_URL}/createAnexoCompleto`, payload);
 }
 
-export function guardarConformidadFicha(http, idAnexoCabecera) {
-    return http.patch(`${process.env.API_URL}/saveConformidadAnexoCabecera?idAnexoCabecera=${idAnexoCabecera}&estado=2`);
+export function guardarConformidadFicha(http, idAnexoCabecera, estado = 2) {
+    return http.patch(`${process.env.API_URL}/saveConformidadAnexoCabecera?idAnexoCabecera=${idAnexoCabecera}&estado=${estado}`);
 }
 
 export function descargarFichaPdf(http, idAnexoCabecera, correlativo) {

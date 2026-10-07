@@ -66,7 +66,7 @@
                                 </q-item>
                                 <q-item v-if="mostrarAccion('conformidad')" clickable v-close-popup @click="$emit('conformidad', scope.row)" class="menu-accion-item menu-accion-item--audio">
                                     <q-item-section avatar><q-avatar icon="description" color="secondary" text-color="white" /></q-item-section>
-                                    <q-item-section class="menu-accion-label">Agregar conformidad</q-item-section>
+                                    <q-item-section class="menu-accion-label">{{ etiquetaConformidad(scope.row) }}</q-item-section>
                                 </q-item>
                                 <q-item v-if="mostrarAccion('validar')" v-show="false" :clickable="puedeValidar(scope.row)" v-close-popup @click="puedeValidar(scope.row) && $emit('validar', scope.row)" class="menu-accion-item menu-accion-item--validar" :class="{ 'text-grey-6': !puedeValidar(scope.row) }">
                                     <q-item-section avatar><q-avatar icon="verified" :color="puedeValidar(scope.row) ? 'positive' : 'grey'" text-color="white" /></q-item-section>
@@ -83,6 +83,8 @@
 </template>
 
 <script>
+import { FICHA_ESTADOS } from 'src/modules/nna/ficha-status';
+
 export default {
     name: 'FichaTable',
     props: {
@@ -102,6 +104,9 @@ export default {
         }
     },
     methods: {
+        etiquetaConformidad(row) {
+            return Number(row.estado) === FICHA_ESTADOS.CERRADO ? 'Ver conformidad' : 'Gestionar conformidad';
+        },
         mostrarAccion(accion) {
             return this.acciones[accion] !== false;
         }
