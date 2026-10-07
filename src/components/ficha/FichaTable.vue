@@ -105,7 +105,7 @@ export default {
     },
     methods: {
         etiquetaConformidad(row) {
-            return Number(row.estado) === FICHA_ESTADOS.CERRADO ? 'Ver conformidad' : 'Gestionar conformidad';
+            return Number(row.estado) === FICHA_ESTADOS.SUSCRITO ? 'Ver conformidad' : 'Gestionar conformidad';
         },
         mostrarAccion(accion) {
             return this.acciones[accion] !== false;

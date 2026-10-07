@@ -1189,8 +1189,8 @@
                             </div>
                         </div>
 
-                        <div v-if="esFichaCerrada(audioRow)" class="audio-replacing-banner text-caption q-mb-sm">
-                            Ficha CERRADA. La conformidad y la fecha de ingreso no se pueden modificar.
+                        <div v-if="esFichaSuscrita(audioRow)" class="audio-replacing-banner text-caption q-mb-sm">
+                            Ficha SUSCRITA. La conformidad y la fecha de ingreso no se pueden modificar.
                         </div>
                         <div v-else-if="esFichaRegistrada(audioRow) && tieneConformidadRegistrada" class="audio-replacing-banner text-caption q-mb-sm">
                             El documento ya está guardado. Complete la conformidad para confirmar la fecha de ingreso y cerrar la ficha.
@@ -4167,11 +4167,11 @@ export default {
         esFichaRegistrada(row) {
             return !!row && Number(row.estado) === FICHA_ESTADOS.REGISTRADO;
         },
-        esFichaCerrada(row) {
-            return !!row && Number(row.estado) === FICHA_ESTADOS.CERRADO;
+        esFichaSuscrita(row) {
+            return !!row && Number(row.estado) === FICHA_ESTADOS.SUSCRITO;
         },
         tieneRegistroFinalizado(row) {
-            return this.esFichaRegistrada(row) || this.esFichaCerrada(row);
+            return this.esFichaRegistrada(row) || this.esFichaSuscrita(row);
         },
         formatearFechaHoraValidacion(fecha = new Date()) {
             const pad = n => String(n).padStart(2, "0");
@@ -6581,7 +6581,7 @@ export default {
             const audios = this.obtenerDocumentosConformidad(documentos);
             this.audioRow = { ...cabecera };
             this.audiosList = audios;
-            if (!this.fechaInscripcion || this.esFichaCerrada(cabecera)) {
+            if (!this.fechaInscripcion || this.esFichaSuscrita(cabecera)) {
                 this.fechaInscripcion = this.obtenerFechaIngresoISO(cabecera);
             }
             this.conformidadConsultaPendiente = false;
@@ -6660,8 +6660,8 @@ export default {
             try {
                 await this.actualizarConformidadDesdeBackend();
                 if (!this.esFichaRegistrada(this.audioRow)) {
-                    this.$q.notify({ type: 'warning', message: this.esFichaCerrada(this.audioRow)
-                        ? 'La ficha ya está CERRADA'
+                    this.$q.notify({ type: 'warning', message: this.esFichaSuscrita(this.audioRow)
+                        ? 'La ficha ya está SUSCRITA'
                         : 'Solo se puede completar la conformidad de una ficha REGISTRADA' });
                     return;
                 }
@@ -6705,12 +6705,12 @@ export default {
                     throw new Error('La ficha ya no tiene un documento de conformidad');
                 }
                 etapa = 'estado';
-                await guardarConformidadFicha(this.$axios, idAnexoCabecera, FICHA_ESTADOS.CERRADO);
+                await guardarConformidadFicha(this.$axios, idAnexoCabecera, FICHA_ESTADOS.SUSCRITO);
                 etapa = 'actualizacion';
                 await this.actualizarConformidadDesdeBackend();
-                if (!this.esFichaCerrada(this.audioRow)) throw new Error('No se confirmó el estado CERRADO');
+                if (!this.esFichaSuscrita(this.audioRow)) throw new Error('No se confirmó el estado SUSCRITO');
                 this.audioFile = null;
-                this.$q.notify({ type: 'positive', message: 'Conformidad completada correctamente. Ficha CERRADA.' });
+                this.$q.notify({ type: 'positive', message: 'Conformidad completada correctamente. Ficha SUSCRITA.' });
             } catch (error) {
                 let recuperado = false;
                 try {
@@ -6725,16 +6725,16 @@ export default {
                         ? 'El documento está guardado; falta completar la fecha de ingreso y el cierre.'
                         : 'No se pudo confirmar la carga del documento.',
                     fecha: recuperado && this.obtenerFechaIngresoISO(this.audioRow) === this.fechaInscripcion
-                        ? 'El documento y la fecha están guardados; falta confirmar el estado CERRADO.'
+                        ? 'El documento y la fecha están guardados; falta confirmar el estado SUSCRITO.'
                         : 'El documento se conserva; no se pudo confirmar la fecha de ingreso.',
-                    estado: 'El documento y la fecha se conservan; no se pudo confirmar el estado CERRADO.',
+                    estado: 'El documento y la fecha se conservan; no se pudo confirmar el estado SUSCRITO.',
                     actualizacion: 'No se pudo confirmar el resultado del cierre.'
                 };
-                const mensaje = recuperado && this.esFichaCerrada(this.audioRow)
-                    ? 'La consulta confirma que la ficha está CERRADA.'
+                const mensaje = recuperado && this.esFichaSuscrita(this.audioRow)
+                    ? 'La consulta confirma que la ficha está SUSCRITA.'
                     : pendientes[etapa];
                 this.$q.notify({
-                    type: recuperado && this.esFichaCerrada(this.audioRow) ? 'info' : 'negative',
+                    type: recuperado && this.esFichaSuscrita(this.audioRow) ? 'info' : 'negative',
                     message: `${mensaje}${recuperado ? '' : ' Pulse Actualizar datos antes de reintentar.'}`
                 });
             } finally {
@@ -6744,8 +6744,8 @@ export default {
 
         async eliminarAudio(row) {
             if (!this.puedeModificarConformidad) {
-                if (this.esFichaCerrada(this.audioRow)) {
-                    this.$q.notify({ type: 'warning', message: 'No se puede eliminar la conformidad de una ficha CERRADA' });
+                if (this.esFichaSuscrita(this.audioRow)) {
+                    this.$q.notify({ type: 'warning', message: 'No se puede eliminar la conformidad de una ficha SUSCRITA' });
                 }
                 return;
             }
