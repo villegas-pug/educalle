@@ -64,7 +64,7 @@
                                     <q-item-section avatar><q-avatar icon="visibility" color="primary" text-color="white" /></q-item-section>
                                     <q-item-section class="menu-accion-label">Ver Ficha</q-item-section>
                                 </q-item>
-                                <q-item v-if="mostrarAccion('conformidad')" clickable v-close-popup @click="$emit('conformidad', scope.row)" class="menu-accion-item menu-accion-item--audio">
+                                <q-item v-if="mostrarConformidad(scope.row)" clickable v-close-popup @click="$emit('conformidad', scope.row)" class="menu-accion-item menu-accion-item--audio">
                                     <q-item-section avatar><q-avatar icon="description" color="secondary" text-color="white" /></q-item-section>
                                     <q-item-section class="menu-accion-label">{{ etiquetaConformidad(scope.row) }}</q-item-section>
                                 </q-item>
@@ -104,6 +104,9 @@ export default {
         }
     },
     methods: {
+        mostrarConformidad(row) {
+            return this.mostrarAccion('conformidad') && Number(row.estado) !== FICHA_ESTADOS.EN_REGISTRO;
+        },
         etiquetaConformidad(row) {
             return Number(row.estado) === FICHA_ESTADOS.SUSCRITO ? 'Ver conformidad' : 'Gestionar conformidad';
         },

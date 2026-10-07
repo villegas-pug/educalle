@@ -14,6 +14,7 @@ El flujo aprobado es EN REGISTRO (1) → REGISTRADO (2) → SUSCRITO (3). Usuari
 - Dar conformidad permanece oculto, utiliza estado 2 y no permite retroceder desde 3. Anulación conserva su comportamiento y estado 0.
 - Colores Quasar: 1 `amber-2` / `amber-10`; 2 `light-blue-2` / `light-blue-10`; 3 `green-2` / `green-10`. Se comparten las etiquetas de estado para presentación y ordenamiento.
 - El estado 3 se denomina SUSCRITO en tablas y SUSCRITA al referirse a una ficha. Sus identificadores son `FICHA_ESTADOS.SUSCRITO` y `esFichaSuscrita`; este cambio de denominación conserva valor numérico, icono, permisos, recuperación y endpoints.
+- La acción `conformidad` no se renderiza para estado 1 (numérico o cadena). En estado 2 muestra Gestionar conformidad y en estado 3 Ver conformidad, siempre que la configuración habilite la acción. Las demás acciones conservan su comportamiento.
 
 ## Recovery
 
@@ -28,6 +29,7 @@ El flujo aprobado es EN REGISTRO (1) → REGISTRADO (2) → SUSCRITO (3). Usuari
 
 - El estado 3 aparece como SUSCRITO / SUSCRITA en etiquetas y mensajes, mantiene el verde y no conserva referencias a los identificadores anteriores.
 - Estado 1 admite edición; estados 2 y 3 no, incluso cuando el backend devuelve cadenas.
+- Estado 1 o "1" oculta Gestionar conformidad. Estados 2 y 3 conservan su acción; `conformidad: false` la oculta en todos los estados.
 - Validación o persistencia fallida bloquea la transición 1 → 2.
 - Documento y fecha preceden al envío de estado 3; no se envía 3 si falta alguna etapa.
 - Fallos de carga, fecha, estado o consulta conservan lo persistido y permiten recuperación sin duplicar el PDF ni retroceder estados.

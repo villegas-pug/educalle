@@ -13,6 +13,7 @@ const routes = [
             {path: '/inicio', component: () => import('pages/Principal.vue')},
             {path: '/registro-nna', name: 'registro-nna', component: () => import('pages/RegistroNna.vue')},
             {path: '/usuario-nna', name: 'usuario-nna', component: () => import('pages/UsuarioNna.vue')},
+            {path: '/espacios-intervencion', name: 'espacios-intervencion', component: () => import('pages/EspaciosIntervencion.vue')},
 
             //REPORTES
             {path: '/asistencia-economica', component: () => import('pages/reportes/ReporteAsistenciaEconomica.vue')},
