@@ -4,6 +4,7 @@
             <q-card-section class="bg-header-dialog row items-center no-wrap">
                 <div class="text-subtitle1 text-weight-bold">{{ titulo }}</div>
                 <q-space />
+                <q-badge v-if="modo === 'editar' && numeroRegistro" color="primary" class="q-mr-sm">N° {{ numeroRegistro }}</q-badge>
                 <q-btn flat round dense icon="close" aria-label="Cerrar formulario" :disable="guardando" @click="cerrar" />
             </q-card-section>
 
@@ -93,6 +94,7 @@ export default {
         value: { type: Boolean, default: false },
         registro: { type: Object, default: null },
         modo: { type: String, default: 'nuevo' },
+        numeroRegistro: { type: String, default: '' },
         catalogo: { type: Object, required: true }
     },
     data() {

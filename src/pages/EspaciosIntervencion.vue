@@ -9,7 +9,7 @@
             {{ errorListado }}. Puede reintentar con Actualizar.
         </q-banner>
         <q-table
-            class="tabla-cabecera-fija" :data="filas" :columns="columnas"
+            class="tabla-cabecera-fija espacios-tabla" :data="filas" :columns="columnas"
             row-key="idEspInterv" :filter="busqueda" :pagination.sync="paginacion"
             :rows-per-page-options="[10, 20, 50, 0]" :loading="cargando"
             table-header-class="bg-inabif text-bold" dense flat bordered
@@ -27,12 +27,12 @@
                 <q-td :props="props">
                     <q-btn-dropdown dropdown-icon="settings" dense :disable="ocupado" :aria-label="'Acciones de ' + props.row.espNombre">
                         <q-list class="espacios-menu-acciones">
-                            <q-item clickable v-close-popup :disable="ocupado" class="espacios-menu-accion" @click="abrirDetalle(props.row.idEspInterv, 'editar')">
-                                <q-item-section avatar><q-avatar icon="edit" size="32px" font-size="24px" color="warning" text-color="white" /></q-item-section>
+                            <q-item clickable v-close-popup :disable="ocupado" class="espacios-menu-accion" @click="abrirDetalle(props.row.idEspInterv, 'editar', correlativo(props.pageIndex))">
+                                <q-item-section avatar><q-avatar icon="edit" size="32px" font-size="16px" color="warning" text-color="white" /></q-item-section>
                                 <q-item-section class="espacios-menu-label">Editar espacio</q-item-section>
                             </q-item>
                             <q-item clickable v-close-popup :disable="ocupado" class="espacios-menu-accion" @click="abrirDetalle(props.row.idEspInterv, 'ver')">
-                                <q-item-section avatar><q-avatar icon="visibility" size="32px" font-size="24px" color="primary" text-color="white" /></q-item-section>
+                                <q-item-section avatar><q-avatar icon="visibility" size="32px" font-size="16px" color="primary" text-color="white" /></q-item-section>
                                 <q-item-section class="espacios-menu-label">Ver espacio</q-item-section>
                             </q-item>
                         </q-list>
@@ -41,8 +41,9 @@
             </template>
         </q-table>
         <espacio-intervencion-form-dialog
-            v-if="dialogoAbierto" v-model="dialogoAbierto" :registro="registro"
-            :modo="modoFormulario" :catalogo="catalogo" @guardado="trasGuardar"
+            v-if="dialogoAbierto" :value="dialogoAbierto" :registro="registro"
+            :modo="modoFormulario" :catalogo="catalogo" :numero-registro="numeroRegistro"
+            @input="actualizarDialogo" @guardado="trasGuardar"
         />
     </q-page>
 </template>
@@ -62,7 +63,7 @@ export default {
         return {
             catalogo: crearCatalogoEspaciosUbigeo(this.$axios),
             filas: [], busqueda: '',
-            paginacion: { sortBy: 'espNombre', descending: false, page: 1, rowsPerPage: 10 },
+            paginacion: { sortBy: 'espNombre', descending: false, page: 1, rowsPerPage: 20 },
             columnas: [
                 { name: 'correlativo', label: 'N°', field: () => '', align: 'center' },
                 { name: 'espNombre', label: 'NOMBRE', field: 'espNombre', align: 'left', sortable: true },
@@ -73,7 +74,7 @@ export default {
                 { name: 'acciones', label: 'ACCIONES', field: () => '', align: 'center', style: 'width: 80px; min-width: 80px; max-width: 80px;' }
             ],
             cargando: false, consultando: false, dialogoAbierto: false,
-            modoFormulario: 'nuevo', registro: null,
+            modoFormulario: 'nuevo', registro: null, numeroRegistro: '',
             errorListado: '',
             revisionCarga: 0, destruido: false
         };
@@ -117,17 +118,24 @@ export default {
         crear() {
             if (this.ocupado) return;
             this.registro = null;
+            this.numeroRegistro = '';
             this.modoFormulario = 'nuevo';
             this.dialogoAbierto = true;
         },
-        async abrirDetalle(idEspInterv, modo) {
+        actualizarDialogo(value) {
+            this.dialogoAbierto = value;
+            if (!value) this.numeroRegistro = '';
+        },
+        async abrirDetalle(idEspInterv, modo, numeroRegistro = '') {
             if (this.ocupado) return;
             this.consultando = true;
+            this.numeroRegistro = '';
             try {
                 const registro = await obtenerEspacioIntervencion(this.$axios, idEspInterv);
                 if (this.destruido) return;
                 this.registro = registro;
                 this.modoFormulario = modo;
+                this.numeroRegistro = modo === 'editar' ? numeroRegistro : '';
                 this.dialogoAbierto = true;
             } catch (error) {
                 if (!this.destruido) this.$q.notify({ type: 'negative', message: describirErrorEspacio(error).message });
@@ -136,7 +144,7 @@ export default {
             }
         },
         async trasGuardar() {
-            this.dialogoAbierto = false;
+            this.actualizarDialogo(false);
             this.registro = null;
             this.$q.notify({ type: 'positive', message: 'Espacio de intervención guardado correctamente' });
             const actualizado = await this.cargarListado();
@@ -149,6 +157,12 @@ export default {
 </script>
 
 <style scoped>
+.espacios-tabla {
+    height: calc(100vh - 230px);
+    min-height: 320px;
+    max-height: none;
+}
+
 .espacios-accion-principal {
     min-width: 0;
 }
