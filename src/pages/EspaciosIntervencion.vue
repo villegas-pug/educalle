@@ -1,6 +1,6 @@
 <template>
     <q-page class="q-pa-md">
-        <h1 class="text-h6 q-mt-none">Gestión de espacios de intervención</h1>
+        <h1 class="text-h6 text-weight-bold text-center q-mt-none">GESTIÓN DE ESPACIOS DE INTERVENCIÓN</h1>
         <div class="row justify-end q-gutter-sm q-mb-md">
             <q-btn label="Nuevo espacio" icon="add" :disable="ocupado" @click="crear" />
             <q-btn label="Actualizar" icon="refresh" :loading="cargando" :disable="ocupado" @click="actualizar" />
@@ -12,6 +12,7 @@
             class="tabla-cabecera-fija" :data="filas" :columns="columnas"
             row-key="idEspInterv" :filter="busqueda" :pagination.sync="paginacion"
             :rows-per-page-options="[10, 20, 50, 0]" :loading="cargando"
+            table-header-class="bg-inabif text-bold" dense flat bordered
             no-data-label="No hay espacios de intervención" no-results-label="No hay coincidencias"
         >
             <template v-slot:top-right>
@@ -24,12 +25,18 @@
             </template>
             <template v-slot:body-cell-acciones="props">
                 <q-td :props="props">
-                    <q-btn flat round dense icon="visibility" aria-label="Ver espacio" :disable="ocupado" @click="abrirDetalle(props.row.idEspInterv, 'ver')">
-                        <q-tooltip>Ver</q-tooltip>
-                    </q-btn>
-                    <q-btn flat round dense icon="edit" aria-label="Editar espacio" :disable="ocupado" @click="abrirDetalle(props.row.idEspInterv, 'editar')">
-                        <q-tooltip>Editar</q-tooltip>
-                    </q-btn>
+                    <q-btn-dropdown dropdown-icon="settings" dense :disable="ocupado" :aria-label="'Acciones de ' + props.row.espNombre">
+                        <q-list class="espacios-menu-acciones">
+                            <q-item clickable v-close-popup :disable="ocupado" class="espacios-menu-accion" @click="abrirDetalle(props.row.idEspInterv, 'editar')">
+                                <q-item-section avatar><q-avatar icon="edit" color="warning" text-color="white" /></q-item-section>
+                                <q-item-section class="espacios-menu-label">Editar espacio</q-item-section>
+                            </q-item>
+                            <q-item clickable v-close-popup :disable="ocupado" class="espacios-menu-accion" @click="abrirDetalle(props.row.idEspInterv, 'ver')">
+                                <q-item-section avatar><q-avatar icon="visibility" color="primary" text-color="white" /></q-item-section>
+                                <q-item-section class="espacios-menu-label">Ver espacio</q-item-section>
+                            </q-item>
+                        </q-list>
+                    </q-btn-dropdown>
                 </q-td>
             </template>
         </q-table>
@@ -58,12 +65,12 @@ export default {
             paginacion: { sortBy: 'espNombre', descending: false, page: 1, rowsPerPage: 10 },
             columnas: [
                 { name: 'correlativo', label: 'N°', field: () => '', align: 'center' },
-                { name: 'espNombre', label: 'Nombre', field: 'espNombre', align: 'left', sortable: true },
-                { name: 'departamento', label: 'Departamento', field: 'departamento', format: formatearNombreGeografico, align: 'left', sortable: true },
-                { name: 'provincia', label: 'Provincia', field: 'provincia', format: formatearNombreGeografico, align: 'left', sortable: true },
-                { name: 'distrito', label: 'Distrito', field: 'distrito', format: formatearNombreGeografico, align: 'left', sortable: true },
-                { name: 'espNombreResponsable', label: 'Responsable', field: 'espNombreResponsable', format: value => value || '—', align: 'left', sortable: true },
-                { name: 'acciones', label: 'Acciones', field: () => '', align: 'center' }
+                { name: 'espNombre', label: 'NOMBRE', field: 'espNombre', align: 'left', sortable: true },
+                { name: 'departamento', label: 'DEPARTAMENTO', field: 'departamento', format: formatearNombreGeografico, align: 'left', sortable: true },
+                { name: 'provincia', label: 'PROVINCIA', field: 'provincia', format: formatearNombreGeografico, align: 'left', sortable: true },
+                { name: 'distrito', label: 'DISTRITO', field: 'distrito', format: formatearNombreGeografico, align: 'left', sortable: true },
+                { name: 'espNombreResponsable', label: 'RESPONSABLE', field: 'espNombreResponsable', format: value => value || '—', align: 'left', sortable: true },
+                { name: 'acciones', label: 'ACCIONES', field: () => '', align: 'center', style: 'width: 80px; min-width: 80px; max-width: 80px;' }
             ],
             cargando: false, consultando: false, dialogoAbierto: false,
             modoFormulario: 'nuevo', registro: null,
@@ -140,3 +147,51 @@ export default {
     }
 };
 </script>
+
+<style scoped>
+.espacios-menu-acciones {
+    min-width: 220px;
+    max-width: 280px;
+    border: 1px solid #e6edf5;
+    border-radius: 10px;
+    box-shadow: 0 8px 18px rgba(15, 35, 60, 0.18);
+    overflow: hidden;
+    background: #fff;
+}
+
+.espacios-menu-accion {
+    min-height: 48px;
+    padding: 6px 10px;
+    align-items: center;
+    transition: background-color 0.18s ease;
+}
+
+.espacios-menu-accion:hover {
+    background: #f4f8ff;
+}
+
+.espacios-menu-accion >>> .q-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 16px !important;
+}
+
+.espacios-menu-label {
+    min-width: 0;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    color: #1f2d3d;
+}
+
+@media (max-width: 599px) {
+    .espacios-menu-acciones {
+        min-width: 196px;
+        max-width: 92vw;
+    }
+
+    .espacios-menu-accion {
+        min-height: 44px;
+        padding: 6px 8px;
+    }
+}
+</style>

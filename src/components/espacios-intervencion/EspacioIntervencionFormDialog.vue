@@ -27,7 +27,7 @@
                             <q-input
                                 v-model="form.espNombre"
                                 label="Nombre del espacio de intervención *"
-                                outlined dense maxlength="150" bottom-slots
+                                outlined dense maxlength="150" bottom-slots hide-bottom-space
                                 :readonly="soloLectura" :disable="guardando"
                                 :error="!!errores.espNombre" :error-message="errores.espNombre"
                                 @input="limpiarError('espNombre')"
@@ -37,7 +37,7 @@
                             <q-select
                                 :value="departamento" :options="departamentos"
                                 option-label="nombre" option-value="idUbigeo"
-                                label="Departamento *" outlined dense clearable bottom-slots
+                                label="Departamento *" outlined dense clearable bottom-slots hide-bottom-space
                                 :readonly="soloLectura" :disable="guardando || hidratando"
                                 :loading="hidratando"
                                 :error="!!errores.espUbigeo" :error-message="errores.espUbigeo"
@@ -48,7 +48,7 @@
                             <q-select
                                 :value="provincia" :options="provincias"
                                 option-label="nombre" option-value="idUbigeo"
-                                label="Provincia *" outlined dense clearable bottom-slots
+                                label="Provincia *" outlined dense clearable bottom-slots hide-bottom-space
                                 :readonly="soloLectura" :disable="guardando || hidratando || !departamento || cargandoProvincias"
                                 :loading="cargandoProvincias"
                                 @input="cambiarProvincia"
@@ -58,7 +58,7 @@
                             <q-select
                                 :value="distrito" :options="distritos"
                                 option-label="nombre" option-value="idUbigeo"
-                                label="Distrito *" outlined dense clearable bottom-slots
+                                label="Distrito *" outlined dense clearable bottom-slots hide-bottom-space
                                 :readonly="soloLectura" :disable="guardando || hidratando || !provincia || cargandoDistritos"
                                 :loading="cargandoDistritos"
                                 @input="cambiarDistrito"
@@ -67,7 +67,7 @@
                         <div class="col-12">
                             <q-input
                                 v-model="form.espNombreResponsable"
-                                label="Responsable" outlined dense maxlength="200" bottom-slots
+                                label="Responsable" outlined dense maxlength="200" bottom-slots hide-bottom-space
                                 :readonly="soloLectura" :disable="guardando"
                                 :error="!!errores.espNombreResponsable" :error-message="errores.espNombreResponsable"
                                 @input="limpiarError('espNombreResponsable')"
@@ -263,5 +263,9 @@ export default {
 .espacio-form-dialog {
     width: 760px;
     max-width: 95vw;
+}
+
+.espacio-form-dialog >>> .q-field {
+    border: 0;
 }
 </style>
