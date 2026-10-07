@@ -2,8 +2,8 @@
     <q-page class="q-pa-md">
         <h1 class="text-h6 text-weight-bold text-center q-mt-none">GESTIÓN DE ESPACIOS DE INTERVENCIÓN</h1>
         <div class="row justify-end q-gutter-sm q-mb-md">
-            <q-btn label="Nuevo espacio" icon="add" :disable="ocupado" @click="crear" />
-            <q-btn label="Actualizar" icon="refresh" :loading="cargando" :disable="ocupado" @click="actualizar" />
+            <q-btn label="Nuevo espacio" icon="add" size="sm" class="btn-inabif espacios-accion-principal" :disable="ocupado" @click="crear" />
+            <q-btn label="Actualizar" icon="refresh" size="sm" class="btn-seccion-acciones espacios-accion-principal" color="grey-5" text-color="white" :loading="cargando" :disable="ocupado" @click="actualizar" />
         </div>
         <q-banner v-if="errorListado" class="bg-red-1 text-negative q-mb-md" dense>
             {{ errorListado }}. Puede reintentar con Actualizar.
@@ -28,11 +28,11 @@
                     <q-btn-dropdown dropdown-icon="settings" dense :disable="ocupado" :aria-label="'Acciones de ' + props.row.espNombre">
                         <q-list class="espacios-menu-acciones">
                             <q-item clickable v-close-popup :disable="ocupado" class="espacios-menu-accion" @click="abrirDetalle(props.row.idEspInterv, 'editar')">
-                                <q-item-section avatar><q-avatar icon="edit" color="warning" text-color="white" /></q-item-section>
+                                <q-item-section avatar><q-avatar icon="edit" size="32px" font-size="24px" color="warning" text-color="white" /></q-item-section>
                                 <q-item-section class="espacios-menu-label">Editar espacio</q-item-section>
                             </q-item>
                             <q-item clickable v-close-popup :disable="ocupado" class="espacios-menu-accion" @click="abrirDetalle(props.row.idEspInterv, 'ver')">
-                                <q-item-section avatar><q-avatar icon="visibility" color="primary" text-color="white" /></q-item-section>
+                                <q-item-section avatar><q-avatar icon="visibility" size="32px" font-size="24px" color="primary" text-color="white" /></q-item-section>
                                 <q-item-section class="espacios-menu-label">Ver espacio</q-item-section>
                             </q-item>
                         </q-list>
@@ -149,6 +149,10 @@ export default {
 </script>
 
 <style scoped>
+.espacios-accion-principal {
+    min-width: 0;
+}
+
 .espacios-menu-acciones {
     min-width: 220px;
     max-width: 280px;
@@ -173,7 +177,6 @@ export default {
 .espacios-menu-accion >>> .q-avatar {
     width: 32px;
     height: 32px;
-    font-size: 16px !important;
 }
 
 .espacios-menu-label {

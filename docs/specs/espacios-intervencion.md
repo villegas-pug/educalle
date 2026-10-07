@@ -9,8 +9,10 @@ Nueva pantalla `#/espacios-intervencion`, titulada GESTIÓN DE ESPACIOS DE INTER
 - Columnas: N°, NOMBRE, DEPARTAMENTO, PROVINCIA, DISTRITO, RESPONSABLE y ACCIONES. No mostrar ID, ubigeo ni estado como columnas.
 - Tabla dense, flat y bordered, con cabecera bg-inabif text-bold como Usuario NNA. Mantener búsqueda y ordenamiento locales.
 - Acciones mediante un único q-btn-dropdown con engranaje settings: Editar espacio y Ver espacio, con iconos edit y visibility, avatares warning y primary y cierre del menú al seleccionar. Consultar el detalle con idEspInterv antes de abrir el modal correspondiente. Deshabilitar el menú mientras se carga, consulta o mantiene abierto el formulario; no incorporar otras acciones ni dependencias del editor de fichas.
+- Los avatares de Editar y Ver usan size="32px" y font-size="24px": círculos de 32 × 32 px e iconos de 24 px centrados, sin la reducción local font-size: 16px que Quasar divide entre dos para el contenido. Conservar colores, etiquetas y dimensiones de las opciones.
 - Numerar desde 1 según el orden visual después del filtrado y ordenamiento, continuando entre páginas. Mostrar el correlativo con un mínimo de cinco dígitos y ceros a la izquierda (00001, 00002, …, 00010); no truncar secuencias mayores. El correlativo no es una clave ni se persiste; conservar `idEspInterv` como row-key y para las llamadas HTTP.
 - Búsqueda y paginación locales; botones Nuevo espacio y Actualizar.
+- Botones de cabecera compactos size="sm", alineados a la derecha con q-gutter-sm y min-width: 0 local, usando como referencia FichaPrimaryActions de Registro NNA. Nuevo espacio utiliza btn-inabif e icono add; Actualizar utiliza btn-seccion-acciones, grey-5, texto blanco e icono refresh. Conservar etiquetas, eventos, carga y condiciones de deshabilitado; no modificar estilos globales.
 - El backend devuelve `idEspInterv`, `idServicio`, `espNombre`, `espUbigeo`, `espNombreResponsable`, `idUnidadOrganicaPadre`, `idServicioPadre`, `espEstado`, además de `departamento`, `provincia` y `distrito` como nombres opcionales de lectura (string o null) en listado y detalle.
 - Filtrar por servicio padre 5 y utilizar directamente los nombres geográficos recibidos, conservando los valores originales. Compartir un formato de celda para mostrar `-` cuando un nombre sea vacío, null o esté ausente. No resolver nombres mediante catálogos ni mostrar un warning general por nombres ausentes.
 - Cargar y recargar la tabla consulta únicamente el listado. Actualizar limpia la caché geográfica y recarga el listado; los catálogos renovados se consultan al abrir el siguiente formulario. Conservar el aviso de errores HTTP del listado y su reintento.
@@ -52,6 +54,7 @@ Todas las rutas son relativas a API_URL. Escrituras en JSON, sin FormData. No im
 
 - La ruta abre la pantalla con el título aprobado; menú provisto por SRH.
 - Título centrado y encabezados en mayúsculas; tabla y engranaje siguen la referencia Usuario NNA. Seleccionar Editar / Ver cierra el menú y abre el modal correcto usando el ID real.
+- Iconos de Editar y Ver de 24 px centrados dentro de avatares de 32 px. Nuevo espacio y Actualizar adoptan el tamaño compacto de Registro NNA, con Nuevo institucional y Actualizar gris, conservando apertura, recarga y bloqueos.
 - Campos sin cajas inferiores vacías; mensajes de validación visibles cuando corresponde y eliminados al corregir. Conservar consulta de solo lectura y bloqueo durante guardado.
 - Solo servicio padre 5 puede listarse o abrirse para consultar / editar.
 - La columna N° muestra 00001–00010 y 00011–00020 entre páginas; sus correlativos se recomputan tras buscar u ordenar y no se envían a la API.
