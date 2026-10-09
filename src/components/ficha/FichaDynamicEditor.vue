@@ -171,7 +171,7 @@
                                                         <div class="ficha-input" :class="{ 'modo-visualizacion': esVisualizacion }">
                                                             <template v-if="esPreguntaBranchedInputSearch(pregunta)">
                                                                 <template v-if="esVisualizacion">
-                                                                    <span class="ficha-valor">{{ obtenerValorDisparadorBranched(pregunta) || '—' }}</span>
+                                                                    <span class="ficha-valor">{{ obtenerValorDisparadorBranchedVisible(pregunta) || '—' }}</span>
                                                                 </template>
                                                                 <q-input
                                                                     v-else
@@ -184,6 +184,7 @@
                                                                     :rules="validarPregunta(pregunta)"
                                                                     :error="tieneErrorLongitudPregunta(pregunta)"
                                                                     :error-message="getMensajeErrorLongitudPregunta(pregunta)"
+                                                                    input-style="text-transform: uppercase;"
                                                                     @input="val => actualizarValorDisparadorBranched(pregunta, val)"
                                                                 >
                                                                     <template v-slot:append>
@@ -203,7 +204,7 @@
 
                                                             <template v-else-if="pregunta.tipoControl === 'select'">
                                                                 <template v-if="esVisualizacion">
-                                                                    <span class="ficha-valor">{{ pregunta.respuesta || '—' }}</span>
+                                                                    <span class="ficha-valor">{{ obtenerTextoVisiblePregunta(pregunta) || '—' }}</span>
                                                                 </template>
                                                                 <q-select
                                                                     v-else
@@ -222,7 +223,7 @@
                                                                     <template v-slot:selected-item="scope">
                                                                         <div class="row items-center no-wrap">
                                                                             <img v-if="getOptionImage(pregunta, scope.opt)" :src="getOptionImage(pregunta, scope.opt)" class="select-option-img q-mr-sm" />
-                                                                            <span>{{ scope.opt.label }}</span>
+                                                                            <span>{{ obtenerEtiquetaMayuscula(scope.opt.label) }}</span>
                                                                         </div>
                                                                     </template>
                                                                     <template v-slot:option="scope">
@@ -231,7 +232,7 @@
                                                                                 <img :src="getOptionImage(pregunta, scope.opt)" class="select-option-img" />
                                                                             </q-item-section>
                                                                             <q-item-section>
-                                                                                <q-item-label>{{ scope.opt.label }}</q-item-label>
+                                                                                <q-item-label>{{ obtenerEtiquetaMayuscula(scope.opt.label) }}</q-item-label>
                                                                             </q-item-section>
                                                                         </q-item>
                                                                     </template>
@@ -241,7 +242,7 @@
                                                             <template v-else-if="pregunta.tipoControl === 'selectM'">
                                                                 <template v-if="esVisualizacion && pregunta.respuesta && pregunta.respuesta.length">
                                                                     <div class="ficha-tags">
-                                                                        <span v-for="item in pregunta.respuesta" :key="item" class="ficha-tag">{{ item }}</span>
+                                                                        <span v-for="(item, itemIndex) in obtenerEtiquetasRespuestaPregunta(pregunta)" :key="`${pregunta.idPregunta}-selectm-${itemIndex}-${item}`" class="ficha-tag">{{ item }}</span>
                                                                     </div>
                                                                 </template>
                                                                 <span v-else-if="esVisualizacion" class="ficha-valor">—</span>
@@ -262,7 +263,7 @@
                                                                     <template v-slot:selected-item="scope">
                                                                         <q-chip removable @remove="scope.removeAtIndex(scope.index)" :tabindex="scope.tabindex" class="q-ma-none">
                                                                             <img v-if="getOptionImage(pregunta, scope.opt)" :src="getOptionImage(pregunta, scope.opt)" class="select-option-img q-mr-xs" />
-                                                                            {{ scope.opt.label }}
+                                                                            {{ obtenerEtiquetaMayuscula(scope.opt.label) }}
                                                                         </q-chip>
                                                                     </template>
                                                                     <template v-slot:option="scope">
@@ -271,7 +272,7 @@
                                                                                 <img :src="getOptionImage(pregunta, scope.opt)" class="select-option-img" />
                                                                             </q-item-section>
                                                                             <q-item-section>
-                                                                                <q-item-label>{{ scope.opt.label }}</q-item-label>
+                                                                                <q-item-label>{{ obtenerEtiquetaMayuscula(scope.opt.label) }}</q-item-label>
                                                                             </q-item-section>
                                                                         </q-item>
                                                                     </template>
@@ -280,7 +281,7 @@
 
                                                             <template v-else-if="pregunta.tipoControl === 'radio'">
                                                                 <template v-if="esVisualizacion">
-                                                                    <span class="ficha-valor">{{ pregunta.respuesta || '—' }}</span>
+                                                                    <span class="ficha-valor">{{ obtenerTextoVisiblePregunta(pregunta) || '—' }}</span>
                                                                 </template>
                                                                 <q-option-group
                                                                     v-else
@@ -587,7 +588,7 @@
                                                             </div>
                                                             <div class="ficha-input" :class="{ 'modo-visualizacion': esVisualizacion }">
                                                                 <template v-if="esVisualizacion">
-                                                                    <span class="ficha-valor">{{ rama.value || '—' }}</span>
+                                                                    <span class="ficha-valor">{{ obtenerEtiquetaMayuscula(rama.value) || '—' }}</span>
                                                                 </template>
                                                                 <q-input
                                                                     v-else
@@ -612,7 +613,7 @@
                                                         </div>
                                                         <div class="ficha-input" :class="{ 'modo-visualizacion': esVisualizacion }">
                                                             <template v-if="esVisualizacion">
-                                                                <span class="ficha-valor">{{ pregunta.respuesta2 || '—' }}</span>
+                                                                <span class="ficha-valor">{{ obtenerTextoVisibleRespuesta2(pregunta) || '—' }}</span>
                                                             </template>
                                                             <template v-else>
                                                                 <q-input
@@ -621,7 +622,7 @@
                                                                     dense
                                                                     :value="pregunta.respuesta2"
                                                                     :style="getPregunta2ControlStyle(pregunta)"
-                                                                    @input="val => $set(pregunta, 'respuesta2', pregunta.tipoDato2 === 'NUMBER' ? normalizarNumeroNoNegativo(val) : val)"
+                                                                    @input="val => actualizarRespuesta2Pregunta(pregunta, val)"
                                                                     :type="pregunta.tipoDato2 === 'NUMBER' ? 'number' : 'textarea'"
                                                                     :min="pregunta.tipoDato2 === 'NUMBER' ? 0 : null"
                                                                     :autogrow="pregunta.tipoDato2 !== 'NUMBER'"
@@ -4502,6 +4503,9 @@ export default {
         normalizarTextoComparacion(value) {
             return questionEngine.normalizeComparisonText(value);
         },
+        obtenerEtiquetaMayuscula(value) {
+            return value === null || value === undefined ? '' : String(value).toUpperCase();
+        },
         getRefValue(refName) {
             const ref = this.normalizarTextoComparacion(refName);
             const centroNombre = this.form.nombreCentro || this.centroSeleccionado?.nombreUnidad || '';
@@ -4613,7 +4617,7 @@ export default {
             if (existe) return options;
 
             options.push({
-                label: value,
+                label: this.obtenerEtiquetaMayuscula(value),
                 value
             });
 
@@ -4748,6 +4752,13 @@ export default {
                 valorTexto = valorTexto.replace(/[^0-9A-Za-zÁÉÍÓÚáéíóúÑñÜü]/g, '');
             }
 
+            const tipo = String(pregunta?.tipoControl || '').toLowerCase();
+            if (!this.esPreguntaBranchedInputSearch(pregunta)
+                && !this.usaTipoNumero(pregunta)
+                && ['text', 'textarea', 'inputsearch'].includes(tipo)) {
+                valorTexto = valorTexto.toUpperCase();
+            }
+
             const rango = this.getRangoLongitudPregunta(pregunta);
             if (rango && rango.max !== null) {
                 valorTexto = valorTexto.slice(0, rango.max);
@@ -4861,7 +4872,10 @@ export default {
         },
         async prepararPreguntaDinamica(pregunta) {
             if (this.esPreguntaRedirected(pregunta) && (this.modo === 'nuevo' || pregunta._redirectSync === true)) {
-                pregunta.respuesta = this.getRefValue(pregunta._redirectRef);
+                pregunta.respuesta = this.normalizarRespuestaPregunta(
+                    pregunta,
+                    this.getRefValue(pregunta._redirectRef)
+                );
             }
 
             if (this.esPreguntaSelectHttpSimple(pregunta)) {
@@ -5857,6 +5871,9 @@ export default {
         obtenerValorDisparadorBranched(pregunta) {
             return pregunta?._branchedTriggerValue || '';
         },
+        obtenerValorDisparadorBranchedVisible(pregunta) {
+            return this.obtenerEtiquetaMayuscula(this.obtenerValorDisparadorBranched(pregunta));
+        },
         actualizarRamificacionTexto(pregunta, index, value) {
             if (!pregunta._ramificaciones[index]) return;
             this.$set(
@@ -5900,6 +5917,18 @@ export default {
             if (this.esPreguntaBranchedInputSearch(pregunta)) return this.obtenerValorDisparadorBranched(pregunta);
             return pregunta?.respuesta === null || pregunta?.respuesta === undefined ? '' : pregunta.respuesta;
         },
+        obtenerEtiquetasRespuestaPregunta(pregunta) {
+            if (!pregunta || pregunta.respuesta === null || pregunta.respuesta === undefined) return [];
+            const values = Array.isArray(pregunta.respuesta)
+                ? pregunta.respuesta
+                : String(pregunta.respuesta).split('|');
+            const options = Array.isArray(pregunta.opciones) ? pregunta.opciones : [];
+
+            return values.map(value => {
+                const option = options.find(item => this.normalizarTextoComparacion(item.value) === this.normalizarTextoComparacion(value));
+                return this.obtenerEtiquetaMayuscula(option?.label ?? value).trim();
+            }).filter(Boolean);
+        },
         obtenerEdadPregunta(pregunta) {
             return this.evaluarEdadPregunta(pregunta).age;
         },
@@ -5919,17 +5948,13 @@ export default {
                 : '';
         },
         obtenerTextoVisiblePregunta(pregunta) {
-            if (!pregunta || pregunta.respuesta === null || pregunta.respuesta === undefined) return '';
-
-            const valores = Array.isArray(pregunta.respuesta)
-                ? pregunta.respuesta
-                : String(pregunta.respuesta).split('|');
-            const opciones = Array.isArray(pregunta.opciones) ? pregunta.opciones : [];
-
-            return valores.map(valor => {
-                const opcion = opciones.find(item => this.normalizarTextoComparacion(item.value) === this.normalizarTextoComparacion(valor));
-                return opcion?.label ?? valor;
-            }).map(valor => String(valor).trim()).filter(Boolean).join('|');
+            return this.obtenerEtiquetasRespuestaPregunta(pregunta).join('|');
+        },
+        obtenerTextoVisibleRespuesta2(pregunta) {
+            if (!pregunta || pregunta.respuesta2 === null || pregunta.respuesta2 === undefined) return '';
+            const option = (Array.isArray(pregunta.opciones2) ? pregunta.opciones2 : [])
+                .find(item => this.normalizarTextoComparacion(item.value) === this.normalizarTextoComparacion(pregunta.respuesta2));
+            return this.obtenerEtiquetaMayuscula(option?.label ?? pregunta.respuesta2).trim();
         },
         coincidenValoresDefaultBifurcaciones(origen, opcion) {
             const valorOrigen = this.normalizarTextoComparacion(origen);
@@ -6049,6 +6074,15 @@ export default {
         actualizarRespuestaPregunta(pregunta, value) {
             this.$set(pregunta, 'respuesta', value);
         },
+        actualizarRespuesta2Pregunta(pregunta, value) {
+            const esTextoLibre = String(pregunta?.tipoControl2 || '').toLowerCase() === 'text'
+                && String(pregunta?.tipoDato2 || '').toUpperCase() !== 'NUMBER';
+            const esNumerica = String(pregunta?.tipoDato2 || '').toUpperCase() === 'NUMBER';
+            const respuesta = esNumerica
+                ? this.normalizarNumeroNoNegativo(value)
+                : esTextoLibre ? this.obtenerEtiquetaMayuscula(value) : value;
+            this.$set(pregunta, 'respuesta2', respuesta);
+        },
         actualizarRespuestaTextoPregunta(pregunta, value) {
             const valorTexto = this.sanitizarValorTextoPregunta(pregunta, value);
             const valorNormalizado = valorTexto === '' ? (this.usaTipoNumero(pregunta) ? null : '') : valorTexto;
@@ -6091,11 +6125,11 @@ export default {
             if (!/^\d*$/.test(pegado)) event.preventDefault();
         },
         actualizarDraftTextM(pregunta, value) {
-            this.$set(pregunta, '_textMDraft', value);
+            this.$set(pregunta, '_textMDraft', this.obtenerEtiquetaMayuscula(value));
         },
         agregarItemTextM(pregunta) {
             if (this.esCampoSoloLectura(pregunta)) return;
-            const valor = String(pregunta._textMDraft || '').trim();
+            const valor = this.obtenerEtiquetaMayuscula(pregunta._textMDraft || '').trim();
             if (!valor) return;
             const errorLongitud = this.getMensajeErrorLongitudTextM(pregunta, valor);
             if (errorLongitud) {
@@ -6278,7 +6312,7 @@ export default {
                     const label = this.resolverPropiedadCaseInsensitive(item, labelField);
                     if (label === undefined || label === null || label === '') return null;
                     return {
-                        label: String(label),
+                        label: this.obtenerEtiquetaMayuscula(label),
                         value: String(label),
                         raw: item
                     };

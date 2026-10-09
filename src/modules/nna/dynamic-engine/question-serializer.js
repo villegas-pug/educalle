@@ -1,6 +1,17 @@
 import { isBranchedInputSearch, isBranchedSelects } from './question-rules';
 import { normalizeComparisonText } from './question-normalizer';
 
+function normalizeFreeText(value) {
+    return value === null || value === undefined ? '' : String(value).toUpperCase();
+}
+
+function normalizeTextItems(rawAnswer) {
+    const values = Array.isArray(rawAnswer)
+        ? rawAnswer
+        : !rawAnswer ? [] : String(rawAnswer).split('|').map(item => item.trim()).filter(Boolean);
+    return values.map(normalizeFreeText);
+}
+
 function normalizeNumberMItems(rawAnswer) {
     const values = Array.isArray(rawAnswer) ? rawAnswer : !rawAnswer ? [] : String(rawAnswer).split('|');
     const seen = new Set();
@@ -21,29 +32,38 @@ export function normalizeBranchedDerivedValue(value) {
 
 export function normalizeAnswer(question, rawAnswer) {
     if (isBranchedInputSearch(question) || isBranchedSelects(question)) return rawAnswer || null;
-    switch (question.tipoControl) {
+    const type = String(question?.tipoControl || '').toLowerCase();
+    const isNumericText = String(question?.tipoDato1 || '').toUpperCase() === 'NUMBER';
+    switch (type) {
         case 'label': return rawAnswer || '';
-        case 'text': case 'date': case 'dateInputs': case 'number': case 'textarea': case 'inputSearch': return rawAnswer || '';
+        case 'text': case 'textarea': case 'inputsearch':
+            return rawAnswer ? (isNumericText ? rawAnswer : normalizeFreeText(rawAnswer)) : '';
+        case 'date': case 'dateinputs': case 'number': return rawAnswer || '';
         case 'age': {
             const age = Number(rawAnswer);
             return Number.isFinite(age) ? age : null;
         }
-        case 'textM': return Array.isArray(rawAnswer) ? rawAnswer : !rawAnswer ? [] : String(rawAnswer).split('|').map(item => item.trim()).filter(Boolean);
-        case 'numberM': return normalizeNumberMItems(rawAnswer);
-        case 'timeRangeM': return Array.isArray(rawAnswer) ? rawAnswer : !rawAnswer ? [] : String(rawAnswer).split('|').map(item => item.trim()).filter(Boolean);
+        case 'textm': return normalizeTextItems(rawAnswer);
+        case 'numberm': return normalizeNumberMItems(rawAnswer);
         case 'radio': case 'select':
             if (rawAnswer === null || rawAnswer === undefined || rawAnswer === '') return null;
             return !Array.isArray(question.opciones) || question.opciones.length === 0 ? rawAnswer
                 : question.opciones.find(option => normalizeComparisonText(option.value) === normalizeComparisonText(rawAnswer))?.value || rawAnswer;
-        case 'selectM': return Array.isArray(rawAnswer) ? rawAnswer : !rawAnswer ? [] : String(rawAnswer).split('|').map(item => item.trim()).filter(Boolean);
+        case 'selectm': return Array.isArray(rawAnswer) ? rawAnswer : !rawAnswer ? [] : String(rawAnswer).split('|').map(item => item.trim()).filter(Boolean);
+        case 'timerangem': return Array.isArray(rawAnswer) ? rawAnswer : !rawAnswer ? [] : String(rawAnswer).split('|').map(item => item.trim()).filter(Boolean);
         default: return rawAnswer || null;
     }
 }
 
 export function initializeQuestion2Answer(question, answer) {
-    if (answer !== undefined && answer !== null) return answer;
-    if (question.tipoControl2 === 'text') return '';
-    return question.tipoControl2 === 'selectM' ? [] : null;
+    if (answer !== undefined && answer !== null) {
+        return String(question?.tipoControl2 || '').toLowerCase() === 'text'
+            && String(question?.tipoDato2 || '').toUpperCase() !== 'NUMBER'
+            ? normalizeFreeText(answer)
+            : answer;
+    }
+    if (String(question?.tipoControl2 || '').toLowerCase() === 'text') return '';
+    return String(question?.tipoControl2 || '').toLowerCase() === 'selectm' ? [] : null;
 }
 
 export function hydrateDateInputs(question) {
@@ -73,7 +93,17 @@ export function serializeAnswer(question) {
         return parts.length ? parts.join('|') : null;
     }
     const type = String(question?.tipoControl || '').toLowerCase();
-    if (['textm', 'numberm', 'timerangem'].includes(type)) return Array.isArray(question.respuesta) && question.respuesta.length ? question.respuesta.join('|') : null;
+    if (type === 'text' || type === 'textarea' || type === 'inputsearch') {
+        const isNumericText = String(question?.tipoDato1 || '').toUpperCase() === 'NUMBER';
+        return question.respuesta
+            ? (isNumericText ? question.respuesta : normalizeFreeText(question.respuesta))
+            : question.respuesta ?? null;
+    }
+    if (type === 'textm') {
+        const items = Array.isArray(question.respuesta) ? question.respuesta.map(normalizeFreeText) : [];
+        return items.length ? items.join('|') : null;
+    }
+    if (['numberm', 'timerangem'].includes(type)) return Array.isArray(question.respuesta) && question.respuesta.length ? question.respuesta.join('|') : null;
     if (type === 'dateinputs') {
         const day = String(question._dateInputsDayDraft || '').trim();
         const month = String(question._dateInputsMonthDraft || '').trim();
@@ -81,13 +111,23 @@ export function serializeAnswer(question) {
         return day && month && year ? `${day}/${month}/${year}` : null;
     }
     if (Array.isArray(question.respuesta)) return question.respuesta.includes('OTRO') || question.respuesta.includes('OTROS')
-        ? question.respuesta.map(answer => answer === 'OTRO' || answer === 'OTROS' ? question.otroTexto || answer : answer).join('|')
+        ? question.respuesta.map(answer => answer === 'OTRO' || answer === 'OTROS'
+            ? normalizeFreeText(question.otroTexto || answer)
+            : answer).join('|')
         : question.respuesta.join('|');
-    return question.respuesta === 'OTRO' || question.respuesta === 'OTROS' ? question.otroTexto || question.respuesta : question.respuesta ?? null;
+    return question.respuesta === 'OTRO' || question.respuesta === 'OTROS'
+        ? normalizeFreeText(question.otroTexto || question.respuesta)
+        : question.respuesta ?? null;
 }
 
 export function serializeAnswer2(question) {
-    return question.respuesta2 === 'OTRO' || question.respuesta2 === 'OTROS'
-        ? question.otroTexto2 || question.respuesta2
+    const isFreeText = String(question?.tipoControl2 || '').toLowerCase() === 'text'
+        && String(question?.tipoDato2 || '').toUpperCase() !== 'NUMBER';
+    if (question.respuesta2 === 'OTRO' || question.respuesta2 === 'OTROS') {
+        const value = question.otroTexto2 || question.respuesta2;
+        return normalizeFreeText(value);
+    }
+    return isFreeText && question.respuesta2 !== null && question.respuesta2 !== undefined
+        ? normalizeFreeText(question.respuesta2)
         : question.respuesta2 ?? null;
 }

@@ -44,7 +44,7 @@ export function parseOptions(options) {
             if (item === null || item === undefined) return null;
             if (typeof item !== 'object') {
                 const value = String(item).trim();
-                return value ? { label: value, value } : null;
+                return value ? { label: value.toUpperCase(), value } : null;
             }
             const label = getCaseInsensitiveProperty(item, 'label')
                 || getCaseInsensitiveProperty(item, 't')
@@ -53,13 +53,13 @@ export function parseOptions(options) {
                 || getCaseInsensitiveProperty(item, 'nombre');
             const value = getCaseInsensitiveProperty(item, 'value') ?? label;
             return label !== undefined && label !== null && String(label).trim()
-                ? { label: String(label).trim(), value: value !== undefined && value !== null ? value : String(label).trim(), raw: item }
+                ? { label: String(label).trim().toUpperCase(), value: value !== undefined && value !== null ? value : String(label).trim(), raw: item }
                 : null;
         }).filter(Boolean);
     }
     if (typeof options !== 'string') return [];
     return options.split('|').map(option => option.trim()).filter(Boolean)
-        .map(option => ({ label: option, value: option }));
+        .map(option => ({ label: option.toUpperCase(), value: option }));
 }
 
 export function normalizeHttpParams(httpParams) {
