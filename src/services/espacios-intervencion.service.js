@@ -33,6 +33,10 @@ function crearPayload(form) {
     };
 }
 
+function normalizarIdentificador(value) {
+    return value === null || value === undefined ? '' : String(value).trim();
+}
+
 export function describirErrorEspacio(error) {
     const body = error?.response?.data;
     const fields = body?.data || error?.fields;
@@ -123,33 +127,84 @@ export function crearCatalogoEspaciosUbigeo(http) {
     const obtenerProvincias = idUbigeo => consultar(`provincias:${idUbigeo}`, '/findAllProvinciasPorDepartamento', { idUbigeo });
     const obtenerDistritos = idUbigeo => consultar(`distritos:${idUbigeo}`, '/findAllDistritosPorProvincia', { idUbigeo });
 
-    async function resolverUbigeo(value) {
-        const ubigeo = String(value || '');
+    async function resolverUbigeo(registroOUbigeo) {
+        const registro = registroOUbigeo && typeof registroOUbigeo === 'object' && !Array.isArray(registroOUbigeo)
+            ? registroOUbigeo
+            : { espUbigeo: registroOUbigeo };
+        const ubigeo = String(registro.espUbigeo || '');
+        const ids = {
+            departamento: normalizarIdentificador(registro.idDepartamento),
+            provincia: normalizarIdentificador(registro.idProvincia),
+            distrito: normalizarIdentificador(registro.idDistrito)
+        };
+        const usaIdsBackend = !!(ids.departamento || ids.provincia || ids.distrito);
         const result = {
             departamento: null, provincia: null, distrito: null, error: '',
             departamentos: [], provincias: [], distritos: []
         };
-        if (!/^\d{6}$/.test(ubigeo)) {
+        if (!usaIdsBackend && !/^\d{6}$/.test(ubigeo)) {
             result.error = 'El ubigeo guardado no es un código válido de seis dígitos';
             return result;
         }
         const departamentos = await obtenerDepartamentos();
         result.departamentos = departamentos;
-        result.departamento = departamentos.find(item => item.idDepartamento === ubigeo.slice(0, 2)) || null;
+        if (usaIdsBackend) {
+            if (!ids.departamento) {
+                result.error = 'El detalle no incluye el identificador del departamento';
+                return result;
+            }
+            result.departamento = departamentos.find(item =>
+                normalizarIdentificador(item.idDepartamento) === ids.departamento
+            ) || null;
+            if (!result.departamento) {
+                result.error = 'El departamento guardado no se encuentra en el catálogo';
+                return result;
+            }
+            const provincias = await obtenerProvincias(result.departamento.idUbigeo);
+            result.provincias = provincias;
+            if (!ids.provincia) {
+                result.error = 'El detalle no incluye el identificador de la provincia';
+                return result;
+            }
+            result.provincia = provincias.find(item =>
+                normalizarIdentificador(item.idProvincia) === ids.provincia
+            ) || null;
+            if (!result.provincia) {
+                result.error = 'La provincia guardada no se encuentra en el catálogo';
+                return result;
+            }
+            const distritos = await obtenerDistritos(result.provincia.idUbigeo);
+            result.distritos = distritos;
+            if (!ids.distrito) {
+                result.error = 'El detalle no incluye el identificador del distrito';
+                return result;
+            }
+            result.distrito = distritos.find(item =>
+                normalizarIdentificador(item.idDistrito) === ids.distrito
+            ) || null;
+            if (!result.distrito) result.error = 'El distrito guardado no se encuentra en el catálogo';
+            return result;
+        }
+
+        result.departamento = departamentos.find(item =>
+            normalizarIdentificador(item.idDepartamento) === ubigeo.slice(0, 2)
+        ) || null;
         if (!result.departamento) {
             result.error = 'El departamento guardado no se encuentra en el catálogo';
             return result;
         }
         const provincias = await obtenerProvincias(result.departamento.idUbigeo);
         result.provincias = provincias;
-        result.provincia = provincias.find(item => item.idProvincia === ubigeo.slice(2, 4)) || null;
+        result.provincia = provincias.find(item =>
+            normalizarIdentificador(item.idProvincia) === ubigeo.slice(2, 4)
+        ) || null;
         if (!result.provincia) {
             result.error = 'La provincia guardada no se encuentra en el catálogo';
             return result;
         }
         const distritos = await obtenerDistritos(result.provincia.idUbigeo);
         result.distritos = distritos;
-        result.distrito = distritos.find(item => item.idUbigeo === ubigeo) || null;
+        result.distrito = distritos.find(item => normalizarIdentificador(item.idUbigeo) === ubigeo) || null;
         if (!result.distrito) result.error = 'El distrito guardado no se encuentra en el catálogo';
         return result;
     }

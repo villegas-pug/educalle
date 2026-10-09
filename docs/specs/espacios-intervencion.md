@@ -25,7 +25,7 @@ Nueva pantalla `#/espacios-intervencion`, titulada GESTIÓN DE ESPACIOS DE INTER
 - Nombre obligatorio, sin blancos, máximo 150 caracteres; responsable opcional, máximo 200. Recortar espacios exteriores; responsable vacío se envía como null.
 - Selección obligatoria Departamento → Provincia → Distrito. Enviar `distrito.idUbigeo` directamente como cadena de seis dígitos, preservando ceros iniciales.
 - Cambiar departamento limpia provincia y distrito; cambiar provincia limpia distrito. Ignorar respuestas obsoletas.
-- Al editar, reconstruir departamento por `idDepartamento === espUbigeo.slice(0, 2)`, provincia por `idProvincia === espUbigeo.slice(2, 4)`, distrito por `idUbigeo === espUbigeo`. Usar el idUbigeo real de la opción padre en las consultas.
+- Al consultar o editar, reconstruir la cascada usando los campos `idDepartamento`, `idProvincia` e `idDistrito` del detalle: convertirlos a cadenas, cargar cada catálogo en orden y buscar cada opción por su identificador. Si los tres campos no vienen, conservar la hidratación heredada desde `espUbigeo`; si viene solo una parte o algún identificador no existe, conservar los niveles encontrados e informar la ubicación incompleta sin inferir opciones por nombre. Usar el `idUbigeo` real de cada opción padre en las consultas.
 - La hidratación no dispara limpiezas de cambios manuales. Si el ubigeo guardado no existe o un catálogo falla, conservarlo para identificar la inconsistencia y exigir una selección válida antes de guardar.
 - Consultar detalle actualizado y verificar servicio padre 5 antes de Ver / Editar. Ver usa formulario de solo lectura. Servicio, unidad y estado no se editan.
 - Al seleccionar Editar, capturar el N° de la fila mediante el mismo cálculo de la columna y conservarlo durante la consulta del detalle. Pasarlo al diálogo como propiedad opcional de texto numeroRegistro, independiente del registro, y mostrar una insignia N° 00017 junto al título y antes del cierre. Limpiar al cerrar o iniciar Nuevo. Solo edición muestra la insignia; el correlativo representa la posición visual, no se persiste ni se envía a la API, que conserva idEspInterv.
@@ -39,7 +39,7 @@ Todas las rutas son relativas a API_URL. Escrituras en JSON, sin FormData. No im
 | Operación | Endpoint | Entrada / Resultado |
 |---|---|---|
 | Listar | GET /findAllEspIntervenciones | data lista; filtrar servicio padre 5 |
-| Consultar | GET /findEspIntervencionById | query idEspInterv; data objeto |
+| Consultar | GET /findEspIntervencionById | query idEspInterv; data objeto con los campos de lectura y, cuando estén disponibles, `idDepartamento`, `idProvincia` e `idDistrito` |
 | Crear | POST /createEspIntervencion | espNombre, espUbigeo, espNombreResponsable; data ID |
 | Editar | PUT /updateEspIntervencion | mismos campos más idEspInterv; data null |
 | Departamentos | GET /findAllDepartamentos | data lista idUbigeo, idDepartamento, nombre |

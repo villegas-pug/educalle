@@ -146,7 +146,7 @@ export default {
                 this.departamentos = departamentos;
                 if (!departamentos.length) this.errorCatalogo = 'No hay departamentos disponibles';
                 if (!this.registro) return;
-                const ubicacion = await this.catalogo.resolverUbigeo(this.ubicacionOriginal);
+                const ubicacion = await this.catalogo.resolverUbigeo(this.registro);
                 if (!this.revisionVigente(revision)) return;
                 this.departamento = ubicacion.departamento;
                 this.provincia = ubicacion.provincia;
