@@ -10,6 +10,7 @@ Las respuestas textuales de la ficha dinámica se muestran y capturan en mayúsc
 - Mostrar etiquetas de `select`, `selectM`, `radio` y controles equivalentes en mayúsculas. Preservar los valores, IDs y códigos originales usados por los catálogos y enviados al backend.
 - Conservar las consultas de búsqueda HTTP exactamente como las escribe el usuario y como se envían al endpoint; su texto no se normaliza como respuesta. Las respuestas obtenidas y las ramificaciones de texto editables sí usan mayúsculas.
 - Mantener sin cambios los valores y el comportamiento de números, fechas y horas.
+- En preguntas `age`, conservar el cálculo y la respuesta numérica; mostrar en mayúsculas la unidad textual `AÑOS`.
 - Mantener la lógica existente de condiciones, referencias y valores por defecto. Las comparaciones de texto del motor son insensibles a mayúsculas, espacios exteriores y acentos; las condiciones numéricas comparan valores numéricos.
 - Conservar endpoints, contratos y formatos de serialización existentes.
 

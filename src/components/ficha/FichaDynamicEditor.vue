@@ -5940,7 +5940,7 @@ export default {
         },
         obtenerTextoEdadPregunta(pregunta) {
             const edad = this.obtenerEdadPregunta(pregunta);
-            return Number.isFinite(edad) ? `${edad} años` : '';
+            return Number.isFinite(edad) ? `${edad} AÑOS` : '';
         },
         obtenerMensajeErrorEdadPregunta(pregunta) {
             return this.evaluarEdadPregunta(pregunta).reason === 'birth-after-reference'
