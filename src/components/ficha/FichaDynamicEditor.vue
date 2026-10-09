@@ -705,7 +705,7 @@
                                         </template>
                                         <template v-slot:body-cell-acciones="props">
                                             <q-td :props="props">
-                                                <q-btn label="Ver PDF" icon="picture_as_pdf" color="info" outline size="sm" no-caps @click="verPdfConformidad(props.row)" />
+                                                <q-btn label="Ver documento" icon="visibility" color="info" outline size="sm" no-caps @click="verDocumentoConformidad(props.row)" />
                                             </q-td>
                                         </template>
                                         <template v-slot:no-data>
@@ -1157,13 +1157,15 @@
                                 <q-file
                                     ref="audioFileInput"
                                     v-model="audioFile"
-                                    label="Seleccionar conformidad firmada"
+                                    label="Seleccionar conformidad firmada (PDF, JPG/JPEG o PNG)"
                                     class="audio-file-field"
                                     outlined
                                     dense
                                     clearable
-                                    accept=".pdf,application/pdf"
+                                    accept=".pdf,.jpg,.jpeg,.png"
+                                    :filter="filtrarArchivosConformidad"
                                     :disable="!puedeModificarConformidad || tieneConformidadRegistrada"
+                                    @rejected="informarArchivoConformidadRechazado"
                                 >
                                     <template v-slot:prepend>
                                         <q-icon name="attach_file" class="audio-field-icon" />
@@ -1256,16 +1258,16 @@
                                                     <q-tooltip>Descargar</q-tooltip>
                                                 </q-btn>
                                                 <q-btn
-                                                    icon="picture_as_pdf"
+                                                    icon="visibility"
                                                     :disable="conformidadOcupada"
                                                     color="info"
                                                     class="audio-action-btn audio-action-btn--edit"
                                                     flat
                                                     round
                                                     size="sm"
-                                                    @click="verPdfConformidad(props.row)"
+                                                    @click="verDocumentoConformidad(props.row)"
                                                 >
-                                                    <q-tooltip>Ver PDF</q-tooltip>
+                                                    <q-tooltip>Ver documento</q-tooltip>
                                                 </q-btn>
                                                 <q-btn
                                                     icon="delete"
@@ -6794,11 +6796,32 @@ export default {
             }
         },
 
-        esArchivoPdf(file) {
+        obtenerMimeConformidad(nombreArchivo) {
+            const extension = String(nombreArchivo || '').split('.').pop().toLowerCase();
+            const tipos = {
+                pdf: 'application/pdf',
+                jpg: 'image/jpeg',
+                jpeg: 'image/jpeg',
+                png: 'image/png'
+            };
+            return Object.prototype.hasOwnProperty.call(tipos, extension) && String(nombreArchivo).includes('.')
+                ? tipos[extension]
+                : '';
+        },
+
+        esArchivoConformidadPermitido(file) {
             if (!file) return false;
-            const nombre = String(file.name || "").toLowerCase();
-            const mime = String(file.type || "").toLowerCase();
-            return nombre.endsWith(".pdf") || mime === "application/pdf";
+            const mimeEsperado = this.obtenerMimeConformidad(file.name);
+            const mime = String(file.type || '').trim().toLowerCase();
+            return !!mimeEsperado && (!mime || mime === 'application/octet-stream' || mime === mimeEsperado);
+        },
+
+        filtrarArchivosConformidad(files) {
+            return files.filter(file => this.esArchivoConformidadPermitido(file));
+        },
+
+        informarArchivoConformidadRechazado() {
+            this.$q.notify({ type: 'warning', message: 'Solo se permiten archivos PDF, JPG/JPEG o PNG' });
         },
 
         async subirAudio() {
@@ -6819,8 +6842,8 @@ export default {
                 }
                 const idAnexoCabecera = this.audioRow.idAnexoCabecera;
                 if (!this.tieneConformidadRegistrada) {
-                    if (!this.audioFile || !this.esArchivoPdf(this.audioFile)) {
-                        this.$q.notify({ type: 'warning', message: 'Seleccione un archivo PDF' });
+                    if (!this.esArchivoConformidadPermitido(this.audioFile)) {
+                        this.informarArchivoConformidadRechazado();
                         return;
                     }
                     etapa = 'documento';
@@ -6941,17 +6964,18 @@ export default {
         async obtenerBlobConformidad(row) {
             const res = await obtenerAudioBlob(this.$axios, this.audioRow.idAnexoCabecera, row.idAudio);
 
-            return res.data;
+            return new Blob([res.data], {
+                type: this.obtenerMimeConformidad(row.nombreArchivo) || 'application/octet-stream'
+            });
         },
 
         async descargarConformidad(row) {
             try {
-                const data = await this.obtenerBlobConformidad(row);
-                const blob = new Blob([data], { type: "application/pdf" });
+                const blob = await this.obtenerBlobConformidad(row);
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.href = url;
-                link.download = row.nombreArchivo || `conformidad_${row.idAudio}.pdf`;
+                link.download = row.nombreArchivo || `conformidad_${row.idAudio}`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -6961,17 +6985,20 @@ export default {
             }
         },
 
-        async verPdfConformidad(row) {
+        async verDocumentoConformidad(row) {
+            if (!this.obtenerMimeConformidad(row.nombreArchivo)) {
+                this.$q.notify({ type: 'warning', message: 'El formato del documento no admite vista previa. Utilice Descargar.' });
+                return;
+            }
             try {
-                const data = await this.obtenerBlobConformidad(row);
-                const blob = new Blob([data], { type: "application/pdf" });
+                const blob = await this.obtenerBlobConformidad(row);
                 const url = window.URL.createObjectURL(blob);
                 window.open(url, "_blank");
                 window.setTimeout(() => {
                     window.URL.revokeObjectURL(url);
                 }, 1000);
             } catch (error) {
-                this.$q.notify({ type: "negative", message: "Error al visualizar el PDF" });
+                this.$q.notify({ type: "negative", message: "Error al visualizar la conformidad" });
             }
         },
 
@@ -7710,7 +7737,7 @@ export default {
         puedeSubirConformidad() {
             return this.puedeModificarConformidad
                 && !!this.fechaInscripcion
-                && (this.tieneConformidadRegistrada || !!this.audioFile);
+                && (this.tieneConformidadRegistrada || this.esArchivoConformidadPermitido(this.audioFile));
         },
 
         fichaFooterFloatingStyle() {
