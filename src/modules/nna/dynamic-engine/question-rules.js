@@ -184,6 +184,10 @@ export function getRedirectRef(options) {
     return getCaseInsensitiveProperty(parsed, 'ref') || getCaseInsensitiveProperty(parsed, 'REF') || null;
 }
 
+export function getRedirectSync(options) {
+    return getCaseInsensitiveProperty(parseJsonFlexible(options), 'sync') === true;
+}
+
 export function formatQuestionDateInput(value) {
     const text = String(value || '').trim();
     const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);

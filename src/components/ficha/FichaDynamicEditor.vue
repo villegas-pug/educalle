@@ -68,6 +68,9 @@
                         <q-card flat>
 
                             <q-card-section>
+                                <q-banner v-if="referenciasSyncPendientes && !loading" class="bg-red-1 text-negative q-mb-md" dense>
+                                    No se pudieron sincronizar las referencias. Cierre y vuelva a abrir la ficha antes de guardar.
+                                </q-banner>
                                 <div class="contexto-ficha">
                                     <div class="row q-col-gutter-md">
                                         <div v-for="item in fichaContexto" :key="item.label" class="col-12 col-md-4">
@@ -745,13 +748,14 @@
                                 @mousedown.prevent="iniciarArrastreFooterFicha"
                                 @touchstart.prevent="iniciarArrastreFooterFicha"
                             />
-                            <q-btn v-if="!esVisualizacion" label="Guardar" icon="save" type="submit" @click="guardarTodo" :disable="cerrandoFicha" title="Guardar" class="ficha-btn-guardar" />
+                            <q-btn v-if="!esVisualizacion" label="Guardar" icon="save" type="submit" @click="guardarTodo" :disable="cerrandoFicha || loading || referenciasSyncPendientes" title="Guardar" class="ficha-btn-guardar" />
                             <q-btn
                                 v-if="modoEdicion && puedeEditar(form)"
                                 label="Cerrar ficha"
                                 icon="fact_check"
                                 @click="iniciarCierreFicha"
                                 :loading="cerrandoFicha"
+                                :disable="loading || referenciasSyncPendientes"
                                 class="ficha-btn-cerrar"
                                 title="Cerrar ficha"
                             />
@@ -3680,6 +3684,7 @@ export default {
             dialog: false,
             dialogHttpPregunta: false,
             loading: false,
+            referenciasSyncPendientes: false,
             preguntaHttpActiva: null,
             formHttpPregunta: {},
             loadingHttpPregunta: false,
@@ -3749,6 +3754,7 @@ export default {
                 nombreAnexo: '',
                 codigoAnexo2: '',
                 fechaRegistro: null,
+                fechaIngreso: null,
                 codigoServicio: '',
                 direccion: '',
                 telefono: '',
@@ -4291,6 +4297,8 @@ export default {
         async editarRegistro(row) {
             if (!this.puedeEditar(row)) return;
             this.modo = "editar";
+            this.referenciasSyncPendientes = false;
+            this.form.fechaIngreso = this.obtenerFechaIngresoISO(row);
             this.codigoNNAFicha = row.codigoNNA ? String(row.codigoNNA).toUpperCase() : '';
             try {
                 this.validacionReseteadaEnEdicion = false;
@@ -4342,6 +4350,8 @@ export default {
 
         async verRegistro(row) {
             this.modo = "ver";
+            this.referenciasSyncPendientes = false;
+            this.form.fechaIngreso = this.obtenerFechaIngresoISO(row);
             this.form.estado = Number(row.estado);
             this.codigoNNAFicha = row.codigoNNA ? String(row.codigoNNA).toUpperCase() : '';
             try {
@@ -4496,6 +4506,7 @@ export default {
                 SERVICIONOMBRE: this.form.nombreServicio || '',
                 RESPID: responsableId,
                 RESPNOMBRE: responsableNombre,
+                FECHAINGRESO: this.obtenerFechaIngresoISO(this.form) || '',
                 GETDATE: getDate
             };
 
@@ -4824,7 +4835,7 @@ export default {
             }
         },
         async prepararPreguntaDinamica(pregunta) {
-            if (this.esPreguntaRedirected(pregunta) && this.modo === 'nuevo') {
+            if (this.esPreguntaRedirected(pregunta) && (this.modo === 'nuevo' || pregunta._redirectSync === true)) {
                 pregunta.respuesta = this.getRefValue(pregunta._redirectRef);
             }
 
@@ -4867,6 +4878,9 @@ export default {
                 this.form.distrito = data.distrito || this.form.distrito;
                 this.form.nombreServicio = data.nombreServicio;
                 this.form.fechaRegistro = data.fechaRegistro || this.form.fechaRegistro;
+                if (Object.prototype.hasOwnProperty.call(data, 'fechaIngreso')) {
+                    this.form.fechaIngreso = this.obtenerFechaIngresoISO(data);
+                }
                 this.form.audioUrl = data.audioUrl;
                 this.form.reqDirector = Number(data.reqDirector ?? this.form.reqDirector ?? 0);
                 this.form.reqObligatoriedad = Number(data.reqObligatoriedad ?? 1);
@@ -4879,11 +4893,28 @@ export default {
                 const preguntasCompletas = this.mezclarCatalogoConRespuestasPersistidas(catalogoBase, data.respuestas || []);
                 this.preguntasRaw = preguntasCompletas;
                 const secciones = this.agruparPreguntasEnSecciones(preguntasCompletas);
+                const preguntasSync = secciones.flatMap(seccion => seccion.preguntas)
+                    .filter(pregunta => this.esPreguntaRedirected(pregunta) && pregunta._redirectSync === true);
+                this.referenciasSyncPendientes = preguntasSync.length > 0;
+                if (this.referenciasSyncPendientes) this.secciones = [];
+                const requiereFechaIngreso = preguntasSync.some(pregunta =>
+                    this.normalizarTextoComparacion(pregunta._redirectRef) === 'FECHAINGRESO'
+                );
+                if (requiereFechaIngreso && !Object.prototype.hasOwnProperty.call(data, 'fechaIngreso')) {
+                    const cabecera = await this.obtenerCabeceraActual(this.form.idAnexoCabecera);
+                    this.form.fechaIngreso = this.obtenerFechaIngresoISO(cabecera);
+                }
+                this.sincronizarResponsableSesion();
                 await this.prepararSeccionesDinamicas(secciones);
                 this.secciones = secciones;
-                this.sincronizarResponsableSesion();
+                this.referenciasSyncPendientes = false;
             } catch (error) {
-                this.$q.notify({ type: 'negative', message: 'Error al cargar las respuestas' });
+                this.$q.notify({
+                    type: 'negative',
+                    message: this.referenciasSyncPendientes
+                        ? 'No se pudieron sincronizar las referencias. Cierre y vuelva a abrir la ficha.'
+                        : 'Error al cargar las respuestas'
+                });
             } finally {
                 this.loading = false;
             }
@@ -4948,6 +4979,8 @@ export default {
         ======================================== */
         abrirDialog() {
             this.modo = "nuevo";
+            this.referenciasSyncPendientes = false;
+            this.form.fechaIngreso = null;
             this.form.estado = FICHA_ESTADOS.EN_REGISTRO;
             this.seccionAbierta = null;
 
@@ -5110,9 +5143,11 @@ export default {
            RESET
         ======================================== */
         resetFormulario() {
+            this.referenciasSyncPendientes = false;
 
             this.form = {
                 estado: FICHA_ESTADOS.EN_REGISTRO,
+                fechaIngreso: null,
                 nombreServicio: "",
                 codigoServicio: "",
                 direccion: "",
@@ -5367,6 +5402,10 @@ export default {
             return true;
         },
         async persistirFicha() {
+            if (this.loading || this.referenciasSyncPendientes) {
+                this.$q.notify({ type: 'warning', message: 'Espere la carga de la ficha; si falló la sincronización, cierre y vuelva a abrirla.' });
+                return false;
+            }
             if (this.esVisualizacion || (this.modoEdicion && !this.puedeEditar(this.form))) {
                 this.$q.notify({ type: 'warning', message: 'Solo se pueden editar fichas EN REGISTRO' });
                 return false;
@@ -5569,7 +5608,7 @@ export default {
             return !!pregunta.respuesta;
         },
         async guardarTodo() {
-            if (this.cerrandoFicha) return;
+            if (this.cerrandoFicha || this.loading || this.referenciasSyncPendientes) return;
             if (!this.mostrarAvisoPendientesGuardado) {
                 await this.ejecutarGuardadoActual();
                 return;
@@ -5729,7 +5768,7 @@ export default {
             return pendientes;
         },
         iniciarCierreFicha() {
-            if (!this.modoEdicion || !this.puedeEditar(this.form) || this.cerrandoFicha) return;
+            if (!this.modoEdicion || !this.puedeEditar(this.form) || this.cerrandoFicha || this.loading || this.referenciasSyncPendientes) return;
 
             const pendientes = this.obtenerPendientesCierreFicha();
             this.pendientesCierre = pendientes;
@@ -5742,7 +5781,7 @@ export default {
             this.dialogConfirmarCierreFicha = true;
         },
         async confirmarCierreFicha() {
-            if (!this.modoEdicion || !this.puedeEditar(this.form) || this.cerrandoFicha) return;
+            if (!this.modoEdicion || !this.puedeEditar(this.form) || this.cerrandoFicha || this.loading || this.referenciasSyncPendientes) return;
             this.dialogConfirmarCierreFicha = false;
             this.cerrandoFicha = true;
             let guardadoExitoso = false;
