@@ -456,7 +456,7 @@
 
                                                             <template v-else-if="pregunta.tipoControl === 'dateInputs'">
                                                                 <template v-if="esVisualizacion">
-                                                                    <span class="ficha-valor">{{ obtenerValorTextoPregunta(pregunta) || '—' }}</span>
+                                                                    <span class="ficha-valor">{{ obtenerTextoPeriodoPregunta(pregunta) || '—' }}</span>
                                                                 </template>
                                                                 <div v-else class="ficha-date-inputs">
                                                                     <q-input
@@ -5867,6 +5867,19 @@ export default {
         },
         hidratarDateInputsDesdeRespuesta(pregunta) {
             Object.assign(pregunta, questionEngine.hydrateDateInputs(pregunta));
+        },
+        obtenerTextoPeriodoPregunta(pregunta) {
+            const respuesta = pregunta?.respuesta;
+            if (respuesta === null || respuesta === undefined) return '';
+
+            const texto = String(respuesta);
+            if (!texto.trim()) return '';
+            const partes = texto.split('/').map(parte => parte.trim());
+            if (partes.length !== 3 || partes.some(parte => !/^\d+$/.test(parte))) return texto;
+
+            const [dias, meses, anios] = partes.map(Number);
+            if (![dias, meses, anios].every(Number.isSafeInteger)) return texto;
+            return `${anios} ${anios === 1 ? 'AÑO' : 'AÑOS'}, ${meses} ${meses === 1 ? 'MES' : 'MESES'} Y ${dias} ${dias === 1 ? 'DÍA' : 'DÍAS'}`;
         },
         obtenerValorDisparadorBranched(pregunta) {
             return pregunta?._branchedTriggerValue || '';
