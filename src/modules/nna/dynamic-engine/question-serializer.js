@@ -89,8 +89,10 @@ export function serializeAnswer(question) {
         return parts.some(Boolean) ? parts.join('|') : null;
     }
     if (isBranchedSelects(question)) {
-        const parts = (question._branchedSelects || []).map(branch => branch.value).filter(value => value !== null && value !== undefined && value !== '');
-        return parts.length ? parts.join('|') : null;
+        const parts = (question._branchedSelects || []).map(branch =>
+            branch.value === null || branch.value === undefined ? '' : String(branch.value)
+        );
+        return parts.some(value => value !== '') ? parts.join('|') : null;
     }
     const type = String(question?.tipoControl || '').toLowerCase();
     if (type === 'text' || type === 'textarea' || type === 'inputsearch') {
