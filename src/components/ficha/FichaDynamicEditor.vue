@@ -7630,7 +7630,7 @@ export default {
             return [
                 { label: 'PERIODO', value: this.fichaPeriodo || this.anioSeleccionado || '' },
                 { label: 'EDUCADOR DE CALLE', value: responsableNormalizado },
-                { label: 'FECHA REGISTRO', value: this.formatearFechaIso(this.form.fechaRegistro) }
+                { label: 'Fecha Ingreso', value: this.formatearFechaIso(this.form.fechaIngreso) }
             ];
         },
         tituloModalHttpPregunta() {
