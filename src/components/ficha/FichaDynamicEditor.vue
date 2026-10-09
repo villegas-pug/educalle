@@ -3777,6 +3777,10 @@ export default {
                 reqObligatoriedad: 1
 
             },
+            responsableFicha: {
+                nombre: '',
+                id: null
+            },
             // MODELOS
             unidadSeleccionada: null,
             servicioSeleccionado: null,
@@ -4298,6 +4302,7 @@ export default {
             if (!this.puedeEditar(row)) return;
             this.modo = "editar";
             this.referenciasSyncPendientes = false;
+            this.inicializarResponsableFicha(row);
             this.form.fechaIngreso = this.obtenerFechaIngresoISO(row);
             this.codigoNNAFicha = row.codigoNNA ? String(row.codigoNNA).toUpperCase() : '';
             try {
@@ -4351,6 +4356,7 @@ export default {
         async verRegistro(row) {
             this.modo = "ver";
             this.referenciasSyncPendientes = false;
+            this.inicializarResponsableFicha(row);
             this.form.fechaIngreso = this.obtenerFechaIngresoISO(row);
             this.form.estado = Number(row.estado);
             this.codigoNNAFicha = row.codigoNNA ? String(row.codigoNNA).toUpperCase() : '';
@@ -4463,6 +4469,25 @@ export default {
             const valor = this.leerLocalStorageSesion('sgs-idUsuario');
             const numero = Number(valor);
             return Number.isFinite(numero) ? numero : null;
+        },
+        normalizarNombreResponsableFicha(value) {
+            const nombre = normalizeTextSpacing(String(value === null || value === undefined ? '' : value).trim());
+            return nombre === '-' ? '' : nombre;
+        },
+        inicializarResponsableFicha(row = {}) {
+            this.responsableFicha = {
+                nombre: this.normalizarNombreResponsableFicha(row.respSupervision)
+                    || this.normalizarNombreResponsableFicha(row.nombrePersonal),
+                id: this.normalizarIdResponsable(row.idRespSupervision)
+                    || this.normalizarIdResponsable(row.idPersonal)
+            };
+        },
+        actualizarResponsableFichaDesdeDetalle(data = {}) {
+            const nombre = this.normalizarNombreResponsableFicha(data.respSupervision);
+            const id = this.normalizarIdResponsable(data.idRespSupervision);
+
+            if (nombre) this.responsableFicha.nombre = nombre;
+            if (id !== null) this.responsableFicha.id = id;
         },
         sincronizarResponsableSesion() {
             const idPersonal = this.obtenerIdPersonalSesion();
@@ -4864,6 +4889,8 @@ export default {
                 const data = res.data?.data;
                 if (!data) return;
 
+                this.actualizarResponsableFichaDesdeDetalle(data);
+
                 if (data.estado !== undefined && data.estado !== null) {
                     this.form.estado = Number(data.estado);
                     if (this.modoEdicion && !this.puedeEditar(this.form)) this.modo = 'ver';
@@ -4980,6 +5007,7 @@ export default {
         abrirDialog() {
             this.modo = "nuevo";
             this.referenciasSyncPendientes = false;
+            this.responsableFicha = { nombre: '', id: null };
             this.form.fechaIngreso = null;
             this.form.estado = FICHA_ESTADOS.EN_REGISTRO;
             this.seccionAbierta = null;
@@ -5159,6 +5187,8 @@ export default {
                 reqDirector: 0,
                 reqSupervisados: 1
             };
+
+            this.responsableFicha = { nombre: '', id: null };
 
             this.preguntasAgrupadas = [];
 
@@ -5463,7 +5493,9 @@ export default {
                 fechaAplicacion: new Date().toISOString().split('T')[0],
                 fechaRegistro: this.form.fechaRegistro,
                 idDirector: this.form.idDirector || null,
-                idRespSupervision: this.normalizarIdResponsable(this.form.idRespSupervision),
+                idRespSupervision: this.modo === 'editar'
+                    ? this.responsableFicha.id
+                    : this.normalizarIdResponsable(this.form.idRespSupervision),
                 idSupervisado: this.buildIdSupervisadoPayload ? this.buildIdSupervisadoPayload() : '',
                 respuestas,
                 totales: {
@@ -6501,6 +6533,7 @@ export default {
             this.guardandoConPendientes = false;
             this.pendientesGuardado = [];
             this.modo = null;
+            this.responsableFicha = { nombre: '', id: null };
             this.codigoNNAFicha = '';
             this.seccionAbierta = null;
             this.modoSupervision = null;
@@ -7621,7 +7654,9 @@ export default {
             };
         },
         fichaContexto() {
-            const responsable = this.form.respSupervision || this.obtenerNombreCompletoSesion() || '';
+            const responsable = this.modo === 'nuevo'
+                ? (this.form.respSupervision || this.obtenerNombreCompletoSesion() || '')
+                : this.responsableFicha.nombre;
             const responsableNormalizado = String(responsable)
                 .replace(/\s+/g, ' ')
                 .trim()
