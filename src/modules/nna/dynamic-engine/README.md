@@ -4,6 +4,7 @@
 
 - Interpreta el catalogo/API y conserva JSON flexible heredado, respuestas separadas por pipe, labels, `dateInputs`, `age` y ramificaciones.
 - Centraliza normalizacion, condiciones, visibilidad, editabilidad, hidratacion y serializacion.
+- En ALTA y ACTUALIZAR, el adaptador limpia respuestas principales, secundarias y borradores de preguntas ocultas al cargar o cambiar respuestas, hasta estabilizar dependencias. VER conserva los datos. La visibilidad permanece pura; defaults y resultados HTTP pendientes no repueblan preguntas ocultas. ACTUALIZAR envía respuestas nulas para persistir la limpieza mediante el endpoint existente.
 - `age` usa `opciones: [{"id": idFechaReferencia}, {"id": idFechaNacimiento}]`; usa la fecha de registro si la primera no es valida y nunca activa reglas bloqueantes.
 - `date` conserva el control nativo del navegador y solo admite fechas calendario validas en formato `YYYY-MM-DD`.
 - Los selects HTTP dependientes aceptan `defaultValueBifurcaciones: [{"tipo":"ref","id":4276,"t":"Departamento domicilio"}]`. Una regla `ref` busca la respuesta visible de la pregunta origen por contenido en ambos sentidos y precarga la rama indicada.

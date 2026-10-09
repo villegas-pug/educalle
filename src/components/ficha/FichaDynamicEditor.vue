@@ -4303,6 +4303,7 @@ export default {
 
         async editarRegistro(row) {
             if (!this.puedeEditar(row)) return;
+            this.secciones = [];
             this.modo = "editar";
             this.referenciasSyncPendientes = false;
             this.inicializarResponsableFicha(row);
@@ -4357,6 +4358,7 @@ export default {
         },
 
         async verRegistro(row) {
+            this.secciones = [];
             this.modo = "ver";
             this.referenciasSyncPendientes = false;
             this.inicializarResponsableFicha(row);
@@ -4960,6 +4962,7 @@ export default {
                 });
             } finally {
                 this.loading = false;
+                this.limpiarRespuestasOcultas();
             }
         },
         async cargarTablaAnexos() {
@@ -5021,6 +5024,7 @@ export default {
            ABRIR DIALOG
         ======================================== */
         abrirDialog() {
+            this.secciones = [];
             this.modo = "nuevo";
             this.referenciasSyncPendientes = false;
             this.responsableFicha = { nombre: '', id: null };
@@ -5291,6 +5295,7 @@ export default {
                 });
             } finally {
                 this.loading = false;
+                this.limpiarRespuestasOcultas();
             }
         },
 
@@ -5465,6 +5470,7 @@ export default {
                     return false;
                 }
             }
+            this.limpiarRespuestasOcultas();
             const reglaInvalida = this.obtenerReglasBloqueantesInvalidas()[0];
             if (reglaInvalida) {
                 this.alertasReglasCanceladas = false;
@@ -5483,16 +5489,16 @@ export default {
                 return false;
             }
 
-            this.limpiarRespuestasOcultas();
             this.sincronizarResponsableSesion();
 
             const respuestas = this.secciones.flatMap(seccion =>
                 seccion.preguntas
-                    .filter(p => this.mostrarPregunta(p))
+                    .filter(p => this.modo === 'editar' || this.esPreguntaVisibleSinEfectos(p))
                     .map(p => ({
                         idPregunta: p.idPregunta,
-                        respuesta: this.serializarRespuestaPregunta(p),
-                        respuesta2: questionEngine.serializeAnswer2(p),
+                        respuesta: this.esPreguntaVisibleSinEfectos(p) ? this.serializarRespuestaPregunta(p) : null,
+                        respuesta2: this.esPreguntaVisibleSinEfectos(p) && this.esPregunta2VisibleSinEfectos(p)
+                            ? questionEngine.serializeAnswer2(p) : null,
                         observacion: null,
                         puntaje: null
                     }))
@@ -5656,6 +5662,7 @@ export default {
             return !!pregunta.respuesta;
         },
         async guardarTodo() {
+            this.limpiarRespuestasOcultas();
             if (this.cerrandoFicha || this.loading || this.referenciasSyncPendientes) return;
             if (!this.mostrarAvisoPendientesGuardado) {
                 await this.ejecutarGuardadoActual();
@@ -5817,6 +5824,7 @@ export default {
         },
         iniciarCierreFicha() {
             if (!this.modoEdicion || !this.puedeEditar(this.form) || this.cerrandoFicha || this.loading || this.referenciasSyncPendientes) return;
+            this.limpiarRespuestasOcultas();
 
             const pendientes = this.obtenerPendientesCierreFicha();
             this.pendientesCierre = pendientes;
@@ -5978,13 +5986,16 @@ export default {
                 && (valorOrigen.includes(valorOpcion) || valorOpcion.includes(valorOrigen));
         },
         async aplicarValoresDefaultBifurcaciones() {
-            if (!['nuevo', 'editar'].includes(this.modo)) return;
+            if (!this.puedeLimpiarRespuestasOcultas()) return;
+            this.limpiarRespuestasOcultas();
 
             for (const seccion of this.secciones) {
                 for (const pregunta of seccion.preguntas) {
-                    if (!this.esPreguntaBranchedSelects(pregunta) || !Array.isArray(pregunta._defaultBranchRules)) continue;
+                    if (!this.esPreguntaVisibleSinEfectos(pregunta)
+                        || !this.esPreguntaBranchedSelects(pregunta) || !Array.isArray(pregunta._defaultBranchRules)) continue;
 
                     for (const regla of pregunta._defaultBranchRules) {
+                        if (!this.puedeLimpiarRespuestasOcultas() || !this.esPreguntaVisibleSinEfectos(pregunta)) break;
                         const index = pregunta._branchedSelects.findIndex(rama =>
                             this.normalizarTextoComparacion(rama.label) === this.normalizarTextoComparacion(regla.branchLabel)
                         );
@@ -6023,7 +6034,7 @@ export default {
             }
         },
         firmaValoresDefaultBifurcaciones() {
-            if (!['nuevo', 'editar'].includes(this.modo)) return '';
+            if (!this.puedeLimpiarRespuestasOcultas()) return '';
 
             return this.secciones.reduce((firmas, seccion) => {
                 seccion.preguntas.forEach(pregunta => {
@@ -6038,6 +6049,7 @@ export default {
                             pregunta.idPregunta,
                             regla.id,
                             regla.branchLabel,
+                            this.esPreguntaVisibleSinEfectos(pregunta),
                             this.obtenerTextoVisiblePregunta(origen),
                             this.modo === 'editar' ? this.esValorVacioCierre(rama?.value) : ''
                         ].join(':'));
@@ -6047,7 +6059,8 @@ export default {
             }, []).join('||');
         },
         aplicarValoresDefault() {
-            if (!['nuevo', 'editar'].includes(this.modo)) return;
+            if (!this.puedeLimpiarRespuestasOcultas()) return;
+            this.limpiarRespuestasOcultas();
 
             for (const seccion of this.secciones) {
                 for (const pregunta of seccion.preguntas) {
@@ -6085,6 +6098,7 @@ export default {
             }
         },
         firmaValoresDefault() {
+            if (!this.puedeLimpiarRespuestasOcultas()) return '';
             return this.secciones.reduce((firmas, seccion) => {
                 seccion.preguntas.forEach(pregunta => {
                     if (!questionEngine.isDefaultValueEligible(pregunta) || !Array.isArray(pregunta._defaultValueRules)) return;
@@ -6289,47 +6303,51 @@ export default {
         },
         async ejecutarBusquedaPreguntaHttp() {
             if (!this.preguntaHttpActiva) return;
-
+            const pregunta = this.preguntaHttpActiva;
+            const revision = pregunta._responseRevision;
+            const params = { ...this.formHttpPregunta };
             this.loadingHttpPregunta = true;
             try {
-                if (!this.preguntaHttpActiva.urlServicio) {
+                if (!pregunta.urlServicio) {
                     throw new Error('URL de servicio no definida');
                 }
-                const params = { ...this.formHttpPregunta };
                 const response = await this.executeDynamicHttp({
-                    url: this.preguntaHttpActiva.urlServicio,
-                    method: this.preguntaHttpActiva._httpMethod,
+                    url: pregunta.urlServicio,
+                    method: pregunta._httpMethod,
                     params,
                     body: params
                 });
+                if (!this.esSolicitudPreguntaVigente(pregunta, revision)
+                    || this.preguntaHttpActiva !== pregunta || !this.dialogHttpPregunta) return;
 
                 const data = this.extraerDataHttp(response);
                 const item = Array.isArray(data) ? (data[0] || {}) : (data || {});
-                const primerCampo = (this.preguntaHttpActiva._httpParamsParsed || []).find(campo => campo.paramKey);
+                const primerCampo = (pregunta._httpParamsParsed || []).find(campo => campo.paramKey);
 
-                this.preguntaHttpActiva._branchedTriggerValue = primerCampo
-                    ? (this.formHttpPregunta[primerCampo.paramKey] || '')
+                pregunta._branchedTriggerValue = primerCampo
+                    ? (params[primerCampo.paramKey] || '')
                     : '';
 
-                this.preguntaHttpActiva._ramificaciones = (this.preguntaHttpActiva._ramificaciones || []).map(rama => ({
+                pregunta._ramificaciones = (pregunta._ramificaciones || []).map(rama => ({
                     ...rama,
                     value: questionEngine.normalizeBranchedDerivedValue(
                         this.resolverPropiedadCaseInsensitive(item, rama.prop) || ''
                     )
                 }));
 
-                this.preguntaHttpActiva._ramificacionesReadonlyHttp = (this.preguntaHttpActiva._ramificaciones || [])
+                pregunta._ramificacionesReadonlyHttp = (pregunta._ramificaciones || [])
                     .some(rama => !!String(rama?.value || '').trim());
 
-                this.preguntaHttpActiva.respuesta = this.serializarRespuestaPregunta(this.preguntaHttpActiva);
+                pregunta.respuesta = this.serializarRespuestaPregunta(pregunta);
                 this.dialogHttpPregunta = false;
             } catch (error) {
+                if (!this.esSolicitudPreguntaVigente(pregunta, revision) || this.preguntaHttpActiva !== pregunta) return;
                 this.$q.notify({
                     type: 'negative',
                     message: 'No se pudo obtener la información de la búsqueda dinámica'
                 });
             } finally {
-                this.loadingHttpPregunta = false;
+                if (this.preguntaHttpActiva === pregunta) this.loadingHttpPregunta = false;
             }
         },
         async executeDynamicHttp({ url, method = 'GET', params = null, body = null }) {
@@ -6354,7 +6372,7 @@ export default {
         },
         async cargarOpcionesSelectHttp(pregunta) {
             if (!this.esPreguntaSelectHttpSimple(pregunta) || pregunta._httpLoaded) return;
-
+            const revision = pregunta._responseRevision;
             pregunta._loadingHttp = true;
             try {
                 const response = await this.executeDynamicHttp({
@@ -6363,19 +6381,22 @@ export default {
                     params: null,
                     body: null
                 });
+                if (!this.esSolicitudPreguntaVigente(pregunta, revision)) return;
                 pregunta.opciones = this.mapearOpcionesHttp(this.extraerDataHttp(response), pregunta._labelHttpField);
                 pregunta._httpLoaded = true;
             } catch (error) {
+                if (!this.esSolicitudPreguntaVigente(pregunta, revision)) return;
                 this.$q.notify({
                     type: 'negative',
                     message: `No se pudieron cargar las opciones de ${pregunta.pregunta}`
                 });
             } finally {
-                pregunta._loadingHttp = false;
+                if (pregunta._responseRevision === revision) pregunta._loadingHttp = false;
             }
         },
         async inicializarBranchedSelects(pregunta) {
             if (!Array.isArray(pregunta._branchedSelects) || pregunta._branchedSelects.length === 0) return;
+            const revision = pregunta._responseRevision;
 
             const tieneRespuestaPersistida = pregunta.respuesta !== null
                 && pregunta.respuesta !== undefined
@@ -6389,6 +6410,7 @@ export default {
             }
 
             await this.cargarOpcionesBranchedSelect(pregunta, 0);
+            if (!this.esSolicitudPreguntaVigente(pregunta, revision)) return;
 
             if (tieneRespuestaPersistida) {
                 await this.hidratarBranchedSelectsDesdeRespuesta(pregunta);
@@ -6410,6 +6432,7 @@ export default {
         async cargarOpcionesBranchedSelect(pregunta, index) {
             const rama = pregunta._branchedSelects[index];
             if (!rama) return;
+            const revision = pregunta._responseRevision;
 
             const params = this.esHttpParamsWildcard(pregunta.httpParams)
                 ? {}
@@ -6424,23 +6447,27 @@ export default {
                     params,
                     body: params
                 });
+                if (!this.esSolicitudPreguntaVigente(pregunta, revision)) return;
                 this.$set(rama, 'options', this.mapearOpcionesHttp(this.extraerDataHttp(response), rama.valueField));
             } catch (error) {
+                if (!this.esSolicitudPreguntaVigente(pregunta, revision)) return;
                 this.$set(rama, 'options', []);
                 this.$q.notify({
                     type: 'negative',
                     message: `No se pudieron cargar las opciones de ${rama.label}`
                 });
             } finally {
-                rama.loading = false;
+                if (pregunta._responseRevision === revision) rama.loading = false;
             }
         },
         async hidratarBranchedSelectsDesdeRespuesta(pregunta) {
+            const revision = pregunta._responseRevision;
             const labels = String(pregunta.respuesta || '')
                 .split('|')
                 .map(item => item.trim());
 
             for (let index = 0; index < pregunta._branchedSelects.length; index++) {
+                if (!this.esSolicitudPreguntaVigente(pregunta, revision)) return;
                 const rama = pregunta._branchedSelects[index];
                 const label = labels[index] || '';
                 if (!label) continue;
@@ -6468,18 +6495,23 @@ export default {
             }
         },
         async onBranchedSelectChange(pregunta, index, value) {
+            if (!this.esPreguntaVisibleSinEfectos(pregunta)) return;
+            const revision = pregunta._responseRevision;
             const rama = pregunta._branchedSelects[index];
             if (!rama) return;
 
             rama.value = value;
             rama.selectedOption = rama.options.find(item => item.value === value) || null;
             this.limpiarBranchedSelectChildren(pregunta, index);
+            pregunta.respuesta = this.serializarRespuestaPregunta(pregunta);
 
             if (rama.selectedOption && index < pregunta._branchedSelects.length - 1) {
                 await this.cargarOpcionesBranchedSelect(pregunta, index + 1);
             }
 
-            pregunta.respuesta = this.serializarRespuestaPregunta(pregunta);
+            if (this.esSolicitudPreguntaVigente(pregunta, revision)) {
+                pregunta.respuesta = this.serializarRespuestaPregunta(pregunta);
+            }
         },
 
         obtenerOpcionesValidas(lista, valueKey) {
@@ -7304,68 +7336,88 @@ export default {
 
             return reglas
         },
-        limpiarRespuestasOcultas() {
-            if (this.modo !== 'nuevo') return
-
-            this.secciones.forEach(sec => {
-                sec.preguntas.forEach(p => {
-                    if (!this.mostrarPregunta(p)) {
-                        switch (p.tipoControl) {
-                            case 'text':    p.respuesta = ''; break
-                            case 'dateInputs': p.respuesta = ''; p._dateInputsYearDraft = ''; p._dateInputsMonthDraft = ''; p._dateInputsDayDraft = ''; break
-                            case 'textM':   p.respuesta = []; p._textMDraft = ''; break
-                            case 'numberM': p.respuesta = []; p._numberMDraft = ''; break
-                            case 'timeRangeM': p.respuesta = []; p._timeRangeStartDraft = ''; p._timeRangeEndDraft = ''; p._timeRangeAttemptedAdd = false; break
-                            case 'selectM': p.respuesta = []; break
-                            case 'label':   p.respuesta = 2; break
-                            default:        p.respuesta = null; break
-                        }
-                        if (this.esPreguntaBranchedInputSearch(p)) {
-                            p._ramificacionesReadonlyHttp = false
-                            p._branchedTriggerValue = ''
-                            p._ramificaciones = (p._ramificaciones || []).map(rama => ({
-                                ...rama,
-                                value: ''
-                            }))
-                        }
-                        if (this.esPreguntaBranchedSelects(p)) {
-                            p._branchedSelects = (p._branchedSelects || []).map(rama => ({
-                                ...rama,
-                                value: '',
-                                selectedOption: null,
-                                options: []
-                            }))
-                        }
-                    }
-                    if (!this.mostrarPregunta2(p)) {
-                        p.respuesta2 = null
-                    }
-                })
-            })
+        puedeLimpiarRespuestasOcultas() {
+            return this.dialog && !this.loading && !this.referenciasSyncPendientes
+                && ['nuevo', 'editar'].includes(this.modo);
         },
+        limpiarDatosRespuestaPregunta(pregunta, soloSecundaria = false) {
+            let cambio = false;
+            const vaciar = (destino, clave, valor) => {
+                if (Array.isArray(valor) && Array.isArray(destino[clave]) && destino[clave].length === 0) return;
+                if (destino[clave] === valor) return;
+                this.$set(destino, clave, valor);
+                cambio = true;
+            };
+            vaciar(pregunta, 'respuesta2', null);
+            if ('otroTexto2' in pregunta) vaciar(pregunta, 'otroTexto2', null);
+            if (soloSecundaria) return cambio;
 
+            vaciar(pregunta, 'respuesta', this.esPreguntaAge(pregunta) ? null : questionEngine.normalizeAnswer(pregunta, null));
+            vaciar(pregunta, 'otroTexto', null);
+            [
+                '_textMDraft', '_numberMDraft', '_timeRangeStartDraft', '_timeRangeEndDraft',
+                '_dateInputsYearDraft', '_dateInputsMonthDraft', '_dateInputsDayDraft'
+            ].forEach(clave => vaciar(pregunta, clave, ''));
+            vaciar(pregunta, '_timeRangeAttemptedAdd', false);
+            vaciar(pregunta, '_ramificacionesReadonlyHttp', false);
+            vaciar(pregunta, '_loadingHttp', false);
+            if (this.esPreguntaBranchedInputSearch(pregunta)) {
+                vaciar(pregunta, '_branchedTriggerValue', '');
+                (pregunta._ramificaciones || []).forEach(rama => vaciar(rama, 'value', ''));
+            }
+            if (this.esPreguntaBranchedSelects(pregunta)) {
+                (pregunta._branchedSelects || []).forEach((rama, index) => {
+                    vaciar(rama, 'value', '');
+                    vaciar(rama, 'selectedOption', null);
+                    vaciar(rama, 'loading', false);
+                    // Conservar el catálogo raíz para permitir una nueva selección.
+                    if (index > 0) vaciar(rama, 'options', []);
+                });
+            }
+            return cambio;
+        },
+        limpiarRespuestasOcultas() {
+            if (!this.puedeLimpiarRespuestasOcultas()) return;
+            const preguntas = this.secciones.flatMap(seccion => seccion.preguntas);
+            let cambio;
+            do {
+                cambio = false;
+                preguntas.forEach(pregunta => {
+                    if (!this.esPreguntaVisibleSinEfectos(pregunta)) {
+                        if (!pregunta._hiddenForCleanup) {
+                            this.$set(pregunta, '_hiddenForCleanup', true);
+                            this.$set(pregunta, '_responseRevision', (pregunta._responseRevision || 0) + 1);
+                        }
+                        if (this.preguntaHttpActiva === pregunta) {
+                            this.dialogHttpPregunta = false;
+                            this.preguntaHttpActiva = null;
+                            this.formHttpPregunta = {};
+                            this.loadingHttpPregunta = false;
+                        }
+                        cambio = this.limpiarDatosRespuestaPregunta(pregunta) || cambio;
+                    } else {
+                        this.$set(pregunta, '_hiddenForCleanup', false);
+                        if (!this.esPregunta2VisibleSinEfectos(pregunta)) {
+                            cambio = this.limpiarDatosRespuestaPregunta(pregunta, true) || cambio;
+                        }
+                    }
+                });
+            } while (cambio);
+        },
+        esSolicitudPreguntaVigente(pregunta, revision) {
+            return pregunta._responseRevision === revision && !pregunta._hiddenForCleanup
+                && (this.loading || (this.dialog
+                    && this.secciones.some(seccion => seccion.preguntas.includes(pregunta))
+                    && (this.esVisualizacion || this.esPreguntaVisibleSinEfectos(pregunta))));
+        },
         mostrarPregunta2(pregunta) {
-            const visible = this.esPregunta2VisibleSinEfectos(pregunta)
-            if (!visible && pregunta.pregunta2 && this.modo === 'nuevo') this.$set(pregunta, 'respuesta2', null)
-            return visible
+            return this.esPregunta2VisibleSinEfectos(pregunta);
         },
         esPregunta2VisibleSinEfectos(pregunta) {
             return questionEngine.isQuestion2Visible(pregunta, id => this.buscarPregunta(id))
         },
         mostrarPregunta(pregunta) {
-            const visible = this.esPreguntaVisibleSinEfectos(pregunta)
-            if (!visible && this.modo === 'nuevo') {
-                switch (pregunta.tipoControl) {
-                    case 'text':    this.$set(pregunta, 'respuesta', ''); break
-                    case 'dateInputs': this.$set(pregunta, 'respuesta', ''); this.$set(pregunta, '_dateInputsYearDraft', ''); this.$set(pregunta, '_dateInputsMonthDraft', ''); this.$set(pregunta, '_dateInputsDayDraft', ''); break
-                    case 'textM': this.$set(pregunta, 'respuesta', []); this.$set(pregunta, '_textMDraft', ''); break
-                    case 'numberM': this.$set(pregunta, 'respuesta', []); this.$set(pregunta, '_numberMDraft', ''); break
-                    case 'selectM': this.$set(pregunta, 'respuesta', []); break
-                    case 'label':   this.$set(pregunta, 'respuesta', 2); break
-                    default:        this.$set(pregunta, 'respuesta', null); break
-                }
-            }
-            return visible
+            return this.esPreguntaVisibleSinEfectos(pregunta);
         },
         esPreguntaVisibleSinEfectos(pregunta) {
             return questionEngine.isQuestionVisible(pregunta, id => this.buscarPregunta(id))
@@ -7655,6 +7707,9 @@ export default {
                 this.fechaAcreditacion = null
             }
         },
+        firmaVisibilidadPreguntasActual() {
+            this.limpiarRespuestasOcultas();
+        },
         firmaValoresDefaultBifurcacionesActual() {
             this.sincronizarValoresDefaultBifurcaciones();
         },
@@ -7665,6 +7720,16 @@ export default {
     },
     computed: {
 
+        firmaVisibilidadPreguntasActual() {
+            if (!this.puedeLimpiarRespuestasOcultas()) return '';
+            return JSON.stringify(this.secciones.flatMap(seccion => seccion.preguntas).map(pregunta => [
+                pregunta.idPregunta,
+                pregunta.respuesta,
+                pregunta.respuesta2,
+                this.esPreguntaVisibleSinEfectos(pregunta),
+                this.esPregunta2VisibleSinEfectos(pregunta)
+            ]));
+        },
         firmaValoresDefaultBifurcacionesActual() {
             return this.firmaValoresDefaultBifurcaciones();
         },
