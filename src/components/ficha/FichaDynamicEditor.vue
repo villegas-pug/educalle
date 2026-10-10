@@ -5914,8 +5914,15 @@ export default {
         cumpleReglaEditable(regla) {
             return questionEngine.matchesEditableRule(regla, id => this.buscarPregunta(id));
         },
+        resolverValorCondicionalDefault(pregunta) {
+            return this.esPreguntaAge(pregunta) ? this.obtenerEdadPregunta(pregunta) : undefined;
+        },
         esCampoSoloLectura(pregunta) {
-            return questionEngine.isReadOnly(pregunta, { isView: this.esVisualizacion, findQuestion: id => this.buscarPregunta(id) });
+            return questionEngine.isReadOnly(pregunta, {
+                isView: this.esVisualizacion,
+                findQuestion: id => this.buscarPregunta(id),
+                resolveConditionReferenceValue: referencia => this.resolverValorCondicionalDefault(referencia)
+            });
         },
         esControlDeshabilitado(pregunta) {
             return this.esVisualizacion || this.esCampoSoloLectura(pregunta);
@@ -6070,7 +6077,9 @@ export default {
                         || !pregunta._defaultValueRules.length
                         || !this.esValorVacioCierre(pregunta.respuesta)) continue;
 
-                    const defaultValue = questionEngine.resolveDefaultValue(pregunta, id => this.buscarPregunta(id));
+                    const defaultValue = questionEngine.resolveDefaultValue(pregunta, id => this.buscarPregunta(id), {
+                        resolveConditionReferenceValue: referencia => this.resolverValorCondicionalDefault(referencia)
+                    });
                     if (defaultValue === null || defaultValue === undefined) continue;
 
                     this.$set(pregunta, 'respuesta', this.normalizarRespuestaPregunta(pregunta, defaultValue));
@@ -6104,13 +6113,19 @@ export default {
                     if (!questionEngine.isDefaultValueEligible(pregunta) || !Array.isArray(pregunta._defaultValueRules)) return;
                     pregunta._defaultValueRules.forEach(regla => {
                         const origen = this.buscarPregunta(regla.id);
+                        const valorReferencia = regla.type === 'cond'
+                            ? this.resolverValorCondicionalDefault(origen)
+                            : undefined;
                         firmas.push([
                             pregunta.idPregunta,
                             regla.id,
+                            regla.type,
+                            regla.comparator,
                             regla.value,
                             regla.defaultValue,
+                            regla.readonly,
                             this.esPreguntaVisibleSinEfectos(pregunta),
-                            this.obtenerTextoVisiblePregunta(origen),
+                            valorReferencia ?? this.obtenerTextoVisiblePregunta(origen),
                             this.esValorVacioCierre(pregunta.respuesta)
                         ].join(':'));
                     });

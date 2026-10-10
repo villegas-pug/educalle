@@ -124,9 +124,19 @@ export function normalizeDefaultValueRules(defaultValue) {
         const id = Number(getCaseInsensitiveProperty(item, 'id'));
         const value = getCaseInsensitiveProperty(item, 'valor') ?? getCaseInsensitiveProperty(item, 'value');
         const defaultValue = getCaseInsensitiveProperty(item, 'defecto') ?? getCaseInsensitiveProperty(item, 'default');
-        return type === 'REF' && Number.isFinite(id) && value !== undefined && value !== null
+        if (type === 'REF' && Number.isFinite(id) && value !== undefined && value !== null
             && String(value).trim() && defaultValue !== undefined && defaultValue !== null
-            ? { type: 'ref', id, value, defaultValue }
+        ) return { type: 'ref', id, value, defaultValue, readonly: true };
+
+        const comparator = String(getCaseInsensitiveProperty(item, 'operador') || getCaseInsensitiveProperty(item, 'comparador') || '').trim();
+        const numericValue = Number(value);
+        const readonlyValue = getCaseInsensitiveProperty(item, 'readonly');
+        const readonly = readonlyValue === true || readonlyValue === 1 || String(readonlyValue).toLowerCase() === 'true';
+        const supportedComparators = ['<', '<=', '>', '>=', '=', '==', '===', '!=', '<>'];
+        return type === 'COND' && Number.isFinite(id) && value !== undefined && value !== null
+            && String(value).trim() && Number.isFinite(numericValue)
+            && supportedComparators.includes(comparator) && defaultValue !== undefined && defaultValue !== null
+            ? { type: 'cond', id, comparator, value: numericValue, defaultValue, readonly }
             : null;
     }).filter(Boolean);
 }

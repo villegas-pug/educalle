@@ -92,25 +92,37 @@ export function getQuestionVisibleAnswer(question) {
     }).map(value => String(value).trim()).filter(Boolean).join('|');
 }
 
-export function getMatchingDefaultValueRule(question, findQuestion) {
+export function getMatchingDefaultValueRule(question, findQuestion, { resolveConditionReferenceValue } = {}) {
     if (!isDefaultValueEligible(question) || !Array.isArray(question?._defaultValueRules) || typeof findQuestion !== 'function') return null;
 
     for (const rule of question._defaultValueRules) {
-        const referenceValue = getQuestionVisibleAnswer(findQuestion(rule.id));
-        const expectedValue = normalizeComparisonText(rule.value);
-        if (referenceValue && expectedValue && normalizeComparisonText(referenceValue).includes(expectedValue)) {
+        const referenceQuestion = findQuestion(rule.id);
+        const resolvedConditionReferenceValue = rule.type === 'cond' && typeof resolveConditionReferenceValue === 'function'
+            ? resolveConditionReferenceValue(referenceQuestion)
+            : undefined;
+        const referenceValue = resolvedConditionReferenceValue !== undefined
+            ? resolvedConditionReferenceValue
+            : getQuestionVisibleAnswer(referenceQuestion);
+        const isMatch = rule.type === 'ref'
+            ? !!referenceValue && !!normalizeComparisonText(rule.value)
+                && normalizeComparisonText(referenceValue).includes(normalizeComparisonText(rule.value))
+            : rule.type === 'cond'
+                && referenceValue !== null && referenceValue !== undefined && referenceValue !== ''
+                && Number.isFinite(Number(referenceValue))
+                && matchesComparator(Number(referenceValue), rule.comparator, rule.value);
+        if (isMatch) {
             return rule;
         }
     }
     return null;
 }
 
-export function hasActiveDefaultValue(question, findQuestion) {
-    return !!getMatchingDefaultValueRule(question, findQuestion);
+export function hasActiveDefaultValue(question, findQuestion, options) {
+    return !!getMatchingDefaultValueRule(question, findQuestion, options);
 }
 
-export function resolveDefaultValue(question, findQuestion) {
-    return getMatchingDefaultValueRule(question, findQuestion)?.defaultValue ?? null;
+export function resolveDefaultValue(question, findQuestion, options) {
+    return getMatchingDefaultValueRule(question, findQuestion, options)?.defaultValue ?? null;
 }
 
 function isEmptyValue(value) {
@@ -162,9 +174,9 @@ export function matchesEditableRule(rule, findQuestion) {
     return !!baseQuestion && matchesCondition(baseQuestion.respuesta, rule.valor);
 }
 
-export function isReadOnly(question, { isView, findQuestion }) {
+export function isReadOnly(question, { isView, findQuestion, resolveConditionReferenceValue }) {
     if (isView || isAgeQuestion(question) || ['readonly', 'redirected'].includes(String(question?.modoControl || '').toLowerCase())) return true;
-    if (hasActiveDefaultValue(question, findQuestion)) return true;
+    if (getMatchingDefaultValueRule(question, findQuestion, { resolveConditionReferenceValue })?.readonly === true) return true;
     return question?._editableRule ? !matchesEditableRule(question._editableRule, findQuestion) : false;
 }
 
