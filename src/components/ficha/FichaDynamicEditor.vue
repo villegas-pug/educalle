@@ -6074,15 +6074,41 @@ export default {
                     if (!this.esPreguntaVisibleSinEfectos(pregunta)
                         || !questionEngine.isDefaultValueEligible(pregunta)
                         || !Array.isArray(pregunta._defaultValueRules)
-                        || !pregunta._defaultValueRules.length
-                        || !this.esValorVacioCierre(pregunta.respuesta)) continue;
+                        || !pregunta._defaultValueRules.length) continue;
 
-                    const defaultValue = questionEngine.resolveDefaultValue(pregunta, id => this.buscarPregunta(id), {
+                    const opcionesEvaluacion = {
                         resolveConditionReferenceValue: referencia => this.resolverValorCondicionalDefault(referencia)
-                    });
+                    };
+                    const aplicado = pregunta._appliedAgeDefault;
+                    if (aplicado) {
+                        const conservaValor = JSON.stringify(pregunta.respuesta) === aplicado.answerSnapshot;
+                        const sigueActiva = questionEngine.getMatchingDefaultValueRule(
+                            { ...pregunta, _defaultValueRules: [aplicado.rule] },
+                            id => this.buscarPregunta(id), opcionesEvaluacion
+                        );
+                        if (!conservaValor || !sigueActiva) {
+                            this.$set(pregunta, '_appliedAgeDefault', null);
+                            if (conservaValor && !sigueActiva) {
+                                this.$set(pregunta, 'respuesta', this.normalizarRespuestaPregunta(pregunta, null));
+                                if (String(pregunta.tipoControl || '').toLowerCase() === 'dateinputs') {
+                                    const drafts = questionEngine.hydrateDateInputs(pregunta);
+                                    Object.keys(drafts).forEach(key => this.$set(pregunta, key, drafts[key]));
+                                }
+                            }
+                        }
+                    }
+                    if (!this.esValorVacioCierre(pregunta.respuesta)) continue;
+
+                    const regla = questionEngine.getMatchingDefaultValueRule(
+                        pregunta, id => this.buscarPregunta(id), opcionesEvaluacion
+                    );
+                    const defaultValue = regla?.defaultValue;
                     if (defaultValue === null || defaultValue === undefined) continue;
 
                     this.$set(pregunta, 'respuesta', this.normalizarRespuestaPregunta(pregunta, defaultValue));
+                    this.$set(pregunta, '_appliedAgeDefault', regla.type === 'cond' && this.esPreguntaAge(this.buscarPregunta(regla.id))
+                        ? { rule: regla, answerSnapshot: JSON.stringify(pregunta.respuesta) }
+                        : null);
                     if (String(pregunta.tipoControl || '').toLowerCase() === 'dateinputs') {
                         const drafts = questionEngine.hydrateDateInputs(pregunta);
                         Object.keys(drafts).forEach(key => this.$set(pregunta, key, drafts[key]));
@@ -6125,7 +6151,7 @@ export default {
                             regla.defaultValue,
                             regla.readonly,
                             this.esPreguntaVisibleSinEfectos(pregunta),
-                            valorReferencia ?? this.obtenerTextoVisiblePregunta(origen),
+                            valorReferencia === null ? 'age:invalid' : valorReferencia ?? this.obtenerTextoVisiblePregunta(origen),
                             this.esValorVacioCierre(pregunta.respuesta)
                         ].join(':'));
                     });
@@ -6134,6 +6160,7 @@ export default {
             }, []).join('||');
         },
         actualizarRespuestaPregunta(pregunta, value) {
+            this.$set(pregunta, '_appliedAgeDefault', null);
             this.$set(pregunta, 'respuesta', value);
         },
         actualizarRespuesta2Pregunta(pregunta, value) {
@@ -6148,7 +6175,7 @@ export default {
         actualizarRespuestaTextoPregunta(pregunta, value) {
             const valorTexto = this.sanitizarValorTextoPregunta(pregunta, value);
             const valorNormalizado = valorTexto === '' ? (this.usaTipoNumero(pregunta) ? null : '') : valorTexto;
-            this.$set(pregunta, 'respuesta', valorNormalizado);
+            this.actualizarRespuestaPregunta(pregunta, valorNormalizado);
             this.cancelarAlertasReglasSiCorregidas();
         },
         actualizarDateInputsPart(pregunta, part, value) {
@@ -6166,6 +6193,7 @@ export default {
             if (!/^\d*$/.test(valorEntrante) || valorEntrante.length > limite) return;
 
             this.$set(pregunta, clave, valorEntrante);
+            this.$set(pregunta, '_appliedAgeDefault', null);
             pregunta.respuesta = this.serializarRespuestaPregunta(pregunta);
         },
         manejarKeydownDateInputs(event) {
@@ -6205,14 +6233,14 @@ export default {
                 return;
             }
             items.push(valor);
-            this.$set(pregunta, 'respuesta', items);
+            this.actualizarRespuestaPregunta(pregunta, items);
             this.$set(pregunta, '_textMDraft', '');
         },
         eliminarItemTextM(pregunta, index) {
             if (this.esCampoSoloLectura(pregunta)) return;
             const items = Array.isArray(pregunta.respuesta) ? [...pregunta.respuesta] : [];
             items.splice(index, 1);
-            this.$set(pregunta, 'respuesta', items);
+            this.actualizarRespuestaPregunta(pregunta, items);
         },
         actualizarDraftNumberM(pregunta, value) {
             this.$set(pregunta, '_numberMDraft', value);
@@ -6235,14 +6263,14 @@ export default {
                 return;
             }
             items.push(valor);
-            this.$set(pregunta, 'respuesta', items);
+            this.actualizarRespuestaPregunta(pregunta, items);
             this.$set(pregunta, '_numberMDraft', '');
         },
         eliminarItemNumberM(pregunta, index) {
             if (this.esCampoSoloLectura(pregunta)) return;
             const items = Array.isArray(pregunta.respuesta) ? [...pregunta.respuesta] : [];
             items.splice(index, 1);
-            this.$set(pregunta, 'respuesta', items);
+            this.actualizarRespuestaPregunta(pregunta, items);
         },
         actualizarTimeRangeDraft(pregunta, tipo, value) {
             this.$set(pregunta, '_timeRangeAttemptedAdd', false);
@@ -6283,7 +6311,7 @@ export default {
 
             const items = Array.isArray(pregunta.respuesta) ? [...pregunta.respuesta] : [];
             items.push(`${inicio} - ${fin}`);
-            this.$set(pregunta, 'respuesta', items);
+            this.actualizarRespuestaPregunta(pregunta, items);
             this.$set(pregunta, '_timeRangeStartDraft', '');
             this.$set(pregunta, '_timeRangeEndDraft', '');
             this.$set(pregunta, '_timeRangeAttemptedAdd', false);
@@ -6292,7 +6320,7 @@ export default {
             if (this.esCampoSoloLectura(pregunta)) return;
             const items = Array.isArray(pregunta.respuesta) ? [...pregunta.respuesta] : [];
             items.splice(index, 1);
-            this.$set(pregunta, 'respuesta', items);
+            this.actualizarRespuestaPregunta(pregunta, items);
         },
         puedeAbrirBusquedaHttp(pregunta) {
             return !this.esVisualizacion && !this.esCampoSoloLectura(pregunta);
@@ -7367,6 +7395,7 @@ export default {
             if ('otroTexto2' in pregunta) vaciar(pregunta, 'otroTexto2', null);
             if (soloSecundaria) return cambio;
 
+            vaciar(pregunta, '_appliedAgeDefault', null);
             vaciar(pregunta, 'respuesta', this.esPreguntaAge(pregunta) ? null : questionEngine.normalizeAnswer(pregunta, null));
             vaciar(pregunta, 'otroTexto', null);
             [

@@ -12,6 +12,7 @@ export function buildQuestion(rawQuestion) {
         _editableBifurcacionesRule: normalizer.normalizeEditableBranches(rawQuestion.editableBifurcaciones),
         _defaultBranchRules: normalizer.normalizeDefaultBranchRules(rawQuestion.defaultValueBifurcaciones),
         _defaultValueRules: normalizer.normalizeDefaultValueRules(rawQuestion.defaultValue),
+        _appliedAgeDefault: null,
         _httpMethod: String(rawQuestion.httpMetodo || 'GET').toUpperCase(), _httpParamsParsed: normalizer.normalizeHttpParams(rawQuestion.httpParams),
         _redirectRef: rules.getRedirectRef(rawQuestion.opciones), _redirectSync: rules.getRedirectSync(rawQuestion.opciones),
         _ageSourceIds: normalizer.normalizeAgeSourceIds(rawQuestion.opciones), _bloqSubmitSiInvalidoRule: normalizer.normalizeBlockSubmitInvalidRule(rawQuestion.bloqSubmitSiInvalido), _ramificaciones: [], _ramificacionesReadonlyHttp: false, _branchedSelects: [],
