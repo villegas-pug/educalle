@@ -4882,10 +4882,13 @@ export default {
         },
         async prepararPreguntaDinamica(pregunta) {
             if (this.esPreguntaRedirected(pregunta) && (this.modo === 'nuevo' || pregunta._redirectSync === true)) {
-                pregunta.respuesta = this.normalizarRespuestaPregunta(
-                    pregunta,
-                    this.getRefValue(pregunta._redirectRef)
-                );
+                const valorReferencia = this.getRefValue(pregunta._redirectRef);
+                const conservarRespuestaGuardada = ['editar', 'ver'].includes(this.modo)
+                    && this.normalizarTextoComparacion(pregunta._redirectRef) === 'CENTROUBIGEO'
+                    && !String(valorReferencia ?? '').trim();
+                if (!conservarRespuestaGuardada) {
+                    pregunta.respuesta = this.normalizarRespuestaPregunta(pregunta, valorReferencia);
+                }
             }
 
             if (this.esPreguntaSelectHttpSimple(pregunta)) {
