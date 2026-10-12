@@ -3767,6 +3767,7 @@ export default {
                 idCentro: null,
                 idEspInterv: null,
                 nombreCentro: '',
+                espIntervUbicacion: '',
                 departamento: '',
                 provincia: '',
                 distrito: '',
@@ -4306,6 +4307,7 @@ export default {
             if (!this.puedeEditar(row)) return;
             this.secciones = [];
             this.modo = "editar";
+            this.form.espIntervUbicacion = row.espIntervUbicacion || '';
             this.referenciasSyncPendientes = false;
             this.inicializarResponsableFicha(row);
             this.form.fechaIngreso = this.obtenerFechaIngresoISO(row);
@@ -4361,6 +4363,7 @@ export default {
         async verRegistro(row) {
             this.secciones = [];
             this.modo = "ver";
+            this.form.espIntervUbicacion = row.espIntervUbicacion || '';
             this.referenciasSyncPendientes = false;
             this.inicializarResponsableFicha(row);
             this.form.fechaIngreso = this.obtenerFechaIngresoISO(row);
@@ -4518,9 +4521,11 @@ export default {
             const periodo = this.fichaPeriodo || this.anioSeleccionado || '';
             const responsableNombre = this.form.respSupervision || this.obtenerNombreCompletoSesion() || '';
             const responsableId = this.normalizarIdResponsable(this.form.idRespSupervision) || this.obtenerIdPersonalSesion();
-            const centroUbigeo = [this.form.departamento, this.form.provincia, this.form.distrito]
-                .filter(Boolean)
-                .join(' / ');
+            const centroUbigeo = ['editar', 'ver'].includes(this.modo)
+                ? (this.form.espIntervUbicacion || '')
+                : [this.form.departamento, this.form.provincia, this.form.distrito]
+                    .filter(Boolean)
+                    .join(' / ');
             const hoy = new Date();
             const getDate = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
 
@@ -5028,6 +5033,7 @@ export default {
         abrirDialog() {
             this.secciones = [];
             this.modo = "nuevo";
+            this.form.espIntervUbicacion = '';
             this.referenciasSyncPendientes = false;
             this.responsableFicha = { nombre: '', id: null };
             this.form.fechaIngreso = null;
@@ -5206,6 +5212,7 @@ export default {
                 estado: FICHA_ESTADOS.EN_REGISTRO,
                 idEspInterv: null,
                 fechaIngreso: null,
+                espIntervUbicacion: '',
                 nombreServicio: "",
                 codigoServicio: "",
                 direccion: "",

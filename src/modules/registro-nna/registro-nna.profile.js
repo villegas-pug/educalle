@@ -47,6 +47,16 @@ export default {
                 classes: 'ellipsis-cell'
             },
             {
+                name: 'sede',
+                label: 'SEDE',
+                field: 'sede',
+                align: 'left',
+                sortable: true,
+                format: value => value || '—',
+                style: 'width: 180px; min-width: 180px;',
+                classes: 'ellipsis-cell'
+            },
+            {
                 name: 'nombreCentro',
                 label: 'ZONA INTERVENCIÓN',
                 field: 'nombreCentro',
