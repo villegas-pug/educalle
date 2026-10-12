@@ -72,7 +72,11 @@
                                 :readonly="soloLectura" :disable="guardando"
                                 :error="!!errores.espNombreResponsable" :error-message="errores.espNombreResponsable"
                                 @input="limpiarError('espNombreResponsable')"
-                            />
+                            >
+                                <template v-if="!soloLectura" v-slot:append>
+                                    <q-btn flat round dense icon="search" aria-label="Buscar personal" :disable="ocupado" @click="abrirBuscadorPersonal" />
+                                </template>
+                            </q-input>
                         </div>
                     </div>
                 </q-card-section>
@@ -81,15 +85,22 @@
                     <q-btn :label="soloLectura ? 'Cerrar' : 'Cancelar'" flat :disable="guardando" @click="cerrar" />
                 </q-card-actions>
             </q-form>
+            <personal-search-dialog
+                v-if="buscadorPersonalAbierto && !soloLectura && value"
+                @close="buscadorPersonalAbierto = false"
+                @select="seleccionarResponsable"
+            />
         </q-card>
     </q-dialog>
 </template>
 
 <script>
 import { crearEspacioIntervencion, actualizarEspacioIntervencion, describirErrorEspacio } from 'src/services/espacios-intervencion.service';
+import PersonalSearchDialog from './PersonalSearchDialog.vue';
 
 export default {
     name: 'EspacioIntervencionFormDialog',
+    components: { PersonalSearchDialog },
     props: {
         value: { type: Boolean, default: false },
         registro: { type: Object, default: null },
@@ -109,6 +120,7 @@ export default {
             errores: {}, errorGeneral: '', errorCatalogo: '',
             hidratando: true, cargandoProvincias: false, cargandoDistritos: false,
             guardando: false,
+            buscadorPersonalAbierto: false,
             revisionUbicacion: 0,
             destruido: false
         };
@@ -129,6 +141,16 @@ export default {
         this.revisionUbicacion++;
     },
     methods: {
+        abrirBuscadorPersonal() {
+            if (this.soloLectura || this.ocupado) return;
+            this.buscadorPersonalAbierto = true;
+        },
+        seleccionarResponsable(nombre) {
+            if (this.soloLectura || this.ocupado) return;
+            this.form.espNombreResponsable = nombre;
+            this.limpiarError('espNombreResponsable');
+            this.buscadorPersonalAbierto = false;
+        },
         revisionVigente(revision) {
             return !this.destruido && revision === this.revisionUbicacion;
         },
@@ -234,7 +256,7 @@ export default {
             return !Object.keys(errores).length;
         },
         async guardar() {
-            if (this.soloLectura || this.ocupado || !this.validar()) return;
+            if (this.soloLectura || this.ocupado || this.buscadorPersonalAbierto || !this.validar()) return;
             this.guardando = true;
             this.errorGeneral = '';
             const payload = {
@@ -256,7 +278,11 @@ export default {
             }
         },
         actualizarVisibilidad(value) { if (!value) this.cerrar(); },
-        cerrar() { if (!this.guardando) this.$emit('input', false); }
+        cerrar() {
+            if (this.guardando) return;
+            this.buscadorPersonalAbierto = false;
+            this.$emit('input', false);
+        }
     }
 };
 </script>

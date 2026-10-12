@@ -51,6 +51,16 @@ export async function listarEspaciosIntervencion(http) {
     return leerLista(response).filter(row => Number(row.idServicioPadre) === SERVICIO_PADRE_EDUCALLE);
 }
 
+export async function buscarPersonalEspacio(http, tipoBusqueda, dynamicValue) {
+    const tipo = Number(tipoBusqueda);
+    const valor = String(dynamicValue ?? '').trim();
+    if (![1, 2].includes(tipo) || !valor) throw new Error('Ingrese un criterio de búsqueda válido');
+    const response = await http.get(`${process.env.API_URL}/findPersonalByDynamicParam`, {
+        params: { tipoBusqueda: tipo, dynamicValue: valor }
+    });
+    return leerLista(response).filter(item => item && typeof item === 'object' && !Array.isArray(item));
+}
+
 export async function obtenerEspacioIntervencion(http, idEspInterv) {
     const response = await http.get(`${process.env.API_URL}/findEspIntervencionById`, { params: { idEspInterv } });
     const body = leerRespuesta(response);
