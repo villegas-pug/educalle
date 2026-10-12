@@ -27,6 +27,7 @@ function confirmarEscritura(response) {
 
 function crearPayload(form) {
     return {
+        sede: String(form.sede || '').trim(),
         espNombre: String(form.espNombre || '').trim(),
         espUbigeo: String(form.espUbigeo || ''),
         espNombreResponsable: String(form.espNombreResponsable || '').trim() || null
@@ -49,6 +50,13 @@ export function describirErrorEspacio(error) {
 export async function listarEspaciosIntervencion(http) {
     const response = await http.get(`${process.env.API_URL}/findAllEspIntervenciones`);
     return leerLista(response).filter(row => Number(row.idServicioPadre) === SERVICIO_PADRE_EDUCALLE);
+}
+
+export async function obtenerSedesEspacio(http) {
+    const response = await http.get(`${process.env.API_URL}/findAllCatalogosByGrupos`, {
+        params: { grupo: 120, subgrupo: 1 }
+    });
+    return leerLista(response).filter(item => item && typeof item.catDescripcion === 'string' && item.catDescripcion.trim());
 }
 
 export async function buscarPersonalEspacio(http, tipoBusqueda, dynamicValue) {

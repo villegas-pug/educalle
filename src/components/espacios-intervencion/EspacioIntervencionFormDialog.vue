@@ -19,11 +19,31 @@
                             <q-btn flat label="Reintentar" :disable="ocupado" @click="reintentarCatalogos" />
                         </template>
                     </q-banner>
+                    <q-banner v-if="errorSedes" class="bg-amber-1 text-amber-10 q-mb-md" dense>
+                        {{ errorSedes }}
+                        <template v-slot:action>
+                            <q-btn flat label="Reintentar sedes" :disable="ocupado" @click="cargarSedes" />
+                        </template>
+                    </q-banner>
                     <div v-if="ubicacionOriginal && !distrito && !hidratando" class="text-caption q-mb-md">
                         Ubigeo guardado: {{ ubicacionOriginal }}. {{ soloLectura ? 'La ubicación no está disponible en el catálogo.' : 'Seleccione una ubicación válida antes de guardar.' }}
                     </div>
 
                     <div class="row q-col-gutter-md">
+                        <div class="col-12">
+                            <q-select
+                                :value="sedeSeleccionada || form.sede || null" :options="sedes"
+                                option-label="catDescripcion" option-value="idCatalogo"
+                                :display-value="form.sede || ''" label="Sede *"
+                                outlined dense bottom-slots hide-bottom-space :clearable="!soloLectura"
+                                :readonly="soloLectura" :disable="guardando || cargandoSedes"
+                                :loading="cargandoSedes" :error="!!errores.sede" :error-message="errores.sede"
+                                @input="cambiarSede"
+                            />
+                            <div v-if="!soloLectura && form.sede && !sedeSeleccionada && !cargandoSedes" class="text-caption q-mt-xs">
+                                La sede guardada no está disponible. Seleccione una sede válida antes de guardar.
+                            </div>
+                        </div>
                         <div class="col-12">
                             <q-input
                                 v-model="form.espNombre"
@@ -95,7 +115,7 @@
 </template>
 
 <script>
-import { crearEspacioIntervencion, actualizarEspacioIntervencion, describirErrorEspacio } from 'src/services/espacios-intervencion.service';
+import { crearEspacioIntervencion, actualizarEspacioIntervencion, describirErrorEspacio, obtenerSedesEspacio } from 'src/services/espacios-intervencion.service';
 import PersonalSearchDialog from './PersonalSearchDialog.vue';
 
 export default {
@@ -111,11 +131,13 @@ export default {
     data() {
         return {
             form: {
+                sede: this.registro?.sede || '',
                 espNombre: this.registro?.espNombre || '',
                 espNombreResponsable: this.registro?.espNombreResponsable || ''
             },
             ubicacionOriginal: String(this.registro?.espUbigeo || ''),
             departamentos: [], provincias: [], distritos: [],
+            sedes: [], cargandoSedes: true, errorSedes: '', revisionSedes: 0,
             departamento: null, provincia: null, distrito: null,
             errores: {}, errorGeneral: '', errorCatalogo: '',
             hidratando: true, cargandoProvincias: false, cargandoDistritos: false,
@@ -132,15 +154,50 @@ export default {
                 : this.modo === 'editar' ? 'Editar espacio de intervención' : 'Nuevo espacio de intervención';
         },
         ocupado() {
-            return this.guardando || this.hidratando || this.cargandoProvincias || this.cargandoDistritos;
+            return this.guardando || this.hidratando || this.cargandoProvincias || this.cargandoDistritos || this.cargandoSedes;
+        },
+        sedeSeleccionada() {
+            return this.sedes.find(item => item.catDescripcion === this.form.sede) || null;
         }
     },
-    mounted() { this.cargarUbicacionInicial(); },
+    mounted() {
+        this.cargarUbicacionInicial();
+        this.cargarSedes();
+    },
     beforeDestroy() {
         this.destruido = true;
         this.revisionUbicacion++;
+        this.revisionSedes++;
     },
     methods: {
+        async cargarSedes() {
+            if (this.guardando || this.destruido) return;
+            const revision = ++this.revisionSedes;
+            this.cargandoSedes = true;
+            this.errorSedes = '';
+            this.sedes = [];
+            try {
+                const sedes = await obtenerSedesEspacio(this.$axios);
+                if (this.destruido || revision !== this.revisionSedes) return;
+                this.sedes = sedes;
+                if (!sedes.length) this.errorSedes = 'No hay sedes disponibles';
+                if (!this.soloLectura) {
+                    const texto = String(this.form.sede || '').trim().toUpperCase();
+                    const seleccion = sedes.find(item => item.catDescripcion.trim().toUpperCase() === texto);
+                    if (seleccion) this.form.sede = seleccion.catDescripcion;
+                }
+            } catch (error) {
+                if (!this.destruido && revision === this.revisionSedes) this.errorSedes = describirErrorEspacio(error).message;
+            } finally {
+                if (!this.destruido && revision === this.revisionSedes) this.cargandoSedes = false;
+            }
+        },
+        cambiarSede(value) {
+            if (this.soloLectura || this.guardando || this.cargandoSedes) return;
+            const seleccion = this.sedes.find(item => item.idCatalogo === value?.idCatalogo);
+            this.form.sede = seleccion?.catDescripcion || '';
+            this.limpiarError('sede');
+        },
         abrirBuscadorPersonal() {
             if (this.soloLectura || this.ocupado) return;
             this.buscadorPersonalAbierto = true;
@@ -240,6 +297,7 @@ export default {
         },
         validar() {
             const errores = {};
+            if (this.cargandoSedes || this.errorSedes || !this.sedeSeleccionada) errores.sede = 'Seleccione una sede válida';
             const nombre = String(this.form.espNombre || '').trim();
             const responsable = String(this.form.espNombreResponsable || '').trim();
             if (!nombre) errores.espNombre = 'Ingrese el nombre del espacio de intervención';
@@ -260,6 +318,7 @@ export default {
             this.guardando = true;
             this.errorGeneral = '';
             const payload = {
+                sede: this.sedeSeleccionada.catDescripcion,
                 espNombre: this.form.espNombre,
                 espNombreResponsable: this.form.espNombreResponsable,
                 espUbigeo: this.distrito.idUbigeo

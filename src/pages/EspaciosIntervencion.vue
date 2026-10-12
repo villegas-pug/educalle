@@ -56,6 +56,10 @@ function formatearNombreGeografico(value) {
     return typeof value === 'string' && value.trim() ? value : '-';
 }
 
+function formatearSede(value) {
+    return typeof value === 'string' && value.trim() ? value : '—';
+}
+
 export default {
     name: 'EspaciosIntervencion',
     components: { EspacioIntervencionFormDialog },
@@ -67,6 +71,7 @@ export default {
             columnas: [
                 { name: 'correlativo', label: 'N°', field: () => '', align: 'center' },
                 { name: 'espNombre', label: 'NOMBRE', field: 'espNombre', align: 'left', sortable: true },
+                { name: 'sede', label: 'SEDE', field: 'sede', format: formatearSede, align: 'left', sortable: true },
                 { name: 'departamento', label: 'DEPARTAMENTO', field: 'departamento', format: formatearNombreGeografico, align: 'left', sortable: true },
                 { name: 'provincia', label: 'PROVINCIA', field: 'provincia', format: formatearNombreGeografico, align: 'left', sortable: true },
                 { name: 'distrito', label: 'DISTRITO', field: 'distrito', format: formatearNombreGeografico, align: 'left', sortable: true },

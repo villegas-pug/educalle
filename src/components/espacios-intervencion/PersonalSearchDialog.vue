@@ -1,5 +1,5 @@
 <template>
-    <q-dialog :value="true" persistent @input="actualizarVisibilidad">
+    <q-dialog :value="true" persistent @input="actualizarVisibilidad" @show="enfocarCriterio">
         <q-card class="personal-search-dialog">
             <q-card-section class="bg-header-dialog row items-center no-wrap">
                 <div class="text-subtitle1 text-weight-bold">Buscar personal</div>
@@ -17,6 +17,7 @@
                         </div>
                         <div class="col-12 col-sm-8">
                             <q-input
+                                ref="criterioBusqueda"
                                 :value="dynamicValue" :label="tipoBusqueda === 1 ? 'Nro. documento' : 'Nombres'"
                                 outlined dense bottom-slots hide-bottom-space
                                 :error="!!errorCriterio" :error-message="errorCriterio"
@@ -90,6 +91,11 @@ export default {
     methods: {
         actualizarVisibilidad(value) {
             if (!value) this.cerrar();
+        },
+        enfocarCriterio() {
+            this.$nextTick(() => {
+                if (!this.cerrado && this.$refs.criterioBusqueda) this.$refs.criterioBusqueda.focus();
+            });
         },
         invalidarBusqueda() {
             this.revisionBusqueda++;
