@@ -13,6 +13,7 @@
                             <q-select
                                 :value="tipoBusqueda" :options="tiposBusqueda" emit-value map-options
                                 label="Buscar por" outlined dense @input="cambiarTipo"
+                                @popup-hide="enfocarCriterio"
                             />
                         </div>
                         <div class="col-12 col-sm-8">
