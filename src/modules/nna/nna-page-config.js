@@ -1,4 +1,5 @@
 export const createNnaPageConfig = () => ({
+    enviarIdEspIntervEnAlta: false,
     accionesPrincipales: {
         resetear: true,
         nuevo: true,

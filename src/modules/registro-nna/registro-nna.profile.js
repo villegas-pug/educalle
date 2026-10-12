@@ -5,6 +5,7 @@ export default {
     pageTitle: 'REGISTRO DE NNA',
     pageConfig: {
         ...createNnaPageConfig(),
+        enviarIdEspIntervEnAlta: true,
         mostrarAvisoPendientesGuardado: true,
         tableColumns: [
             {

@@ -3765,6 +3765,7 @@ export default {
                 capacidad: null,
 
                 idCentro: null,
+                idEspInterv: null,
                 nombreCentro: '',
                 departamento: '',
                 provincia: '',
@@ -5004,6 +5005,7 @@ export default {
             // si tienes form
             if (this.form) {
                 this.form.idCentro = null
+                this.form.idEspInterv = null
                 this.form.nombreCentro = null
             }
 
@@ -5094,6 +5096,7 @@ export default {
             )
 
             // llenar form
+            this.form.idEspInterv = this.normalizarIdEspInterv(this.centroSeleccionado.idEspInterv)
             this.form.idUnidad = unidad?.idUnidad ?? this.unidadSeleccionada
             this.form.nombreUnidad = unidad?.nombreUnidad || ''
 
@@ -5166,11 +5169,17 @@ export default {
             }
 
         },
+        normalizarIdEspInterv(value) {
+            if (typeof value !== 'number' && typeof value !== 'string') return null;
+            const id = Number(value);
+            return Number.isSafeInteger(id) && id > 0 ? id : null;
+        },
         seleccionarCentro(centro) {
 
             this.centroSeleccionado = centro
             this.centroNombre = centro.nombreUnidad
             this.form.idCentro = centro.idUnidadOrganica
+            this.form.idEspInterv = this.normalizarIdEspInterv(centro.idEspInterv)
             this.form.nombreCentro = centro.nombreUnidad
             this.form.tipoCentro = centro.tipoCentro
             this.form.departamento = centro.departamento
@@ -5195,6 +5204,7 @@ export default {
 
             this.form = {
                 estado: FICHA_ESTADOS.EN_REGISTRO,
+                idEspInterv: null,
                 fechaIngreso: null,
                 nombreServicio: "",
                 codigoServicio: "",
@@ -5461,6 +5471,12 @@ export default {
                 this.$q.notify({ type: 'warning', message: 'Solo se pueden editar fichas EN REGISTRO' });
                 return false;
             }
+            const enviarIdEspInterv = this.modo === 'nuevo' && this.pageConfig.enviarIdEspIntervEnAlta === true;
+            const idEspInterv = enviarIdEspInterv ? this.normalizarIdEspInterv(this.form.idEspInterv) : null;
+            if (enviarIdEspInterv && idEspInterv === null) {
+                this.$q.notify({ type: 'warning', message: 'Vuelve a seleccionar el espacio de intervención.' });
+                return false;
+            }
             if (this.modoEdicion) {
                 const cabecera = await this.obtenerCabeceraActual(this.form.idAnexoCabecera);
                 this.form.estado = Number(cabecera.estado);
@@ -5546,6 +5562,7 @@ export default {
                 //     }
                 // }
             } else {
+                if (enviarIdEspInterv) payload.idEspInterv = idEspInterv;
                 payload.usuRegistra = this.obtenerIdUsuarioSesion();
                 await crearFicha(this.$axios, payload);
             }
