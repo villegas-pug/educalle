@@ -81,10 +81,34 @@ export function normalizeHttpParams(httpParams) {
 
 export function normalizeEditableRule(editable) {
     const parsed = parseJsonFlexible(editable);
-    if (!parsed || typeof parsed !== 'object') return null;
-    const id = Number(getCaseInsensitiveProperty(parsed, 'id'));
-    const value = getCaseInsensitiveProperty(parsed, 'valor');
-    return Number.isFinite(id) && value !== undefined && value !== null ? { id, valor: value } : null;
+    if (parsed === null) {
+        if (editable === null || editable === undefined || (typeof editable === 'string' && !editable.trim())) return null;
+        if (typeof editable === 'string') {
+            try {
+                if (JSON.parse(editable) === null) return null;
+            } catch (error) { /* A non-empty malformed rule must keep the destination locked. */ }
+        }
+        return { conditions: [], valid: false };
+    }
+    if (Array.isArray(parsed) && parsed.length === 0) return null;
+
+    const rules = Array.isArray(parsed) ? parsed : [parsed];
+    const conditions = rules.map(rule => {
+        if (!rule || typeof rule !== 'object' || Array.isArray(rule)) return null;
+
+        const id = Number(getCaseInsensitiveProperty(rule, 'id'));
+        const value = getCaseInsensitiveProperty(rule, 'valor');
+        const operatorValue = getCaseInsensitiveProperty(rule, 'operador');
+        const operator = operatorValue === undefined ? '==' : String(operatorValue).trim();
+        return Number.isFinite(id) && id > 0 && value !== undefined && value !== null
+            && ['==', '!='].includes(operator)
+            ? { id, operator, valor: value }
+            : null;
+    });
+
+    return conditions.every(Boolean)
+        ? { conditions, valid: true }
+        : { conditions: [], valid: false };
 }
 
 export function normalizeEditableBranches(editableBranches) {

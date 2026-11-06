@@ -53,7 +53,8 @@ module.exports = function (ctx) {
 
             env: {
                 API_URL : ctx.dev
-                ? 'http://10.101.0.36:4000/api/ms-educalle'
+                // ? 'http://10.101.0.36:4000/api/ms-educalle'
+                ? 'https://srvapp03.inabif.gob.pe/api/ms-educalle'
                 : 'https://srvapp03.inabif.gob.pe/api/ms-educalle',
                 
                 API_RUTA:'https://srvapp01.inabif.gob.pe:8443/SRH',

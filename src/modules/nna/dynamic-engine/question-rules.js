@@ -169,9 +169,32 @@ export function isQuestion2Visible(question, findQuestion) {
 }
 
 export function matchesEditableRule(rule, findQuestion) {
-    if (!rule || !rule.id) return true;
-    const baseQuestion = findQuestion(rule.id);
-    return !!baseQuestion && matchesCondition(baseQuestion.respuesta, rule.valor);
+    if (!rule) return true;
+
+    let conditions;
+    if (Array.isArray(rule)) {
+        conditions = rule;
+    } else if (Array.isArray(rule.conditions)) {
+        if (rule.valid === false) return false;
+        conditions = rule.conditions;
+    } else {
+        conditions = [rule];
+    }
+
+    return conditions.every(condition => {
+        if (!condition || typeof condition !== 'object') return false;
+        const id = Number(condition.id);
+        if (!Number.isFinite(id) || id <= 0) return false;
+
+        const baseQuestion = findQuestion(id);
+        if (!baseQuestion) return false;
+
+        const operator = condition.operator ?? condition.operador ?? '==';
+        const matches = matchesCondition(baseQuestion.respuesta, condition.valor);
+        if (operator === '==') return matches;
+        if (operator === '!=') return !matches;
+        return false;
+    });
 }
 
 export function isReadOnly(question, { isView, findQuestion, resolveConditionReferenceValue }) {
