@@ -312,6 +312,7 @@
                                                                             class="ficha-textm__input"
                                                                             :value="pregunta._textMDraft"
                                                                             :style="getPreguntaControlStyle(pregunta)"
+                                                                            :maxlength="getPreguntaMaxLength(pregunta)"
                                                                             :readonly="esCampoSoloLectura(pregunta)"
                                                                             :rules="validarPreguntaTextM(pregunta)"
                                                                             :error="!!getMensajeErrorLongitudTextM(pregunta, pregunta._textMDraft)"
@@ -364,6 +365,7 @@
                                                                             class="ficha-textm__input"
                                                                             :value="pregunta._numberMDraft"
                                                                             :style="getPreguntaControlStyle(pregunta)"
+                                                                            :maxlength="getPreguntaMaxLength(pregunta)"
                                                                             :readonly="esCampoSoloLectura(pregunta)"
                                                                             :rules="validarPreguntaNumberM(pregunta)"
                                                                             :error="!!getMensajeErrorLongitudNumberM(pregunta, pregunta._numberMDraft)"
@@ -4736,6 +4738,11 @@ export default {
             const rango = this.getRangoLongitudPregunta(pregunta);
             return rango && rango.max !== null ? rango.max : null;
         },
+        limitarBorradorLongitudPregunta(pregunta, value) {
+            const valor = value === null || value === undefined ? '' : String(value);
+            const max = this.getPreguntaMaxLength(pregunta);
+            return max === null ? valor : valor.slice(0, max);
+        },
         tieneErrorLongitudPregunta(pregunta) {
             return !!this.getMensajeErrorLongitudPregunta(pregunta);
         },
@@ -6242,7 +6249,8 @@ export default {
             if (!/^\d*$/.test(pegado)) event.preventDefault();
         },
         actualizarDraftTextM(pregunta, value) {
-            this.$set(pregunta, '_textMDraft', this.obtenerEtiquetaMayuscula(value));
+            const valor = this.obtenerEtiquetaMayuscula(value);
+            this.$set(pregunta, '_textMDraft', this.limitarBorradorLongitudPregunta(pregunta, valor));
         },
         agregarItemTextM(pregunta) {
             if (this.esCampoSoloLectura(pregunta)) return;
@@ -6270,7 +6278,7 @@ export default {
             this.actualizarRespuestaPregunta(pregunta, items);
         },
         actualizarDraftNumberM(pregunta, value) {
-            this.$set(pregunta, '_numberMDraft', value);
+            this.$set(pregunta, '_numberMDraft', this.limitarBorradorLongitudPregunta(pregunta, value));
         },
         agregarItemNumberM(pregunta) {
             if (this.esCampoSoloLectura(pregunta)) return;
